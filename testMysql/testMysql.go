@@ -9,13 +9,12 @@ import (
 
 func testSelect() {
 
-	//db, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/mysql?charset=utf8");
-	db, err := sql.Open("mysql", "dog123:dog123@tcp(192.168.5.199:3306)/ask?charset=utf8");
+	db, err := sql.Open("mysql", "root:goumintech@tcp(192.168.86.72:3309)/mall?charset=utf8");
 	if err != nil {
 		fmt.Printf("connect err");
 	}
 
-	rows, err1 := db.Query("select uid,subject from ask_question order by id desc limit 0,5");
+	rows, err1 := db.Query("select uid,token from user_token");
     if err1 != nil {
 		fmt.Println(err1.Error());
 		return;
@@ -28,16 +27,15 @@ func testSelect() {
 		fmt.Print(cols[i]);
 		fmt.Print("\t");
 	}
-	fmt.Println("here\n");
 
-	var Host int;
-	var User string;
+	var uid int;
+	var token string;
 
 	for rows.Next() {
-		if err := rows.Scan(&Host, &User); err == nil {
-			fmt.Print(Host);
+		if err := rows.Scan(&uid, &token); err == nil {
+			fmt.Print(uid);
 			fmt.Print("\t");
-			fmt.Print(User);
+			fmt.Print(token);
 			fmt.Print("\t\r\n");
 		}
 	}

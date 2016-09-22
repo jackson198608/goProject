@@ -76,7 +76,6 @@ func testBasicGrammar() {
 
 	//slice testing
 	//var mySlice []int = players[:3]
-	
 }
 
 func testFurtherGrammar(){
@@ -106,9 +105,10 @@ func testSlice(a []int) int{
 func main(){
 	//testBasicGrammar();
 	//testFurtherGrammar();
-	a := []int{1,2,3,4,5};
-	b := testSlice(a);
-	fmt.Println(b);
+	/*testSlice*/
+	//a := []int{1,2,3,4,5};
+	//b := testSlice(a);
+	//fmt.Println(b);
+
+	/*testInterface*/	
 }
-
-
