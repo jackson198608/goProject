@@ -19,11 +19,28 @@ func do() {
 	fmt.Println("do")
 }
 
-// test return value to be function
+// test return value to be function,also can be called closure
 func test3() F {
+	var s string = "say somthing to see the var outside,this is test3 speaking"
 	return func() {
-		fmt.Println("return by test3")
+		fmt.Println(s)
 	}
+}
+
+// accept int paramter and return two closure function
+func test5(b int) (func(int, int) (bool, int), func(bool) bool) {
+	var a bool = true
+	var sum int = 0
+	return func(x int, y int) (bool, int) {
+			fmt.Println("this is the add function in test5 ", sum)
+			sum++
+			z := (x + y) * b
+			return a, z
+		}, func(a bool) bool {
+			fmt.Println("this is return bool function in test5 ", sum)
+			sum++
+			return a
+		}
 }
 
 // test slice function
@@ -52,15 +69,26 @@ func doTest(a int) int {
 	return a + 1
 }
 
+//take function as paramter
 func test4(task func(a int) int) (bool, int) {
 	b := task(3)
 	return true, b
 }
 
 func main() {
-	//按顺序解析()
-	//test3()()
-	_, a := test4(doTest)
-	fmt.Println(a)
+	/*
+		//按顺序解析()
+		test3()()
+	*/
+
+	a, b := test5(10)
+	_, z := a(1, 5)
+	fmt.Println(z)
+	b(true)
+
+	/*
+		_, a := test4(doTest)
+		fmt.Println(a)
+	*/
 
 }
