@@ -1,10 +1,12 @@
-package iosPush
+package appPush
 
 import (
+	"strconv"
 	"strings"
 )
 
 type Task struct {
+	phoneType   int //o for ios ,1 for android
 	DeviceToken string
 	TaskJson    string
 }
@@ -12,7 +14,8 @@ type Task struct {
 func NewTask(redisString string) (t *Task) {
 	var tR Task
 	result := strings.Split(redisString, "|")
-	tR.DeviceToken = result[0]
-	tR.TaskJson = result[1]
+	tR.phoneType, _ = strconv.Atoi(result[0])
+	tR.DeviceToken = result[1]
+	tR.TaskJson = result[2]
 	return &tR
 }

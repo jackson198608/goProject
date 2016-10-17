@@ -1,11 +1,13 @@
-package iosPush
+package appPush
 
 import (
+	"bytes"
 	"fmt"
 	apns "github.com/sideshow/apns2"
 	"github.com/sideshow/apns2/certificate"
+	"io/ioutil"
 	"log"
-	"strings"
+	"net/http"
 )
 
 type Worker struct {
@@ -20,6 +22,15 @@ func NewWorker(t *Task) (w *Worker) {
 }
 
 func (w Worker) Push() {
+	phoneType := w.t.phoneType
+	if phoneType == 0 {
+		w.iosPush()
+	} else {
+		w.androidPush()
+	}
+}
+
+func (w Worker) iosPush() {
 	cert, pemErr := certificate.FromPemFile("/etc/pro-lingdang.pem", "gouminwang")
 	if pemErr != nil {
 		log.Println("Cert Error:", pemErr)
@@ -42,8 +53,25 @@ func (w Worker) Push() {
 	log.Println("APNs ID:", res.ApnsID)
 }
 
-func (w Worker) PushTest() {
-	var task string = `fb71306452499efc778cc77d1be6614b8e1753e79b7acd8348ce6cb47abd4dc2|{"aps":{"alert":"task","sound":"default","badge":1,"type":6,"mark":""}}`
-	var temps []string = strings.Split(task, "|")
-	fmt.Println(temps[0])
+func (w Worker) androidPush() {
+	url := "http://sdk.open.api.igexin.com/apiex.htm"
+	fmt.Println("URL:>", url)
+
+	var jsonStr []byte = []byte(w.t.TaskJson)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req.Header.Set("User-Agent", "GeTui PHP/1.0")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+
 }
