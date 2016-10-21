@@ -28,7 +28,7 @@ func testSet(client *redis.Client) {
 }
 
 func testRpush(client *redis.Client) {
-	err := (*client).RPush("list1", "do1").Err()
+	err := (*client).RPush("list1", "fuck1").Err()
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +82,7 @@ func conn(conn string) (client *redis.Client) {
 }
 
 func main() {
-	client := conn("127.0.0.1:6379")
+	client := conn("210.14.154.198:6379")
 	//testSet(client)
 	testRpush(client)
 }
