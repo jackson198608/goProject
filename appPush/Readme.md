@@ -1,0 +1,2 @@
+- 可以推送给apns，也可以推送给geui android个推
+- redisString 格式:  phoneType|deviceToken|jsonString
