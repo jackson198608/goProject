@@ -33,18 +33,7 @@ func Init() {
 	appPush.Init(timeout)
 }
 
-func main() {
-
-	//init the system process
-	Init()
-
-	//for insert test data
-	if os.Args[1] == "test" {
-		fmt.Println("here")
-		testCreateTestData()
-		return
-	}
-
+func pushCenter() {
 	//main loop
 	for {
 		//init data
@@ -66,4 +55,50 @@ func main() {
 		//push data to app
 		push()
 	}
+
+}
+
+func singlePush() {
+	//main loop
+	for {
+		//init data
+		tasks = make([]redisData, numForOneLoop, numForOneLoop)
+		taskNum = 0
+
+		//load data from redis
+		loadDataFromRedis()
+
+		//if there is no data
+		if taskNum == 0 {
+			log.Println("[Notice] sleep for", 5, " second")
+			time.Sleep(5 * time.Second)
+		}
+
+		//push data to app
+		push()
+	}
+
+}
+
+func main() {
+
+	//init the system process
+	Init()
+
+	switch os.Args[1] {
+	case "test":
+		fmt.Println("[test]")
+		testCreateTestData()
+
+	case "multi":
+		fmt.Println("[multi-push]")
+		pushCenter()
+	case "single":
+		fmt.Println("[single-push]")
+		singlePush()
+
+	default:
+		fmt.Println("do nothing")
+	}
+
 }

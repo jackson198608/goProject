@@ -43,6 +43,7 @@ func testLlen(client *redis.Client) {
 
 func croutinePopRedis(c chan int, client *redis.Client, i int) {
 	redisStr := (*client).LPop("MessageCenter").Val()
+	log.Println(redisStr)
 	redisStrArr := strings.Split(redisStr, "^")
 	tasks[i].pushStr = redisStrArr[0]
 	tasks[i].insertStr = redisStrArr[1]
