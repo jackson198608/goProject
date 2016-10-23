@@ -3,10 +3,17 @@ package main
 import (
 	"github.com/jackson198608/gotest/inMongo"
 	mgo "gopkg.in/mgo.v2"
+	"log"
 )
 
-func do(c chan int, session *mgo.Session, i int) {
-	t := inMongo.NewTask(tasks[i].insertStr)
+func doInMongo(c chan int, session *mgo.Session, i int) {
+	mongoStr := tasks[i].insertStr
+	if mongoStr == "0" {
+		log.Println("[Warn]no need to insert mongo")
+		c <- 1
+		return
+	}
+	t := inMongo.NewTask(mongoStr)
 	w := inMongo.NewWorker(t)
 	w.Insert(session)
 
@@ -17,7 +24,7 @@ func insertMongo() {
 	//init session
 	session, err := mgo.Dial(c.mongoConn)
 	if err != nil {
-		panic(err)
+		log.Println("[Error] mongo connect error")
 	}
 	defer session.Close()
 
@@ -28,7 +35,7 @@ func insertMongo() {
 	c := make(chan int, taskNum)
 
 	for i := 0; i < taskNum; i++ {
-		go do(c, session, i)
+		go doInMongo(c, session, i)
 	}
 	for i := 0; i < taskNum; i++ {
 		<-c

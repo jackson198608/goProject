@@ -3,8 +3,21 @@ package main
 import (
 	"fmt"
 	redis "gopkg.in/redis.v4"
+	"log"
 	"strings"
 )
+
+func putFailOneBack(i int) {
+	client := connect(c.redisConn)
+	pushStr := tasks[i].pushStr + "^0"
+	err := (*client).RPush("MessageCenter", pushStr).Err()
+	if err != nil {
+		log.Println("[Error] push str into redis error:  ", pushStr)
+	}
+
+	client.Close()
+
+}
 
 func connect(conn string) (client *redis.Client) {
 	client = redis.NewClient(&redis.Options{
@@ -12,16 +25,16 @@ func connect(conn string) (client *redis.Client) {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
-	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
-	// Output: PONG <nil>
+	_, err := client.Ping().Result()
+	if err != nil {
+		log.Println("[Error] redis connect error")
+	}
 	return client
 }
 
 func testLlen(client *redis.Client) {
 	len := (*client).LLen("MessageCenter").Val()
-	fmt.Println("len:", len)
-	if len > numForOneLoop {
+	if int(len) > numForOneLoop {
 		taskNum = numForOneLoop
 	} else {
 		taskNum = int(len)
