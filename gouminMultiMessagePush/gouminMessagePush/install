@@ -1,0 +1,5 @@
+cp -p gouminMultiMessagePush /usr/bin/
+chmod 755 /usr/bin/gouminMultiMessagePush
+cp -p msgConfig.json /etc/
+cp -p pro-lingdang.pem /etc/ 
+nohup gouminMultiMessagePush do >/tmp/push.log 2>&1 & 
