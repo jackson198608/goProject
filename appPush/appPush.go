@@ -54,8 +54,8 @@ func (w Worker) iosPush(p12bytes []byte) (result bool) {
 	notification.Payload = w.t.TaskJson // See Payload section below
 
 	client := apns.NewClient(cert).Production()
-	//res, err := client.Push(notification)
-	_, err := client.Push(notification)
+	res, err := client.Push(notification)
+	//_, err := client.Push(notification)
 
 	if err != nil {
 		//log.Println("Error:", err)
@@ -63,7 +63,7 @@ func (w Worker) iosPush(p12bytes []byte) (result bool) {
 		return result
 	}
 
-	//log.Println("APNs ID:", res.ApnsID)
+	log.Println("APNs ID:", res.ApnsID)
 	return true
 }
 
@@ -87,8 +87,8 @@ func (w Worker) androidPush() (result bool) {
 	}
 	defer resp.Body.Close()
 
-	//body, _ := ioutil.ReadAll(resp.Body)
-	ioutil.ReadAll(resp.Body)
-	//fmt.Println("response Body:", string(body))
+	body, _ := ioutil.ReadAll(resp.Body)
+	//ioutil.ReadAll(resp.Body)
+	log.Println("[notice] android response Body:", string(body))
 	return true
 }
