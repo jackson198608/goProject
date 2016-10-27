@@ -15,6 +15,7 @@ type Config struct {
 type redisData struct {
 	pushStr   string
 	insertStr string
+	times     int
 }
 
 func loadConfig() {

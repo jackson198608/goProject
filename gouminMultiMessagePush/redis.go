@@ -4,9 +4,16 @@ import (
 	"fmt"
 	redis "gopkg.in/redis.v4"
 	"log"
+	"strconv"
+	"strings"
 )
 
 func putFailOneBack(i int) {
+
+	if tasks[i].times == 5 {
+		log.Println("[Error] fail exceed,drop: ", tasks[i].pushStr, tasks[i].insertStr)
+		return
+	}
 	client := connect(c.redisConn)
 	var pushStr string = ""
 	if (jobType == "multi") || (jobType == "single") {
@@ -14,6 +21,10 @@ func putFailOneBack(i int) {
 	} else {
 		pushStr = tasks[i].insertStr
 	}
+
+	//add times into it
+	newTimes := tasks[i].times + 1
+	pushStr = pushStr + "^" + strconv.Itoa(newTimes)
 
 	err := (*client).RPush(redisQueueName, pushStr).Err()
 	if err != nil {
@@ -49,9 +60,19 @@ func testLlen(client *redis.Client) {
 func croutinePopRedisMultiData(c chan int, client *redis.Client, i int) {
 	log.Println("[notice] pop mcMulti")
 	redisStr := (*client).LPop("mcMulti").Val()
-	log.Println(redisStr)
-	tasks[i].pushStr = redisStr
+	if redisStr == "" {
+		log.Println("[notice] got nothing")
+		c <- 1
+		return
+	}
+	redisArr := strings.Split(redisStr, "^")
+	tasks[i].pushStr = redisArr[0]
 	tasks[i].insertStr = ""
+	if len(redisArr) == 2 {
+		tasks[i].times, _ = strconv.Atoi(redisArr[1])
+	} else {
+		tasks[i].times = 1
+	}
 
 	c <- 1
 }
@@ -69,9 +90,19 @@ func lopMulti(client *redis.Client) {
 
 func croutinePopRedisSingleData(c chan int, client *redis.Client, i int) {
 	redisStr := (*client).LPop("mcSingle").Val()
-	log.Println(redisStr)
-	tasks[i].pushStr = redisStr
+	if redisStr == "" {
+		log.Println("[notice] got nothing")
+		c <- 1
+		return
+	}
+	redisArr := strings.Split(redisStr, "^")
+	tasks[i].pushStr = redisArr[0]
 	tasks[i].insertStr = ""
+	if len(redisArr) == 2 {
+		tasks[i].times, _ = strconv.Atoi(redisArr[1])
+	} else {
+		tasks[i].times = 1
+	}
 
 	c <- 1
 }
@@ -89,9 +120,19 @@ func lopSingle(client *redis.Client) {
 
 func croutinePopRedisInsertData(c chan int, client *redis.Client, i int) {
 	redisStr := (*client).LPop("mcInsert").Val()
-	log.Println(redisStr)
+	if redisStr == "" {
+		log.Println("[notice] got nothing")
+		c <- 1
+		return
+	}
+	redisArr := strings.Split(redisStr, "^")
+	tasks[i].insertStr = redisArr[0]
 	tasks[i].pushStr = ""
-	tasks[i].insertStr = redisStr
+	if len(redisArr) == 2 {
+		tasks[i].times, _ = strconv.Atoi(redisArr[1])
+	} else {
+		tasks[i].times = 1
+	}
 
 	c <- 1
 }
