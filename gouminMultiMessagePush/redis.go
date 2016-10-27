@@ -4,13 +4,18 @@ import (
 	"fmt"
 	redis "gopkg.in/redis.v4"
 	"log"
-	"strings"
 )
 
 func putFailOneBack(i int) {
 	client := connect(c.redisConn)
-	pushStr := tasks[i].pushStr + "^0"
-	err := (*client).RPush("MessageCenter", pushStr).Err()
+	var pushStr string = ""
+	if (jobType == "multi") || (jobType == "single") {
+		pushStr = tasks[i].pushStr
+	} else {
+		pushStr = tasks[i].insertStr
+	}
+
+	err := (*client).RPush(redisQueueName, pushStr).Err()
 	if err != nil {
 		log.Println("[Error] push str into redis error:  ", pushStr)
 	}
@@ -33,7 +38,7 @@ func connect(conn string) (client *redis.Client) {
 }
 
 func testLlen(client *redis.Client) {
-	len := (*client).LLen("MessageCenter").Val()
+	len := (*client).LLen(redisQueueName).Val()
 	if int(len) > numForOneLoop {
 		taskNum = numForOneLoop
 	} else {
@@ -41,20 +46,60 @@ func testLlen(client *redis.Client) {
 	}
 }
 
-func croutinePopRedis(c chan int, client *redis.Client, i int) {
-	redisStr := (*client).LPop("MessageCenter").Val()
+func croutinePopRedisMultiData(c chan int, client *redis.Client, i int) {
+	log.Println("[notice] pop mcMulti")
+	redisStr := (*client).LPop("mcMulti").Val()
 	log.Println(redisStr)
-	redisStrArr := strings.Split(redisStr, "^")
-	tasks[i].pushStr = redisStrArr[0]
-	tasks[i].insertStr = redisStrArr[1]
+	tasks[i].pushStr = redisStr
+	tasks[i].insertStr = ""
 
 	c <- 1
 }
 
-func lopDataFromRedis(client *redis.Client) {
+func lopMulti(client *redis.Client) {
 	c := make(chan int, taskNum)
 	for i := 0; i < taskNum; i++ {
-		go croutinePopRedis(c, client, i)
+		go croutinePopRedisMultiData(c, client, i)
+	}
+
+	for i := 0; i < taskNum; i++ {
+		<-c
+	}
+}
+
+func croutinePopRedisSingleData(c chan int, client *redis.Client, i int) {
+	redisStr := (*client).LPop("mcSingle").Val()
+	log.Println(redisStr)
+	tasks[i].pushStr = redisStr
+	tasks[i].insertStr = ""
+
+	c <- 1
+}
+
+func lopSingle(client *redis.Client) {
+	c := make(chan int, taskNum)
+	for i := 0; i < taskNum; i++ {
+		go croutinePopRedisSingleData(c, client, i)
+	}
+
+	for i := 0; i < taskNum; i++ {
+		<-c
+	}
+}
+
+func croutinePopRedisInsertData(c chan int, client *redis.Client, i int) {
+	redisStr := (*client).LPop("mcInsert").Val()
+	log.Println(redisStr)
+	tasks[i].pushStr = ""
+	tasks[i].insertStr = redisStr
+
+	c <- 1
+}
+
+func lopInsert(client *redis.Client) {
+	c := make(chan int, taskNum)
+	for i := 0; i < taskNum; i++ {
+		go croutinePopRedisInsertData(c, client, i)
 	}
 
 	for i := 0; i < taskNum; i++ {
@@ -66,6 +111,17 @@ func loadDataFromRedis() {
 	client := connect(c.redisConn)
 	testLlen(client)
 	fmt.Println(taskNum)
-	lopDataFromRedis(client)
+	switch jobType {
+	case "multi":
+		lopMulti(client)
+	case "single":
+		lopSingle(client)
+	case "insert":
+		lopInsert(client)
+
+	default:
+		fmt.Println("[notice] no use to get data from redis")
+	}
+
 	client.Close()
 }

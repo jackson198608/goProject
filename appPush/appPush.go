@@ -39,6 +39,7 @@ func (w Worker) Push(p12bytes []byte) (result bool) {
 }
 
 func (w Worker) iosPush(p12bytes []byte) (result bool) {
+	log.Println("[Notice] iosPush")
 	//cert, pemErr := certificate.FromPemFile("/etc/pro-lingdang.pem", "gouminwang")
 	cert, pemErr := certificate.FromPemBytes(p12bytes, "gouminwang")
 	if pemErr != nil {
@@ -58,7 +59,7 @@ func (w Worker) iosPush(p12bytes []byte) (result bool) {
 	//_, err := client.Push(notification)
 
 	if err != nil {
-		//log.Println("Error:", err)
+		log.Println("Error:", err)
 		result = false
 		return result
 	}
@@ -68,6 +69,7 @@ func (w Worker) iosPush(p12bytes []byte) (result bool) {
 }
 
 func (w Worker) androidPush() (result bool) {
+	log.Println("[notice]androidPush")
 	url := "http://sdk.open.api.igexin.com/apiex.htm"
 
 	var jsonStr []byte = []byte(w.t.TaskJson)

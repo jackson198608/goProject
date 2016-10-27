@@ -39,7 +39,7 @@ func TestFibonacci(t *testing.T) {
 	c := make(chan int, workNum)
 
 	for i := 0; i < workNum; i++ {
-		go androidPush(c)
+		go iosPush(c)
 	}
 	for i := 0; i < workNum; i++ {
 		<-c

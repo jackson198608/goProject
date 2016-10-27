@@ -22,8 +22,9 @@ func NewWorker(t *Task) (w *Worker) {
 func (w Worker) Insert(session *mgo.Session) {
 	//convert json string to struct
 	var m row
+	log.Println("[notice]", w.t.columData)
 	if err := json.Unmarshal([]byte(w.t.columData), &m); err != nil {
-		fmt.Println("error json fotmat")
+		fmt.Println("[error]insert mongo error", err, w.t.columData)
 	}
 
 	//get the table name
