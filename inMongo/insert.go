@@ -2,7 +2,6 @@ package inMongo
 
 import (
 	"encoding/json"
-	"fmt"
 	mgo "gopkg.in/mgo.v2"
 	"strconv"
 )
@@ -21,9 +20,9 @@ func NewWorker(t *Task) (w *Worker) {
 func (w Worker) Insert(session *mgo.Session) {
 	//convert json string to struct
 	var m row
-	fmt.Println("[notice]", w.t.columData)
 	if err := json.Unmarshal([]byte(w.t.columData), &m); err != nil {
-		fmt.Println("[error] mongo json error", err, w.t.columData)
+		//fmt.Println("[error] mongo json error", err, w.t.columData)
+		return
 	}
 
 	//get the table name
@@ -35,6 +34,7 @@ func (w Worker) Insert(session *mgo.Session) {
 
 	err := c.Insert(&m)
 	if err != nil {
-		fmt.Println("[Error]insert into mongo error", err)
+		//fmt.Println("[Error]insert into mongo error", err)
+		return
 	}
 }
