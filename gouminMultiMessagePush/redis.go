@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	redis "gopkg.in/redis.v4"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -11,7 +9,7 @@ import (
 func putFailOneBack(i int) {
 
 	if tasks[i].times == 5 {
-		log.Println("[Error] fail exceed,drop: ", tasks[i].pushStr, tasks[i].insertStr)
+		//fmt.Println("[Error] fail exceed,drop: ", tasks[i].pushStr, tasks[i].insertStr)
 		return
 	}
 	client := connect(c.redisConn)
@@ -28,7 +26,7 @@ func putFailOneBack(i int) {
 
 	err := (*client).RPush(redisQueueName, pushStr).Err()
 	if err != nil {
-		log.Println("[Error] push str into redis error:  ", pushStr)
+		//fmt.Println("[Error] push str into redis error:  ", pushStr)
 	}
 
 	client.Close()
@@ -43,7 +41,7 @@ func connect(conn string) (client *redis.Client) {
 	})
 	_, err := client.Ping().Result()
 	if err != nil {
-		log.Println("[Error] redis connect error")
+		fmt.Println("[Error] redis connect error")
 	}
 	return client
 }
@@ -58,10 +56,10 @@ func testLlen(client *redis.Client) {
 }
 
 func croutinePopRedisMultiData(c chan int, client *redis.Client, i int) {
-	log.Println("[notice] pop mcMulti")
+	fmt.Println("[notice] pop mcMulti")
 	redisStr := (*client).LPop("mcMulti").Val()
 	if redisStr == "" {
-		log.Println("[notice] got nothing")
+		fmt.Println("[notice] got nothing")
 		c <- 1
 		return
 	}
@@ -91,7 +89,7 @@ func lopMulti(client *redis.Client) {
 func croutinePopRedisSingleData(c chan int, client *redis.Client, i int) {
 	redisStr := (*client).LPop("mcSingle").Val()
 	if redisStr == "" {
-		log.Println("[notice] got nothing")
+		fmt.Println("[notice] got nothing")
 		c <- 1
 		return
 	}
@@ -121,7 +119,7 @@ func lopSingle(client *redis.Client) {
 func croutinePopRedisInsertData(c chan int, client *redis.Client, i int) {
 	redisStr := (*client).LPop("mcInsert").Val()
 	if redisStr == "" {
-		log.Println("[notice] got nothing")
+		fmt.Println("[notice] got nothing")
 		c <- 1
 		return
 	}

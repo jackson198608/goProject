@@ -14,6 +14,9 @@ type Task struct {
 func NewTask(redisString string) (t *Task) {
 	var tR Task
 	result := strings.Split(redisString, "|")
+	if len(result) != 3 {
+		return nil
+	}
 	tR.phoneType, _ = strconv.Atoi(result[0])
 	tR.DeviceToken = result[1]
 	tR.TaskJson = result[2]

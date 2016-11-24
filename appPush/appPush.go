@@ -2,10 +2,10 @@ package appPush
 
 import (
 	"bytes"
+	"fmt"
 	apns "github.com/sideshow/apns2"
 	"github.com/sideshow/apns2/certificate"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 )
@@ -39,11 +39,11 @@ func (w Worker) Push(p12bytes []byte) (result bool) {
 }
 
 func (w Worker) iosPush(p12bytes []byte) (result bool) {
-	log.Println("[Notice] iosPush")
+	fmt.Println("[Notice] iosPush")
 	//cert, pemErr := certificate.FromPemFile("/etc/pro-lingdang.pem", "gouminwang")
 	cert, pemErr := certificate.FromPemBytes(p12bytes, "gouminwang")
 	if pemErr != nil {
-		log.Println("[Error]Cert Error:", pemErr)
+		fmt.Println("[Error]Cert Error:", pemErr)
 		result = false
 		return result
 	}
@@ -59,17 +59,17 @@ func (w Worker) iosPush(p12bytes []byte) (result bool) {
 	//_, err := client.Push(notification)
 
 	if err != nil {
-		log.Println("Error:", err)
+		fmt.Println("Error:", err)
 		result = false
 		return result
 	}
 
-	log.Println("APNs ID:", res.ApnsID)
+	fmt.Println("APNs ID:", res.ApnsID)
 	return true
 }
 
 func (w Worker) androidPush() (result bool) {
-	log.Println("[notice]androidPush")
+	fmt.Println("[notice]androidPush")
 	url := "http://sdk.open.api.igexin.com/apiex.htm"
 
 	var jsonStr []byte = []byte(w.t.TaskJson)
@@ -91,6 +91,6 @@ func (w Worker) androidPush() (result bool) {
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	//ioutil.ReadAll(resp.Body)
-	log.Println("[notice] android response Body:", string(body))
+	fmt.Println("[notice] android response Body:", string(body))
 	return true
 }

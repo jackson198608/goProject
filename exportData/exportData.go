@@ -7,10 +7,10 @@ import (
 	"os"
 )
 
-func testSelect(searchSql string, dbName string) {
+func doSelect(searchSql string, dbName string) {
 
-	db, err := sql.Open("mysql", "dog123:dog123@tcp(210.14.154.198:3306)/"+dbName+"?charset=utf8")
-	//db, err := sql.Open("mysql", "dog123:dog123@tcp(192.168.5.199:3306)/ask?charset=utf8");
+	//db, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/"+dbName+"?charset=utf8");
+	db, err := sql.Open("mysql", "dog123:dog123@tcp(192.168.5.199:3306)/"+dbName+"?charset=utf8")
 	if err != nil {
 		fmt.Printf("connect err")
 	}
@@ -22,24 +22,29 @@ func testSelect(searchSql string, dbName string) {
 	}
 
 	defer rows.Close()
-	fmt.Println("")
-	cols, _ := rows.Columns()
-	for i := range cols {
-		fmt.Print(cols[i])
-		fmt.Print("\t")
-	}
-
-	var Host string
-	var User string
-	fmt.Println(rows)
+	columns, _ := rows.Columns()
+	count := len(columns)
+	values := make([]interface{}, count)
+	valuePtrs := make([]interface{}, count)
 
 	for rows.Next() {
-		if err := rows.Scan(&Host, &User); err == nil {
-			fmt.Print(Host)
-			fmt.Print("\t")
-			fmt.Print(User)
-			fmt.Print("\t\r\n")
+		for i, _ := range columns {
+			valuePtrs[i] = &values[i]
 		}
+		rows.Scan(valuePtrs...)
+		for i, _ := range columns {
+			var v interface{}
+			val := values[i]
+			b, ok := val.([]byte)
+			if ok {
+				v = string(b)
+			} else {
+				v = val
+			}
+			fmt.Print(v)
+			fmt.Print(",")
+		}
+		fmt.Print("\n")
 	}
 }
 
@@ -47,5 +52,5 @@ func main() {
 	dbName := os.Args[1]
 	searchSql := os.Args[2]
 	fmt.Println("sql:", searchSql, " db:", dbName)
-	testSelect(searchSql, dbName)
+	doSelect(searchSql, dbName)
 }

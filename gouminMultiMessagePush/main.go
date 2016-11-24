@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/jackson198608/gotest/appPush"
 	"io/ioutil"
-	"log"
 	"os"
 	"time"
 )
@@ -32,7 +30,6 @@ func Init() {
 	getRedisQueueName()
 	cBytes, err := ioutil.ReadFile("/etc/pro-lingdang.pem")
 	if err != nil {
-		log.Fatal("[Error] read cert file error")
 		return
 	}
 
@@ -69,7 +66,6 @@ func pushCenter() {
 
 		//if there is no data
 		if taskNum == 0 {
-			log.Println("[Notice] sleep for", 5, " second")
 			time.Sleep(5 * time.Second)
 		}
 
@@ -91,7 +87,6 @@ func singlePush() {
 
 		//if there is no data
 		if taskNum == 0 {
-			log.Println("[Notice] sleep for", 5, " second")
 			time.Sleep(5 * time.Second)
 		}
 
@@ -113,7 +108,6 @@ func onlyInsertMongo() {
 
 		//if there is no data
 		if taskNum == 0 {
-			log.Println("[Notice] sleep for", 5, " second")
 			time.Sleep(5 * time.Second)
 		}
 
@@ -131,23 +125,18 @@ func main() {
 
 	switch jobType {
 	case "test":
-		fmt.Println("[test]")
 		testCreateTestData()
 
 	case "multi":
-		fmt.Println("[multi-push]")
 		pushCenter()
 
 	case "single":
-		fmt.Println("[single-push]")
 		singlePush()
 
 	case "insert":
-		fmt.Println("[insert-mongo]")
 		onlyInsertMongo()
 
 	default:
-		fmt.Println("do nothing")
 	}
 
 }

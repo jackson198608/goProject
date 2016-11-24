@@ -1,15 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"github.com/jackson198608/gotest/inMongo"
 	mgo "gopkg.in/mgo.v2"
-	"log"
 )
 
 func doInMongo(c chan int, session *mgo.Session, i int) {
 	mongoStr := tasks[i].insertStr
 	if mongoStr == "0" {
-		log.Println("[Warn]no need to insert mongo")
 		c <- 1
 		return
 	}
@@ -24,7 +23,7 @@ func insertMongo() {
 	//init session
 	session, err := mgo.Dial(c.mongoConn)
 	if err != nil {
-		log.Println("[Error] mongo connect error")
+		return
 	}
 	defer session.Close()
 
