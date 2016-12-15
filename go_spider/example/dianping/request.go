@@ -12,7 +12,6 @@ func newRequest(tag string, url string) *request.Request {
 	h.Add("Accept-Encoding", "gzip")
 
 	req := request.NewRequest(url, "html", tag, "GET", "", h, nil, nil, nil)
-	request.NewRequestWithProxy()
 	return req
 }
 
