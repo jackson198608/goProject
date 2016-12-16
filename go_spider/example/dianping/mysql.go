@@ -21,6 +21,7 @@ func insertShopDetail(
 	shopImage string,
 ) int64 {
 
+	// db, err := sql.Open("mysql", "root:goumintech@tcp(192.168.86.72:3309)/travel?charset=utf8mb4")
 	db, err := sql.Open("mysql", "root:my-secret-pw@tcp(127.0.0.1:3306)/activitydb?charset=utf8mb4")
 	//db, err := sql.Open("mysql", "dog123:dog123@tcp(192.168.5.199:3306)/shop?charset=utf8mb4")
 	if err != nil {
@@ -54,6 +55,7 @@ func insertShopPhoto(
 	shopId int64,
 	shopImage string,
 ) int64 {
+	// db, err := sql.Open("mysql", "root:goumintech@tcp(192.168.86.72:3309)/travel?charset=utf8mb4")
 	db, err := sql.Open("mysql", "root:my-secret-pw@tcp(127.0.0.1:3306)/activitydb?charset=utf8mb4")
 	//db, err := sql.Open("mysql", "dog123:dog123@tcp(192.168.5.199:3306)/shop?charset=utf8mb4")
 	if err != nil {
@@ -95,7 +97,7 @@ func insertShopComment(
 	weightPoint int,
 	created string,
 ) int64 {
-
+	// db, err := sql.Open("mysql", "root:goumintech@tcp(192.168.86.72:3309)/travel?charset=utf8mb4")
 	db, err := sql.Open("mysql", "root:my-secret-pw@tcp(127.0.0.1:3306)/activitydb?charset=utf8mb4")
 	//	db, err := sql.Open("mysql", "dog123:dog123@tcp(192.168.5.199:3306)/shop?charset=utf8mb4")
 	if err != nil {
@@ -129,6 +131,7 @@ func insertCommentPhoto(
 	commentId int64,
 	commentImage string,
 ) int64 {
+	// db, err := sql.Open("mysql", "root:goumintech@tcp(192.168.86.72:3309)/travel?charset=utf8mb4")
 	db, err := sql.Open("mysql", "root:my-secret-pw@tcp(127.0.0.1:3306)/activitydb?charset=utf8mb4")
 	//db, err := sql.Open("mysql", "dog123:dog123@tcp(192.168.5.199:3306)/shop?charset=utf8mb4")
 	if err != nil {
@@ -161,6 +164,7 @@ func updateImageForFirstPhoto(
 	shopDetailId int64,
 	shopImage string,
 ) bool {
+	// db, err := sql.Open("mysql", "root:goumintech@tcp(192.168.86.72:3309)/travel?charset=utf8mb4")
 	db, err := sql.Open("mysql", "root:my-secret-pw@tcp(127.0.0.1:3306)/activitydb?charset=utf8mb4")
 	//db, err := sql.Open("mysql", "dog123:dog123@tcp(192.168.5.199:3306)/shop?charset=utf8mb4")
 	if err != nil {

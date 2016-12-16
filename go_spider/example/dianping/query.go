@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/PuerkitoBio/goquery"
-	"github.com/hu17889/go_spider/core/common/page"
+	"github.com/jackson198608/gotest/go_spider/core/common/page"
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,7 +26,8 @@ func qGouminList(p *page.Page) {
 		// For each item found, get the band and title
 		url, isExsit := s.Attr("href")
 		if isExsit {
-			realUrl := "http://bbs.goumin.com/" + url
+			// realUrl := "http://bbs.goumin.com/" + url
+			realUrl := "http://www.dianping.com/" + url
 			logger.Println("[info]find detail page: ", realUrl)
 			/*
 				realUrlTag := "shopDetail"
@@ -41,7 +42,8 @@ func qGouminList(p *page.Page) {
 		// For each item found, get the band and title
 		url, isExsit := s.Attr("href")
 		if isExsit {
-			realUrl := "http://bbs.goumin.com/" + url
+			// realUrl := "http://bbs.goumin.com/" + url
+			realUrl := "http://www.dianping.com/" + url
 			logger.Println("[info]find next list page: ", realUrl)
 			realUrlTag := "gouminList"
 			req := newRequest(realUrlTag, realUrl)

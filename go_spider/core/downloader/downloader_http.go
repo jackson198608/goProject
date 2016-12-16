@@ -9,14 +9,15 @@ import (
 	"github.com/jackson198608/gotest/go_spider/core/common/mlog"
 	"github.com/jackson198608/gotest/go_spider/core/common/page"
 	"github.com/jackson198608/gotest/go_spider/core/common/request"
-	"github.com/jackson198608/gotest/go_spider/core/common/util"
+    "github.com/jackson198608/gotest/go_spider/core/common/util"
+	"github.com/jackson198608/gotest/go_spider/core/common/redis"//删除redis中的无效代理ip地址(key=proxy)
 	//    "golang.org/x/text/encoding/simplifiedchinese"
 	//    "golang.org/x/text/transform"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	//"fmt"
+	// "fmt"
 	"golang.org/x/net/html/charset"
 	//    "regexp"
 	//    "golang.org/x/net/html"
@@ -261,9 +262,9 @@ func connectByHttpProxy(p *page.Page, in_req *request.Request) (*http.Response, 
 		},
 	}
 	resp, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
+    if err != nil {
+        return nil, err
+    }
 	return resp, nil
 
 }
@@ -283,7 +284,11 @@ func (this *HttpDownloader) downloadFile(p *page.Page, req *request.Request) (*p
 	if proxystr := req.GetProxyHost(); len(proxystr) != 0 {
 		//using http proxy
 		//fmt.Print("HttpProxy Enter ",proxystr,"\n")
-		resp, err = connectByHttpProxy(p, req)
+        // fmt.Println(proxystr)
+        resp, err = connectByHttpProxy(p, req)
+        if err != nil {
+            redis.LRem(proxystr)
+        }
 	} else {
 		//normal http download
 		//fmt.Print("Http Normal Enter \n",proxystr,"\n")

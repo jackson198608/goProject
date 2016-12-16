@@ -1,1 +1,1 @@
-GOOS=linux GOARCH=amd64 go build -o spider github.com/hu17889/go_spider/example/dianping 
+GOOS=linux GOARCH=amd64 go build -o spider github.com/jackson198608/gotest/go_spider/example/dianping 

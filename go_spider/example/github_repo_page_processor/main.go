@@ -11,9 +11,9 @@ Pckages may be imported:
 */
 import (
     "github.com/PuerkitoBio/goquery"
-    "github.com/hu17889/go_spider/core/common/page"
-    "github.com/hu17889/go_spider/core/pipeline"
-    "github.com/hu17889/go_spider/core/spider"
+    "github.com/jackson198608/gotest/go_spider/core/common/page"
+    "github.com/jackson198608/gotest/go_spider/core/pipeline"
+    "github.com/jackson198608/gotest/go_spider/core/spider"
     "strings"
     "fmt"
 )
@@ -65,7 +65,7 @@ func main() {
     //  PageProcesser ;
     //  Task name used in Pipeline for record;
     spider.NewSpider(NewMyPageProcesser(), "TaskName").
-        AddUrl("https://github.com/hu17889?tab=repositories", "html"). // Start url, html is the responce type ("html" or "json" or "jsonp" or "text")
+        AddUrl("https://github.com/jackson198608/gotest?tab=repositories", "html"). // Start url, html is the responce type ("html" or "json" or "jsonp" or "text")
         AddPipeline(pipeline.NewPipelineConsole()).                    // Print result on screen
         SetThreadnum(3).                                               // Crawl request by three Coroutines
         Run()

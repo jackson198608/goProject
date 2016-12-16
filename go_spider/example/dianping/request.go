@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/hu17889/go_spider/core/common/request"
+	"github.com/jackson198608/gotest/go_spider/core/common/request"
 	"net/http"
+	// "fmt"
 )
 
 func newRequest(tag string, url string) *request.Request {
@@ -11,7 +12,9 @@ func newRequest(tag string, url string) *request.Request {
 	h.Add("Connection", "close")
 	h.Add("Accept-Encoding", "gzip")
 
-	req := request.NewRequest(url, "html", tag, "GET", "", h, nil, nil, nil)
+	ProxyIp := LRange()
+	// req := request.NewRequest(url, "html", tag, "GET", "", h, nil, nil, nil)
+	req := request.NewRequestWithProxy(url, "html", tag, "GET", "", h, nil, ProxyIp, nil, nil) //proxy
 	return req
 }
 
