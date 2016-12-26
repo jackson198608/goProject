@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/hu17889/go_spider/core/common/request"
+	"github.com/jackson198608/gotest/go_spider/core/common/request"
 	"net/http"
 )
 

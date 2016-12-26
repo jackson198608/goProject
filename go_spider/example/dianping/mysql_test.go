@@ -1,8 +1,23 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 )
+
+func TestShopExist(t *testing.T) {
+	name := "国冠宠物(三里屯店)"
+	shopCity := "北京"
+	isExist := checkShopExist(name, shopCity)
+	if isExist {
+		//logger.Println("[info] find shop")
+		fmt.Println("[info] find shop")
+
+	} else {
+		//logger.Println("[info]  not find shop")
+		fmt.Println("[info]  not find shop")
+	}
+}
 
 func TestInsertShopDetail(t *testing.T) {
 	city := "北京"
@@ -24,7 +39,7 @@ func TestInsertShopDetail(t *testing.T) {
 func TestInsertShopPhoto(t *testing.T) {
 	shopId := 684
 	shopImage := "http://p1.meituan.net/dpmerchantalbum/bb0d36ce78c29da743f03b8362478508200488.jpg%40700w_700h_0e_1l%7Cwatermark%3D1%26%26r%3D1%26p%3D9%26x%3D5%26y%3D5%26relative%3D1"
-	insertShopPhoto(shopId, shopImage)
+	insertShopPhoto(int64(shopId), shopImage)
 }
 
 func TestInsertShopComment(t *testing.T) {
@@ -38,11 +53,11 @@ func TestInsertShopComment(t *testing.T) {
 	envPoint := 4
 	weightPoint := 4
 	created := "2016-11-10"
-	insertShopComment(shopId, content, username, avar, price, star, servicePoint, envPoint, weightPoint, created)
+	insertShopComment(int64(shopId), content, username, avar, price, star, servicePoint, envPoint, weightPoint, created)
 }
 
 func TestInsertCommentPhoto(t *testing.T) {
 	commentId := 684
 	commentImage := "http://qcloud.dpfile.com/pc/pNbzwsrQ1578BWsIuRV9ridwkCZOg4csxT1awQ7nJ_jMyPRMleaDSP-6WmQuJiv6TYGVDmosZWTLal1WbWRW3A.jpg"
-	insertCommentPhoto(commentId, commentImage)
+	insertCommentPhoto(int64(commentId), commentImage)
 }

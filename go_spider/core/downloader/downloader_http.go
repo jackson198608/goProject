@@ -5,6 +5,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/bitly/go-simplejson"
 	"strconv"
+	"time"
 	//    iconv "github.com/djimenez/iconv-go"
 	"github.com/jackson198608/gotest/go_spider/core/common/mlog"
 	"github.com/jackson198608/gotest/go_spider/core/common/page"
@@ -30,6 +31,20 @@ import (
 // The "jsonp" content is modified to json.
 // The "text" content will save body plain text only.
 // The page result is saved in Page.
+
+const ProxyServer = "proxy.abuyun.com:9010"
+
+type AbuyunProxy struct {
+	AppID     string
+	AppSecret string
+}
+
+func (p AbuyunProxy) ProxyClient() http.Client {
+	proxyURL, _ := url.Parse("http://" + p.AppID + ":" + p.AppSecret + "@" + ProxyServer)
+	return http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}, Timeout: 20 * time.Second}
+
+}
+
 type HttpDownloader struct {
 }
 
@@ -213,6 +228,46 @@ func (this *HttpDownloader) changeCharsetEncodingAutoGzipSupport(contentTypeStr 
 	return bodystr
 }
 
+func connectByAbuyun(p *page.Page, req *request.Request) (*http.Response, error) {
+	/*
+		client := &http.Client{
+			CheckRedirect: req.GetRedirectFunc(),
+		}
+	*/
+
+	client := AbuyunProxy{AppID: "HK71T41EZ21304GP", AppSecret: "75FE0C4E23EEA0E7"}.ProxyClient()
+	client.CheckRedirect = req.GetRedirectFunc()
+
+	httpreq, err := http.NewRequest(req.GetMethod(), req.GetUrl(), strings.NewReader(req.GetPostdata()))
+	httpreq.Header.Set("Proxy-Switch-Ip", "yes")
+	if header := req.GetHeader(); header != nil {
+		httpreq.Header = req.GetHeader()
+	}
+
+	if cookies := req.GetCookies(); cookies != nil {
+		for i := range cookies {
+			httpreq.AddCookie(cookies[i])
+		}
+	}
+
+	var resp *http.Response
+	if resp, err = client.Do(httpreq); err != nil {
+		if e, ok := err.(*url.Error); ok && e.Err != nil && e.Err.Error() == "normal" {
+			//  normal
+		} else {
+			mlog.LogInst().LogError(err.Error())
+			p.SetStatus(true, err.Error())
+			//fmt.Printf("client do error %v \r\n", err)
+			return nil, err
+		}
+	}
+
+	if resp.StatusCode != 200 {
+		p.SetStatus(true, "not 200")
+	}
+	return resp, nil
+}
+
 // choose http GET/method to download
 func connectByHttp(p *page.Page, req *request.Request) (*http.Response, error) {
 	client := &http.Client{
@@ -287,7 +342,8 @@ func (this *HttpDownloader) downloadFile(p *page.Page, req *request.Request) (*p
 	} else {
 		//normal http download
 		//fmt.Print("Http Normal Enter \n",proxystr,"\n")
-		resp, err = connectByHttp(p, req)
+		//resp, err = connectByHttp(p, req)
+		resp, err = connectByAbuyun(p, req)
 	}
 
 	if err != nil {

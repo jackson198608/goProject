@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/hu17889/go_spider/core/common/page"
+	"github.com/jackson198608/gotest/go_spider/core/common/page"
 	"os"
 	"path"
 	"strconv"
@@ -13,6 +13,269 @@ import (
 
 func checkCanSave(p *page.Page) bool {
 	return true
+}
+
+func saveFirstAreaFind(p *page.Page) bool {
+	query := p.GetHtmlParser()
+	query.Find(".nc-items").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+
+		if i == 1 {
+			// find FirstBusiness
+			s.Find(".nc-items a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+				//find it
+				name := s.Text()
+				logger.Println("[info]find first bussiness", name)
+
+				//save it
+				businessId, isExist := checkBusinessExist(name)
+				if !isExist {
+					businessId = insertBusiness(name, CityId, 0)
+				}
+
+				//when insert firt business fail
+				if businessId == 0 {
+					logger.Println("[error]insert first bussiness fail", name)
+					return true
+				}
+
+				url, isExist := s.Attr("href")
+				if isExist {
+					realUrl := "http://www.dianping.com" + url
+					tag := "shopSecondBusinessList|" + strconv.Itoa(int(businessId))
+					logger.Println("[info]find second business list url", name, " ", realUrl, " ", tag)
+
+					req := newRequest(tag, realUrl)
+					p.AddTargetRequestWithParams(req)
+
+				} else {
+					logger.Println("this first bussiness has no second bussiness", name)
+				}
+
+				return true
+			}, nil)
+
+		} else if i == 2 {
+			//find first region
+			s.Find(".nc-items a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+				name := s.Text()
+				logger.Println("find first region", name)
+
+				//save it
+				regionId, isExist := checkRegionExist(name)
+				if !isExist {
+					regionId = insertRegion(name, CityId, 0)
+				}
+
+				//when insert firt business fail
+				if regionId == 0 {
+					logger.Println("[error]insert first region fail", name)
+					return true
+				}
+
+				url, isExist := s.Attr("href")
+				if isExist {
+					realUrl := "http://www.dianping.com" + url
+					tag := "shopSecondRegionList|" + strconv.Itoa(int(regionId))
+					logger.Println("[info]find second region list url", name, " ", realUrl, " ", tag)
+
+					req := newRequest(tag, realUrl)
+					p.AddTargetRequestWithParams(req)
+
+				} else {
+					logger.Println("this first region has no second region", name)
+				}
+
+				return true
+			}, nil)
+
+		} else if i == 3 {
+			//find first region
+			s.Find(".nc-items a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+				name := s.Text()
+				logger.Println("find first metro", name)
+
+				//save it
+				metroId, isExist := checkMetroExist(name)
+				if !isExist {
+					metroId = insertMetro(name, CityId, 0)
+				}
+
+				//when insert firt business fail
+				if metroId == 0 {
+					logger.Println("[error]insert first metro fail", name)
+					return true
+				}
+
+				url, isExist := s.Attr("href")
+				if isExist {
+					realUrl := "http://www.dianping.com" + url
+					tag := "shopSecondMetroList|" + strconv.Itoa(int(metroId))
+					logger.Println("[info]find second metro list url", name, " ", realUrl, " ", tag)
+
+					req := newRequest(tag, realUrl)
+					p.AddTargetRequestWithParams(req)
+
+				} else {
+					logger.Println("this first metro has no second metro", name)
+				}
+
+				return true
+			}, nil)
+
+		}
+
+		return true
+	}, nil)
+
+	return true
+
+}
+
+func saveSecondBusinessList(p *page.Page, firstBusinessId int64) bool {
+	query := p.GetHtmlParser()
+	firstBusinessIdStr := strconv.Itoa(int(firstBusinessId))
+	query.Find("#bussi-nav-sub a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+		secondBusinessName := s.Text()
+		secondBusinessUrl, isExist := s.Attr("href")
+		logger.Println("[info] find second business", secondBusinessName)
+		if i == 0 {
+			if !isExist {
+				return true
+			}
+
+			secondBusinessUrl = "http://www.dianping.com" + secondBusinessUrl
+			tag := "shopUpdateOfSecondBusinessList|" + firstBusinessIdStr
+			logger.Println("[info] find second business url", secondBusinessName, " ", secondBusinessUrl, " ", tag)
+			req := newRequest(tag, secondBusinessUrl)
+			p.AddTargetRequestWithParams(req)
+
+		} else {
+			secondBusinessId, isExist := checkBusinessExist(secondBusinessName)
+			if !isExist {
+				secondBusinessId = insertBusiness(secondBusinessName, CityId, firstBusinessId)
+			}
+
+			if secondBusinessId == 0 {
+				logger.Println("[error]insert second business fail", secondBusinessName)
+				return true
+			}
+
+			secondBusinessIdStr := strconv.Itoa(int(secondBusinessId))
+
+			if !isExist {
+				return true
+			}
+
+			secondBusinessUrl = "http://www.dianping.com" + secondBusinessUrl
+			tag := "shopUpdateSecondBusinessList|" + firstBusinessIdStr + "|" + secondBusinessIdStr
+			logger.Println("[info] find second business url", secondBusinessName, " ", secondBusinessUrl, " ", tag)
+			req := newRequest(tag, secondBusinessUrl)
+			p.AddTargetRequestWithParams(req)
+
+		}
+
+		return true
+	}, nil)
+	return true
+
+}
+
+func saveSecondRegionList(p *page.Page, firstRegionId int64) bool {
+	query := p.GetHtmlParser()
+	firstRegionIdStr := strconv.Itoa(int(firstRegionId))
+	query.Find("#region-nav-sub a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+		secondRegionName := s.Text()
+		secondRegionUrl, isExist := s.Attr("href")
+		logger.Println("[info] find second region", secondRegionName)
+		if i == 0 {
+			if !isExist {
+				return true
+			}
+
+			secondRegionUrl = "http://www.dianping.com" + secondRegionUrl
+			tag := "shopUpdateOfSecondRegionList|" + firstRegionIdStr
+			logger.Println("[info] find second region url", secondRegionName, " ", secondRegionUrl, " ", tag)
+			req := newRequest(tag, secondRegionUrl)
+			p.AddTargetRequestWithParams(req)
+
+		} else {
+			secondRegionId, isExist := checkRegionExist(secondRegionName)
+			if !isExist {
+				secondRegionId = insertRegion(secondRegionName, CityId, firstRegionId)
+			}
+
+			if secondRegionId == 0 {
+				logger.Println("[error]insert second region fail", secondRegionName)
+				return true
+			}
+
+			secondRegionIdStr := strconv.Itoa(int(secondRegionId))
+
+			if !isExist {
+				return true
+			}
+
+			secondRegionUrl = "http://www.dianping.com" + secondRegionUrl
+			tag := "shopUpdateSecondRegionList|" + firstRegionIdStr + "|" + secondRegionIdStr
+			logger.Println("[info] find second region url", secondRegionName, " ", secondRegionUrl, " ", tag)
+			req := newRequest(tag, secondRegionUrl)
+			p.AddTargetRequestWithParams(req)
+
+		}
+
+		return true
+	}, nil)
+	return true
+
+}
+
+func saveSecondMetroList(p *page.Page, firstMetroId int64) bool {
+	query := p.GetHtmlParser()
+	firstMetroIdStr := strconv.Itoa(int(firstMetroId))
+	query.Find("#metro-nav-sub a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+		secondMetroName := s.Text()
+		secondMetroUrl, isExist := s.Attr("href")
+		logger.Println("[info] find second metro", secondMetroName)
+		if i == 0 {
+			if !isExist {
+				return true
+			}
+
+			secondMetroUrl = "http://www.dianping.com" + secondMetroUrl
+			tag := "shopUpdateOfSecondMetroList|" + firstMetroIdStr
+			logger.Println("[info] find second metro url", secondMetroName, " ", secondMetroUrl, " ", tag)
+			req := newRequest(tag, secondMetroUrl)
+			p.AddTargetRequestWithParams(req)
+
+		} else {
+			secondMetroId, isExist := checkMetroExist(secondMetroName)
+			if !isExist {
+				secondMetroId = insertMetro(secondMetroName, CityId, firstMetroId)
+			}
+
+			if secondMetroId == 0 {
+				logger.Println("[error]insert second metro fail", secondMetroName)
+				return true
+			}
+
+			secondMetroIdStr := strconv.Itoa(int(secondMetroId))
+
+			if !isExist {
+				return true
+			}
+
+			secondMetroUrl = "http://www.dianping.com" + secondMetroUrl
+			tag := "shopUpdateSecondMetroList|" + firstMetroIdStr + "|" + secondMetroIdStr
+			logger.Println("[info] find second metro url", secondMetroName, " ", secondMetroUrl, " ", tag)
+			req := newRequest(tag, secondMetroUrl)
+			p.AddTargetRequestWithParams(req)
+
+		}
+
+		return true
+	}, nil)
+	return true
+
 }
 
 func saveImage(p *page.Page) bool {
@@ -45,6 +308,33 @@ func saveImage(p *page.Page) bool {
 	result.Close()
 
 	return true
+}
+
+func getFirtBusiness(query *goquery.Document) {
+	query.Find(".nc-items").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+		if i == 1 {
+			s.Find(".nc-items a span").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+				name := s.Text()
+				logger.Println("find first bussiness", name)
+				return false
+			}, nil)
+
+		}
+		return false
+	}, nil)
+}
+
+func getShopType(query *goquery.Document, shopType *string) {
+	query.Find(".breadcrumb a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+		if i == 2 {
+			*result = s.Text()
+			*result = strings.Replace(*result, " ", "", -1)
+			*result = strings.Replace(*result, "\n", "", -1)
+			return false
+		}
+
+		return true
+	}, shopType)
 }
 
 func getShopName(query *goquery.Document, shopName *string) {
@@ -209,7 +499,7 @@ func getFloatPrice(realPriceText string, deleteYuan bool) int {
 		if err == nil {
 			return int(realFloatPrice * 100)
 		} else {
-			logger.Println("[error] get int price error", err, realPriceText)
+			logger.Println("[error] get int price error,make it to be 0", err, "realPriceText:", realPriceText)
 			return 0
 		}
 
@@ -219,9 +509,28 @@ func getFloatPrice(realPriceText string, deleteYuan bool) int {
 func saveShopDetail(p *page.Page) (int64, bool) {
 	query := p.GetHtmlParser()
 	//find name
+	var shopType *string = new(string)
+	var shopIntType int = 0
+	getShopType(query, shopType)
+	logger.Println("[info] shopType: ", *shopType)
+
+	switch *shopType {
+	case "宠物店":
+		shopIntType = 1
+	case "宠物医院":
+		shopIntType = 2
+	}
+	logger.Println("[info] shopIntType: ", shopIntType)
+
 	var shopName *string = new(string)
 	getShopName(query, shopName)
 	logger.Println("[info] shopName: ", *shopName)
+
+	shopFindId, isExist := checkShopExist(*shopName, City)
+	if isExist {
+		logger.Println("[info]find shop exist ", *shopName, " ", shopFindId)
+		return shopFindId, false
+	}
 
 	//find address
 	var shopAddress *string = new(string)
@@ -244,10 +553,17 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 	getShopStar(query, shopStar)
 	shopIntStar, err := strconv.Atoi(*shopStar)
 	if err != nil {
-		logger.Println("[error] parsInt error for shop int start", err)
-		return 0, false
+		logger.Println("[error] parsInt error for shop star", err, "star:", *shopStar)
+		if (*shopStar)[len(*shopStar)-1] == '0' {
+			logger.Println("[info] fix error for shop star make it to be 0")
+			shopIntStar = 0
+		} else {
+			logger.Println("[error] still error for shop star return")
+			return 0, false
+		}
+
 	}
-	logger.Println("[info] shopStar: ", *shopStar)
+	logger.Println("[info] shopIntStar: ", shopIntStar)
 
 	//find service point
 	var shopServicePoint *string = new(string)
@@ -275,7 +591,7 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 	//insert record
 	shopDetailId := insertShopDetail(
 		City,
-		Type,
+		shopIntType,
 		*shopName,
 		*shopAddress,
 		*shopPhone,
@@ -285,7 +601,7 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 		shopIntServicePoint,
 		shopIntEnvPoint,
 		shopIntWeightPoint,
-		*shopTime, "http://www.baidu.com")
+		*shopTime, "http://www.baidu.com", 0, 0, 0, 0, 0, 0)
 
 	return shopDetailId, true
 }

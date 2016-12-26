@@ -2,16 +2,31 @@ package main
 
 import (
 	"fmt"
-	"github.com/hu17889/go_spider/core/pipeline"
-	"github.com/hu17889/go_spider/core/spider"
+	"github.com/jackson198608/gotest/go_spider/core/pipeline"
+	"github.com/jackson198608/gotest/go_spider/core/spider"
 	"log"
 	"os"
 	"strconv"
 )
 
+//var dbAuth string = "root:my-secret-pw"
+
+var dbAuth string = "dog123:dog123"
+
+//var dbDsn string = "127.0.0.1:3306"
+
+var dbDsn string = "192.168.5.199:3306"
+
+//var dbName string = "activitydb"
+
+var dbName string = "shop"
+
 var Type int = 1
 
 var City string = "北京"
+
+var CityId int64 = 1
+var CityIdStr string = "1"
 
 var saveDir string = "/data/aigouwang"
 
@@ -53,8 +68,8 @@ func main() {
 	//  PageProcesser ;
 	//  Task name used in Pipeline for record;
 
-	if len(os.Args) != 8 {
-		fmt.Println("useage: datadir startUrl startUrlType logfile threadnum type city")
+	if len(os.Args) != 9 {
+		fmt.Println("useage: datadir startUrl startUrlType logfile threadnum type city cityId")
 		os.Exit(1)
 	}
 	saveDir = os.Args[1]
@@ -64,6 +79,9 @@ func main() {
 	threaNum, _ = strconv.Atoi(os.Args[5])
 	Type, _ = strconv.Atoi(os.Args[6])
 	City = os.Args[7]
+	CityIdStr = os.Args[8]
+	CityIdInt, _ := strconv.Atoi(CityIdStr)
+	CityId = int64(CityIdInt)
 
 	load()
 	logger.Println("[info]start ", startUrl)

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/PuerkitoBio/goquery"
-	"github.com/hu17889/go_spider/core/common/page"
+	"github.com/jackson198608/gotest/go_spider/core/common/page"
 	"regexp"
 	"strconv"
 	"strings"
@@ -52,6 +52,93 @@ func qGouminList(p *page.Page) {
 
 }
 
+/*
+	type 1 for Update of
+	type 2 for Update
+	cat 1 for business
+	cat 2 for region
+	cat 3 for metro
+*/
+func qShopUpdateList(p *page.Page, tag string, first int64, second int64, Type int, cat int) {
+	query := p.GetHtmlParser()
+
+	//find shop list
+	query.Find(".shop-all-list .txt .tit a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+		// For each item found, get the band and title
+		url, isExsit := s.Attr("href")
+		if isExsit {
+			isMatch, err := regexp.MatchString("^/shop/\\d+$", url)
+			if err != nil {
+				logger.Println("[error]Match parse error", url)
+				return true
+			}
+
+			if isMatch {
+				realUrl := "http://www.dianping.com" + url
+				logger.Println("[info]find detail url: ", realUrl)
+				//find name
+				s.Find("h4").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+					shopName := s.Text()
+					logger.Println("[info]find detail name: ", shopName, " ", tag)
+					_, isExist := checkShopExist(shopName, City)
+					if !isExist {
+						logger.Println("[info]shop is not exist,fetch it ", shopName, " ", realUrl)
+						tag := "shopDetail"
+						req := newRequest(tag, realUrl)
+						p.AddTargetRequestWithParams(req)
+
+						return false
+					}
+
+					if Type == 1 {
+						switch cat {
+						case 1:
+							logger.Println("[info]in the updateShopBusiness", shopName, " ", tag)
+							updateShopBusiness(shopName, first)
+						case 2:
+							logger.Println("[info]in the updateShopRegion", shopName, " ", tag)
+							updateShopRegion(shopName, first)
+						case 3:
+							logger.Println("[info]in the updateShopMetro", shopName, " ", tag)
+							updateShopMetro(shopName, first)
+						}
+					} else if Type == 2 {
+						switch cat {
+						case 1:
+							logger.Println("[info]in the updateShopBusinessWithSub", shopName, " ", tag, " first:", first, " second:", second)
+							updateShopBusinessWithSub(shopName, first, second)
+						case 2:
+							logger.Println("[info]in the updateShopRegionWithSub", shopName, " ", tag)
+							updateShopRegionWithSub(shopName, first, second)
+						case 3:
+							logger.Println("[info]in the updateShopMetroWithSub", shopName, " ", tag)
+							updateShopMetroWithSub(shopName, first, second)
+						}
+					}
+					return false
+				}, nil)
+
+			}
+		}
+		return true
+	}, nil)
+
+	query.Find(".page .next").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+		// For each item found, get the band and title
+		//if i == 0 {
+		url, isExsit := s.Attr("href")
+		if isExsit {
+			realUrl := "http://www.dianping.com" + url
+			logger.Println("[info]find next list page: ", realUrl)
+			req := newRequest(tag, realUrl)
+			p.AddTargetRequestWithParams(req)
+		}
+		//}
+		return true
+	}, nil)
+
+}
+
 func qShopList(p *page.Page) {
 	query := p.GetHtmlParser()
 
@@ -69,11 +156,9 @@ func qShopList(p *page.Page) {
 			if isMatch {
 				realUrl := "http://www.dianping.com" + url
 				logger.Println("[info]find detail page: ", realUrl)
-				/*
-					realUrlTag := "shopDetail"
-						req := newRequest(realUrlTag, realUrl)
-						p.AddTargetRequestWithParams(req)
-				*/
+				realUrlTag := "shopDetail"
+				req := newRequest(realUrlTag, realUrl)
+				p.AddTargetRequestWithParams(req)
 			}
 		}
 		return true
