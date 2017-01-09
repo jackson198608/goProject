@@ -230,8 +230,26 @@ func qShopDetail(p *page.Page, shopDetailId int64) {
 		return true
 	}, nil)
 
+	//find shop image1
+	query.Find(".photos a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+		// For each item found, get the band and title
+		if i == 0 {
+			url, isExsit := s.Attr("href")
+			if isExsit {
+				realUrl := "http://www.dianping.com" + url
+				logger.Println("[info]find image start page: ", realUrl)
+				shopDetailIdStr := strconv.Itoa(int(shopDetailId))
+				realUrlTag := "shopImage1|" + shopDetailIdStr
+				req := newRequest(realUrlTag, realUrl)
+				p.AddTargetRequestWithParams(req)
+				return false
+			}
+		}
+		return true
+	}, nil)
+
 	//find commentlist
-	query.Find(".J-tab a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+	query.Find(".comment-all a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
 		// For each item found, get the band and title
 		if i == 1 {
 			url, isExsit := s.Attr("href")

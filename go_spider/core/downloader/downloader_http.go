@@ -342,8 +342,8 @@ func (this *HttpDownloader) downloadFile(p *page.Page, req *request.Request) (*p
 	} else {
 		//normal http download
 		//fmt.Print("Http Normal Enter \n",proxystr,"\n")
-		resp, err = connectByHttp(p, req)
-		//resp, err = connectByAbuyun(p, req)
+		//resp, err = connectByHttp(p, req)
+		resp, err = connectByAbuyun(p, req)
 	}
 
 	if err != nil {

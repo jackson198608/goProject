@@ -9,17 +9,17 @@ import (
 	"strconv"
 )
 
-var dbAuth string = "root:my-secret-pw"
+//var dbAuth string = "root:my-secret-pw"
 
-//var dbAuth string = "dog123:dog123"
+var dbAuth string = "dog123:dog123"
 
-var dbDsn string = "127.0.0.1:3306"
+//var dbDsn string = "127.0.0.1:3306"
 
-//var dbDsn string = "192.168.5.199:3306"
+var dbDsn string = "192.168.5.199:3306"
 
-var dbName string = "activitydb"
+//var dbName string = "activitydb"
 
-//var dbName string = "shop"
+var dbName string = "shop"
 
 var Type int = 1
 

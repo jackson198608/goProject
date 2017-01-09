@@ -354,6 +354,13 @@ func getShopAddress(query *goquery.Document, shopAddress *string) {
 	}, shopAddress)
 }
 
+func getShopCity(query *goquery.Document, shopCity *string) {
+	query.Find(".J-city").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+		*result = s.Text()
+		return false
+	}, shopCity)
+}
+
 func getShopPhone(query *goquery.Document, shopPhone *string) {
 	query.Find(".tel span").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
 		if i >= 1 {
@@ -482,6 +489,20 @@ func getImageFromPage(query *goquery.Document, shopImage *string) {
 	}, shopImage)
 }
 
+func getRealShopImageUrl(query *goquery.Document, realShopUrl *string) {
+	query.Find(".picture-list .J_list .img a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+		shopUrl, isExist := s.Attr("href")
+		if !isExist {
+			return false
+
+		}
+		*result = "http://www.dianping.com" + shopUrl
+		return false
+
+	}, realShopUrl)
+
+}
+
 func getRealPriceFromText(priceText string) string {
 	realPriceText := priceText[9:len(priceText)]
 	return string(realPriceText)
@@ -526,7 +547,11 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 	getShopName(query, shopName)
 	logger.Println("[info] shopName: ", *shopName)
 
-	shopFindId, isExist := checkShopExist(*shopName, City)
+	var shopCity *string = new(string)
+	getShopCity(query, shopCity)
+	logger.Println("[info] shopCity: ", *shopCity)
+
+	shopFindId, isExist := checkShopExist(*shopName, *shopCity)
 	if isExist {
 		logger.Println("[info]find shop exist ", *shopName, " ", shopFindId)
 		return shopFindId, false
@@ -590,8 +615,9 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 
 	//insert record
 	shopDetailId := insertShopDetail(
-		City,
-		shopIntType,
+		*shopCity,
+		//shopIntType,
+		Type,
 		*shopName,
 		*shopAddress,
 		*shopPhone,
@@ -664,6 +690,13 @@ func saveShopImagePath(p *page.Page, shopDetailId int64, isFirst bool) (int64, b
 	var shopImage *string = new(string)
 	getImageFromPage(query, shopImage)
 	if *shopImage == "" {
+		logger.Println("[info] no Image found:")
+		var realShopUrl *string = new(string)
+		getRealShopImageUrl(query, realShopUrl)
+		logger.Println("[info] no Image found,try to find real:", *realShopUrl)
+		req := newRequest(p.GetUrlTag(), *realShopUrl)
+		p.AddTargetRequestWithParams(req)
+
 		return 0, false
 	}
 	logger.Println("[info]Image url:", *shopImage)
@@ -865,7 +898,7 @@ func getCommentTime(p *page.Page, s *goquery.Selection) string {
 		}
 		return false
 	}, nil)
-	return "2016-" + commentTime
+	return "2016-" + commentTime + " 00:00:00"
 }
 
 func getCommentWeightPoint(p *page.Page, s *goquery.Selection) int {
@@ -926,7 +959,8 @@ func processEachComment(p *page.Page, s *goquery.Selection, shopDetailId int64) 
 	logger.Println("[info]comment weightPoint:", weightPoint)
 
 	//find commentTime
-	commentTime := getCommentTime(p, s)
+	//commentTime := getCommentTime(p, s)
+	commentTime := "2017-01-01 00:00:00"
 	logger.Println("[info]comment commentTime:", commentTime)
 
 	shopCommentId := insertShopComment(shopDetailId, content, username, avar, price, star, servicePoint, envPoint, weightPoint, commentTime)
