@@ -52,6 +52,12 @@ func qGouminList(p *page.Page) {
 
 }
 
+func StripQueryString(inputUrl string) string {
+	index := strings.Index(inputUrl, "jpg")
+	realUrl := inputUrl[0 : index+3]
+	return string(realUrl)
+}
+
 /*
 	type 1 for Update of
 	type 2 for Update
@@ -61,6 +67,22 @@ func qGouminList(p *page.Page) {
 */
 func qShopUpdateList(p *page.Page, tag string, first int64, second int64, Type int, cat int) {
 	query := p.GetHtmlParser()
+	images := make([]string, 20, 20)
+
+	query.Find(".shop-all-list .pic a img").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+		// For each item found, get the band and title
+		//if i == 0 {
+		url, isExsit := s.Attr("data-src")
+		if isExsit {
+			images[i] = url
+			realUrlTag := "shopImage"
+			logger.Println("[info] fetch image url: ", url)
+			req := newImageRequest(realUrlTag, url)
+			p.AddTargetRequestWithParams(req)
+		}
+		//}
+		return true
+	}, nil)
 
 	//find shop list
 	query.Find(".shop-all-list .txt .tit a").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
@@ -73,50 +95,57 @@ func qShopUpdateList(p *page.Page, tag string, first int64, second int64, Type i
 				return true
 			}
 
+			shopImageUrl := images[i]
+			shopImage := getPathFromUrl(shopImageUrl)
+
 			if isMatch {
 				realUrl := "http://www.dianping.com" + url
 				logger.Println("[info]find detail url: ", realUrl)
-				//find name
-				s.Find("h4").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
-					shopName := s.Text()
-					logger.Println("[info]find detail name: ", shopName, " ", tag)
-					_, isExist := checkShopExist(shopName, City)
-					if !isExist {
-						logger.Println("[info]shop is not exist,fetch it ", shopName, " ", realUrl)
-						tag := "shopDetail"
-						req := newRequest(tag, realUrl)
-						p.AddTargetRequestWithParams(req)
+				logger.Println("[info]find detail url: ", shopImageUrl, shopImage)
+				/*
+					//find name
+					s.Find("h4").EachWithBreak(func(i int, s *goquery.Selection, result *string) bool {
+						shopName := s.Text()
+						logger.Println("[info]find detail name: ", shopName, " ", tag, " shop Image:", shopImage)
+						_, isExist := checkShopExist(shopName, City)
+						if !isExist {
+							logger.Println("[info]shop is not exist,fetch it ", shopName, " ", realUrl)
+							tag := "shopDetail"
+							req := newRequest(tag, realUrl)
+							p.AddTargetRequestWithParams(req)
 
+							return false
+						}
+
+						updateShopImage(shopName, shopImage)
+							if Type == 1 {
+								switch cat {
+								case 1:
+									logger.Println("[info]in the updateShopBusiness", shopName, " ", tag)
+									updateShopBusiness(shopName, first)
+								case 2:
+									logger.Println("[info]in the updateShopRegion", shopName, " ", tag)
+									updateShopRegion(shopName, first)
+								case 3:
+									logger.Println("[info]in the updateShopMetro", shopName, " ", tag)
+									updateShopMetro(shopName, first)
+								}
+							} else if Type == 2 {
+								switch cat {
+								case 1:
+									logger.Println("[info]in the updateShopBusinessWithSub", shopName, " ", tag, " first:", first, " second:", second)
+									updateShopBusinessWithSub(shopName, first, second)
+								case 2:
+									logger.Println("[info]in the updateShopRegionWithSub", shopName, " ", tag)
+									updateShopRegionWithSub(shopName, first, second)
+								case 3:
+									logger.Println("[info]in the updateShopMetroWithSub", shopName, " ", tag)
+									updateShopMetroWithSub(shopName, first, second)
+								}
+							}
 						return false
-					}
-
-					if Type == 1 {
-						switch cat {
-						case 1:
-							logger.Println("[info]in the updateShopBusiness", shopName, " ", tag)
-							updateShopBusiness(shopName, first)
-						case 2:
-							logger.Println("[info]in the updateShopRegion", shopName, " ", tag)
-							updateShopRegion(shopName, first)
-						case 3:
-							logger.Println("[info]in the updateShopMetro", shopName, " ", tag)
-							updateShopMetro(shopName, first)
-						}
-					} else if Type == 2 {
-						switch cat {
-						case 1:
-							logger.Println("[info]in the updateShopBusinessWithSub", shopName, " ", tag, " first:", first, " second:", second)
-							updateShopBusinessWithSub(shopName, first, second)
-						case 2:
-							logger.Println("[info]in the updateShopRegionWithSub", shopName, " ", tag)
-							updateShopRegionWithSub(shopName, first, second)
-						case 3:
-							logger.Println("[info]in the updateShopMetroWithSub", shopName, " ", tag)
-							updateShopMetroWithSub(shopName, first, second)
-						}
-					}
-					return false
-				}, nil)
+					}, nil)
+				*/
 
 			}
 		}
@@ -136,7 +165,6 @@ func qShopUpdateList(p *page.Page, tag string, first int64, second int64, Type i
 		//}
 		return true
 	}, nil)
-
 }
 
 func qShopList(p *page.Page) {

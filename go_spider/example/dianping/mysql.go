@@ -187,6 +187,43 @@ func updateShopBusiness(
 	return true
 }
 
+func updateShopImage(
+	shopName string,
+	image string,
+) bool {
+	shopId, isExist := checkShopExist(shopName, City)
+	if !isExist {
+		return false
+	}
+
+	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+	if err != nil {
+		logger.Println("[error] connect db err")
+		return false
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("update shop set image = ? where id = ? ")
+	if err != nil {
+		logger.Println("[error] update prepare error: ", err)
+		return false
+	}
+
+	res, err := stmt.Exec(image, shopId)
+	if err != nil {
+		logger.Println("[error] update excute error: ", err)
+		return false
+	}
+
+	num, err := res.RowsAffected()
+	if err != nil {
+		logger.Println("[error] get insert id error: ", err, " num:", num)
+		return false
+	}
+
+	return true
+}
+
 func updateShopBusinessWithSub(
 	shopName string,
 	business int64,
