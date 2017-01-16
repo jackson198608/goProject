@@ -7,12 +7,16 @@ import (
     "strconv"
 )
 
-type results struct {
+type Post struct {
 
     // The req is Request object that contains the parsed result, which saved in PageItems.
     tid int
 
     pid int
+}
+
+func getNewTaskData(startPid int,endPid int,limit int,offset int) Post {
+    
 }
 
 //读取post任务数据
@@ -50,7 +54,7 @@ func getTaskData(startPid int,endPid int,limit int,offset int) map[int]map[strin
         if err != nil {
             panic(err.Error()) // proper error handling instead of panic in your app
             fmt.Println(err)
-            return results
+            return nil
         }
         row := make(map[string]string)//每行数据  
         var value string
