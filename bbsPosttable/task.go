@@ -63,3 +63,39 @@ func insertIntoPost(tid int, pid int){
         insertPost(tableid,tid,pid)
     }
 }
+
+
+func EventTask(taskNum int) {
+    var limit int = 100
+    var offset int = 0
+
+    count := getEventLogCount()
+    for {
+        eventtask := getEventLogTask(limit,offset)
+        if len(eventtask) == 0 {
+            fmt.Println("task data is empty")
+            return
+        }
+        for _,v := range eventtask {
+            updateEventLog(v.id,v.infoid)
+        }
+        offset += limit
+        if offset > count {
+            break;
+        }
+    }
+}
+
+
+func updateEventLog(id int,infoid int) (bool){
+    tid ,_:= checkEventPostExist(infoid)
+    if tid == 0 {
+        return false
+    }
+    event := checkEventLogExist(id)
+    if event == false {
+        return false
+    }
+    updateEventLogTid(id,int(tid))
+    return true
+}

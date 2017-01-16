@@ -11,3 +11,5 @@ mlog.StraceInst().Println("start crawl : " + req.GetUrl())
 
 work/src$ go install github.com/jackson198608/gotest/bbsPosttable
 work/src$ ../bin/bbsPosttable
+
+work/src$ go get gopkg.in/mgo.v2

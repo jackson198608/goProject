@@ -241,3 +241,123 @@ func checkTableExist(tableid int) (bool) {
     return rows.Next()
 
 }
+
+type EventLog struct {
+    counts int
+    id int
+    infoid int
+}
+
+// event log
+
+func getEventLogCount() (int){
+    db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+    if err != nil {
+        logger.Println("[error] connect db err")
+    }
+    defer db.Close()
+    tableName := "event_log"
+    event := new(EventLog)
+    row  :=db.QueryRow("SELECT count(*) as counts FROM `"+ tableName +"` where type=2 and tid=0")
+    row.Scan(&event.counts)
+    return event.counts
+}
+
+func getEventLogTask(limit int,offset int) []*EventLog{
+    db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+    if err != nil {
+        logger.Println("[error] connect db err")
+    }
+    defer db.Close()
+    tableName := "event_log"
+    
+    rows, err := db.Query("select id,infoid from `"+ tableName +"` where type=2 and tid=0 limit "+ strconv.Itoa(limit) + " offset "+strconv.Itoa(offset)+"")
+
+    if err != nil {
+        logger.Println("[error] check business sql prepare error: ", err)
+        // return 0, false
+    }
+    defer rows.Close()
+    var rowsData []*EventLog
+    for rows.Next() {
+        var row = new(EventLog)
+        rows.Scan(&row.id,&row.infoid)
+        rowsData = append(rowsData,row)
+    }
+
+    return rowsData
+}
+
+func updateEventLogTid(id int, tid int) {
+    db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+    if err != nil {
+        logger.Println("[error] connect db err")
+    }
+    defer db.Close()
+    stmt, err := db.Prepare("update event_log SET tid=? where id=?")
+    if err != nil {
+        fmt.Println(err)
+        // logger.Println("[error] insert prepare error: ", err)
+    }
+    res, err := stmt.Exec(strconv.Itoa(tid),strconv.Itoa(id))
+    if err != nil {
+        logger.Println("[error] insert excute error: ", err)
+    }
+    num, err := res.RowsAffected()
+    if err != nil {
+        logger.Println("[error] insert excute error: ", err,num)
+    } 
+}
+
+
+//检查数据是否存在
+func checkEventPostExist(pid int ) (int64, bool) {
+    db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+    if err != nil {
+        logger.Println("[error] connect db err")
+        //fmt.Println("[error] connect db err")
+        return 0,false
+    }
+    defer db.Close()
+    tableName := "pre_forum_post"
+
+    rows, err := db.Query("select tid from `"+ tableName +"` where pid=" + strconv.Itoa(pid) +"")
+    if err != nil {
+        logger.Println("[error] check business sql prepare error: ", err)
+        fmt.Println("[error] check sql prepare error: ", err)
+        return 0,false
+    }
+
+    for rows.Next() {
+        var tid int64
+        if err := rows.Scan(&tid); err != nil {
+            logger.Println("[error] check post sql get rows error ", err)
+            return 0, false
+        }
+        return tid, true
+
+    }
+
+    return 0,false
+
+}
+
+func checkEventLogExist(id int ) ( bool) {
+    db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+    if err != nil {
+        logger.Println("[error] connect db err")
+        //fmt.Println("[error] connect db err")
+        return false
+    }
+    defer db.Close()
+    tableName := "event_log"
+    rows, err := db.Query("select id from `"+ tableName +"` where id=" + strconv.Itoa(id) +"")
+    if err != nil {
+        logger.Println("[error] check business sql prepare error: ", err)
+        fmt.Println("[error] check sql prepare error: ", err)
+        return false
+    }
+
+    return rows.Next()
+
+}
