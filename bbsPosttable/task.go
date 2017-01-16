@@ -25,25 +25,20 @@ import (
 // }
 
 func NewTask(taskNum int) {
-    var startPid int = 0
-    var endPid int = 10
+    var startPid int = 30
+    var endPid int = 60
     var limit int = 100
     var offset int = 0
-    count := 1000
+
+    count := getPostCount(startPid,endPid)
     for {
-        task := getTaskData(startPid,endPid,limit,offset)
+        task := getNewTaskData(startPid,endPid,limit,offset)
         if len(task) == 0 {
             fmt.Println("task data is empty")
             return
         }
         for _,v := range task {
-            // fmt.Println(k,v)
-            // fmt.Println("--------------------------")
-            for i := range v {
-                // fmt.Println(kk,vv)
-                fmt.Println("kk--------------------------vv")
-                fmt.Println(v[i])
-            }
+            insertIntoPost(v.tid,v.pid)
         }
         offset += limit
         if offset > count {

@@ -8,15 +8,55 @@ import (
 )
 
 type Post struct {
-
     // The req is Request object that contains the parsed result, which saved in PageItems.
     tid int
 
     pid int
+    counts int
 }
 
-func getNewTaskData(startPid int,endPid int,limit int,offset int) Post {
+
+
+func getNewTaskData(startPid int,endPid int,limit int,offset int) []*Post{
+    db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+    if err != nil {
+        logger.Println("[error] connect db err")
+    }
+    defer db.Close()
+    tableName := "pre_forum_post"
     
+    rows, err := db.Query("select tid,pid from `"+ tableName +"` where pid>=" + strconv.Itoa(startPid) + " and pid<=" + strconv.Itoa(endPid) +" limit "+ strconv.Itoa(limit) + " offset "+strconv.Itoa(offset)+"")
+
+    if err != nil {
+        logger.Println("[error] check business sql prepare error: ", err)
+        // return 0, false
+    }
+    defer rows.Close()
+    var rowsData []*Post
+    for rows.Next() {
+        var row = new(Post)
+        rows.Scan(&row.tid,&row.pid)
+        rowsData = append(rowsData,row)
+    }
+
+    // for _,ar := range rowsData {
+    //     fmt.Println(ar.tid,ar.pid)
+    // }
+    // fmt.Println(rowsData)
+    return rowsData
+}
+
+func getPostCount(startPid int,endPid int) (int){
+    db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+    if err != nil {
+        logger.Println("[error] connect db err")
+    }
+    defer db.Close()
+    tableName := "pre_forum_post"
+    user := new(Post)
+    row  :=db.QueryRow("SELECT count(*) as counts FROM `"+ tableName +"` where pid>=" + strconv.Itoa(startPid) + " and pid<=" + strconv.Itoa(endPid) +"")
+    row.Scan(&user.counts)
+    return user.counts
 }
 
 //读取post任务数据
@@ -35,7 +75,7 @@ func getTaskData(startPid int,endPid int,limit int,offset int) map[int]map[strin
     defer rows.Close()
     columns, err := rows.Columns() //读出查询出的列字段名  
     if err != nil {
-        panic(err.Error()) // proper error handling instead of panic in your app
+        logger.Println("[error] cloumns err",err) // proper error handling instead of panic in your app
     }
     // Make a slice for the values
     values := make([][]byte, len(columns))//values是每个列的值，这里获取到byte里  
@@ -52,7 +92,7 @@ func getTaskData(startPid int,endPid int,limit int,offset int) map[int]map[strin
     for rows.Next() { //循环，让游标往下移动  
         err = rows.Scan(scanArgs...)//query.Scan查询出来的不定长值放到scans[i] = &values[i],也就是每行都放在values里  
         if err != nil {
-            panic(err.Error()) // proper error handling instead of panic in your app
+            logger.Println("[error] rows scan",err)// proper error handling instead of panic in your app
             fmt.Println(err)
             return nil
         }
@@ -97,16 +137,16 @@ func updateThread(tableid int ,tid int){
     posttableid := strconv.Itoa(tableid)
     stmt, err := db.Prepare("update pre_forum_thread SET posttableid=? where tid=?")
     if err != nil {
-        logger.Println("[error] insert prepare error: ", err)
+        fmt.Println(err)
+        // logger.Println("[error] insert prepare error: ", err)
     }
     res, err := stmt.Exec(posttableid,strconv.Itoa(tid))
     if err != nil {
         logger.Println("[error] insert excute error: ", err)
     }
     num, err := res.RowsAffected()
-    fmt.Println(num)
     if err != nil {
-        logger.Println("[error] insert excute error: ", err)
+        logger.Println("[error] insert excute error: ", err,num)
     }
 }
 
@@ -114,13 +154,15 @@ func updateThread(tableid int ,tid int){
 func createTable(tableid int){
     db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
     if err != nil {
-        logger.Println("[error] connect db err")
+        fmt.Println(err)
+        // logger.Println("[error] connect db err")
     }
     defer db.Close()
     tableName := "pre_forum_post_"+ strconv.Itoa(tableid)
     stmt, err := db.Prepare("create table "+ tableName +" like pre_forum_post")
     if err != nil {
-        logger.Println("[error] insert prepare error: ", err)
+        fmt.Println(err)
+        // logger.Println("[error] insert prepare error: ", err)
     }
 
     res, err := stmt.Exec()
@@ -129,9 +171,8 @@ func createTable(tableid int){
     }
 
     num, err := res.RowsAffected()
-    fmt.Println(num)
     if err != nil {
-        logger.Println("[error] insert excute error: ", err)
+        logger.Println("[error] insert excute error: ", err,num)
     }
 }
 
@@ -139,13 +180,15 @@ func createTable(tableid int){
 func insertPost(tableid int,tid int,pid int){
     db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
     if err != nil {
-        logger.Println("[error] connect db err")
+        fmt.Println(err)
+        // logger.Println("[error] connect db err")
     }
     defer db.Close()
     tableName := "pre_forum_post_"+ strconv.Itoa(tableid)
     stmt, err := db.Prepare("INSERT IGNORE INTO "+ tableName +" select * from pre_forum_post where tid="+strconv.Itoa(tid))
     if err != nil {
-        logger.Println("[error] insert prepare error: ", err)
+        fmt.Println(err)
+        // logger.Println("[error] insert prepare error: ", err)
     }
 
     res, err := stmt.Exec()
@@ -154,9 +197,8 @@ func insertPost(tableid int,tid int,pid int){
     }
 
     num, err := res.RowsAffected()
-    fmt.Println(num)
     if err != nil {
-        logger.Println("[error] insert excute error: ", err)
+        logger.Println("[error] insert excute error: ", err,num)
     }
 }
 

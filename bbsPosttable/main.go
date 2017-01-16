@@ -31,5 +31,8 @@ func main() {
     // // tableExist := checkTableExist(107)
     // arr := getTaskData(1,10,10,0)
     NewTask(2)
+    // data := getNewTaskData(1,10,10,0)
+    // fmt.Println(data)
+    // count := getPostCount(1,20)
     fmt.Println("")
 }
