@@ -76,27 +76,28 @@ func GetAppMessageById(tableid int,id string) *AppMessage {
 /**
  * 获取一条记录通过objectid
  */
-func GetAppMessageCount(tableid int) (int){
-    var count int
-    where := bson.M{"type":1}
-    // where := bson.M{"type": bson.M{"$in":{23, 26, 32}}}//find({"age":{"$in":(23, 26, 32)}})
-    query := func(c *mgo.Collection) error {
-        count,_ := c.Find(where).Count()
-        return int(count)
-    }
-    tablename := "app_message_"+strconv.Itoa(tableid)
-    witchCollection(tablename, query)
-    return count
-}
+// func GetAppMessageCount(tableid int){
+//     var count int
+//     // where := bson.M{"type": bson.M{"$in":{23, 26, 32}}}//find({"age":{"$in":(23, 26, 32)}})
+//     where := bson.M{"type":bson.M{"$in":[]int{1,10}}}
+//     query := func(c *mgo.Collection) error {
+//         count,_ := c.Find(where).Count()
+//         // fmt.Println(count,err)
+//         return count
+//     }
+//     tablename := "app_message_"+strconv.Itoa(tableid)
+//     witchCollection(tablename, query)
+//     fmt.Println(count)
+// }
 
 
 //获取所有的person数据
-func PageAppMessage(tableid int) []AppMessage {
+func PageAppMessage(tableid int,limit int,skip int) []AppMessage {
     var messages []AppMessage
-    // where := bson.M{"type": {"$in":{23, 26, 32}}}
-    where := bson.M{"type":10}
+    // where := bson.M{"type":1}
+    where := bson.M{"type":bson.M{"$in":[]int{1,10}}}
     query := func(c *mgo.Collection) error {
-        return c.Find(where).All(&messages)
+        return c.Find(where).Skip(skip).Limit(limit).All(&messages)
     }
     tablename := "app_message_"+strconv.Itoa(tableid)
     err := witchCollection(tablename, query)
@@ -158,11 +159,35 @@ func test(){
 }
 
 func task() {
-    count := GetAppMessageCount(50)
-    fmt.Println(count)
-    result := PageAppMessage(50)
+     // GetAppMessageCount(50)
+    // fmt.Println(count)
+    result := PageAppMessage(50,14,2)
     for _,v := range result {
-        fmt.Println(v.Id,v.Info)
+
+        pid,_ := strconv.Atoi(v.Info)
+        tid,_ := checkEventPostExist(pid)
+        fmt.Println(v.Id,v.Info,tid)
     }
     // fmt.Println(result)
+}
+
+func MessageTask() {
+    var limit int = 3
+    var offset int = 0
+    var tableid int = 1
+    for {
+        messageTask := PageAppMessage(tableid,limit,offset)
+        if len(messageTask) == 0 {
+            fmt.Println("task data is empty")
+            return
+        }
+        for _,v := range messageTask {
+            pid,_ := strconv.Atoi(v.Info)
+            tid,_ := checkEventPostExist(pid)
+            id := bson.M{"_id": v.Id}
+            change := bson.M{"$set":bson.M{"tid":tid}}
+            UpdatePerson(tableid,id,change)
+        }
+        offset += limit
+    }
 }

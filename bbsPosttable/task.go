@@ -99,3 +99,8 @@ func updateEventLog(id int,infoid int) (bool){
     updateEventLogTid(id,int(tid))
     return true
 }
+
+
+
+
+

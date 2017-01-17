@@ -37,5 +37,6 @@ func main() {
     // count := getPostCount(1,20)
     fmt.Println("")
     // test()
-    task()
+    // task()
+    MessageTask()
 }
