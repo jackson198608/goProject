@@ -171,10 +171,10 @@ func task() {
     // fmt.Println(result)
 }
 
-func MessageTask() {
-    var limit int = 3
+func MessageTask(taskNum int) {
+    var limit int = 100
     var offset int = 0
-    var tableid int = 1
+    var tableid int = 50 //表id
     for {
         messageTask := PageAppMessage(tableid,limit,offset)
         if len(messageTask) == 0 {

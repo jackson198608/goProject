@@ -38,5 +38,5 @@ func main() {
     fmt.Println("")
     // test()
     // task()
-    MessageTask()
+    MessageTask(2)
 }
