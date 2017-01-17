@@ -30,13 +30,13 @@ func main() {
     // postIsExist := checkPostExist(17,2731136217,47993364)
     // // tableExist := checkTableExist(107)
     // arr := getTaskData(1,10,10,0)
-    // NewTask(2)
-    // EventTask(1)
+    // NewTask(2)//跑帖子的进程
+    // EventTask(1)//个人动态进程任务
     // data := getNewTaskData(1,10,10,0)
     // fmt.Println(data)
     // count := getPostCount(1,20)
     fmt.Println("")
     // test()
     // task()
-    MessageTask(2)
+    MessageTask(2)//app message 进程任务
 }
