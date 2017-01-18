@@ -4,7 +4,9 @@ import (
   "gopkg.in/mgo.v2"
   "gopkg.in/mgo.v2/bson"
   "strconv"
+  "strings"
   "fmt"
+  // "reflect"
 )
 
 
@@ -12,7 +14,7 @@ type AppMessage struct {
     Id    bson.ObjectId `bson:"_id"`
     Info  string        `bson:"info"`
     Tid  string        `bson:"tid"` //bson:"name" 表示mongodb数据库中对应的字段名称
-    Type string         `bson:"type"`
+    Type int         `bson:"type"`
 }
 
 const URL = "192.168.86.68:27017" //mongodb连接字符串
@@ -175,6 +177,8 @@ func MessageTask(taskNum int) {
     var limit int = 100
     var offset int = 0
     var tableid int = 50 //表id
+    var pid int 
+    var str []string
     for {
         messageTask := PageAppMessage(tableid,limit,offset)
         if len(messageTask) == 0 {
@@ -182,9 +186,19 @@ func MessageTask(taskNum int) {
             return
         }
         for _,v := range messageTask {
-            pid,_ := strconv.Atoi(v.Info)
+            if v.Type == 10 {
+                str = strings.Split(v.Info,"|")
+                pid,_ = strconv.Atoi(str[1])
+                // fmt.Println("type:", reflect.TypeOf(pid)) 
+            }
+            if v.Type == 1 {
+                pid,_ = strconv.Atoi(v.Info)
+            }
+            fmt.Println(pid)
+
             tid,_ := checkEventPostExist(pid)
             id := bson.M{"_id": v.Id}
+            fmt.Println(tid)
             change := bson.M{"$set":bson.M{"tid":tid}}
             UpdateMessage(tableid,id,change)
         }
