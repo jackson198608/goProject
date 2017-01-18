@@ -194,11 +194,9 @@ func MessageTask(taskNum int) {
             if v.Type == 1 {
                 pid,_ = strconv.Atoi(v.Info)
             }
-            fmt.Println(pid)
 
             tid,_ := checkEventPostExist(pid)
             id := bson.M{"_id": v.Id}
-            fmt.Println(tid)
             change := bson.M{"$set":bson.M{"tid":tid}}
             UpdateMessage(tableid,id,change)
         }
