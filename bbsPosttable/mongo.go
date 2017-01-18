@@ -44,9 +44,9 @@ func witchCollection(collection string, s func(*mgo.Collection) error) error {
 }
 
 /**
- * 添加person对象
+ * 添加message对象
  */
-func AddPerson(tableid int,p AppMessage) string {
+func AddMessage(tableid int,p AppMessage) string {
     p.Id = bson.NewObjectId()
     query := func(c *mgo.Collection) error {
         return c.Insert(p)
@@ -91,7 +91,7 @@ func GetAppMessageById(tableid int,id string) *AppMessage {
 // }
 
 
-//获取所有的person数据
+//获取所有的appmessage数据
 func PageAppMessage(tableid int,limit int,skip int) []AppMessage {
     var messages []AppMessage
     // where := bson.M{"type":1}
@@ -108,8 +108,8 @@ func PageAppMessage(tableid int,limit int,skip int) []AppMessage {
 }
 
 
-//更新person数据
-func UpdatePerson(tableid int,query bson.M, change bson.M) string {
+//更新message数据
+func UpdateMessage(tableid int,query bson.M, change bson.M) string {
     exop := func(c *mgo.Collection) error {
         return c.Update(query, change)
     }
@@ -153,7 +153,7 @@ func test(){
     id := bson.M{"_id": message.Id}
     // message := bson.M{"_id": bson.ObjectIdHex("58734e66bdd4fb1e004175e1")}
     change := bson.M{"$set":bson.M{"tid":122211}}
-    UpdatePerson(50,id,change)
+    UpdateMessage(50,id,change)
     fmt.Println(message)
 
 }
@@ -186,7 +186,7 @@ func MessageTask(taskNum int) {
             tid,_ := checkEventPostExist(pid)
             id := bson.M{"_id": v.Id}
             change := bson.M{"$set":bson.M{"tid":tid}}
-            UpdatePerson(tableid,id,change)
+            UpdateMessage(tableid,id,change)
         }
         offset += limit
     }
