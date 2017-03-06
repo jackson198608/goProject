@@ -3,13 +3,13 @@ package post
 import (
 	"database/sql"
 	"fmt"
-	"github.com/Masterminds/squirrel"
+	"github.com/jackson198608/squirrel"
 	"testing"
 )
 
 func getDbCache() squirrel.DBProxyBeginner {
-	dbName := "new_dog123"
-	con, err := sql.Open("mysql", "root:my-secret-pw@tcp(127.0.0.1:3306)/"+dbName+"?charset=utf8")
+	dbName := "test_dz2"
+	con, err := sql.Open("mysql", "root:goumintech@tcp(192.168.86.72:3309)/"+dbName+"?charset=utf8")
 	if err != nil {
 		fmt.Printf("connect err")
 		return nil
@@ -19,17 +19,18 @@ func getDbCache() squirrel.DBProxyBeginner {
 	return cache
 }
 
-func NewWithTidPid() *Post {
+func NewWithTidPid() (*Post, bool) {
 	cache := getDbCache()
-	post := NewPost(cache, "mysql", 65441666, 4411466, false)
+	post := NewPost(cache, "mysql", 47993506, 2731136240, false)
 	exist := post.PidExists()
 	if exist {
 		fmt.Println(post.Message)
 	} else {
 
 		fmt.Println("not exisit")
+		return post, false
 	}
-	return post
+	return post, true
 }
 
 func TestNewWithTidPid(t *testing.T) {
@@ -37,8 +38,11 @@ func TestNewWithTidPid(t *testing.T) {
 }
 
 func TestMove(t *testing.T) {
-	p := NewWithTidPid()
-	p.MoveToSplit()
+	p, isExist := NewWithTidPid()
+	if isExist {
+		p.MoveToSplit()
+	}
+
 }
 
 func TestInsert(t *testing.T) {

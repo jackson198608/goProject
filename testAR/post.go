@@ -1,8 +1,8 @@
 package post
 
 import (
-	"github.com/Masterminds/squirrel"
-	"github.com/Masterminds/structable"
+	"github.com/jackson198608/squirrel"
+	"github.com/jackson198608/structable"
 	//_ "github.com/lib/pq"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -12,7 +12,7 @@ import (
 // For convenience, we declare the table name as a constant.
 var baseTable string = "pre_forum_post"
 var PostTable string = "pre_forum_post"
-var tableBaseNum int = 10
+var tableBaseNum int = 100
 
 // This is our struct. Notice that we make this a structable.Recorder.
 type Post struct {
@@ -109,9 +109,7 @@ func (p *Post) MoveToSplit() bool {
 	} else {
 
 		PostTable = p.getTableSplitName()
-		fmt.Println("[info] former pid", p.Pid)
 		p.Recorder.ChangeBindTableName(PostTable)
-		fmt.Println("[info] after pid", p.Pid)
 		defer p.backToMain()
 		p.isSplit = true
 		err := p.Insert()
