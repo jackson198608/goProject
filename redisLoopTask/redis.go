@@ -1,170 +1,95 @@
-package main
+package redisLoopTask
 
 import (
+	"errors"
+	//"github.com/jackson198608/goProject/tableSplit/pre_forum_post/task"
 	redis "gopkg.in/redis.v4"
 	"strconv"
 	"strings"
 )
 
-type redis struct {
-	queueName string
+type RedisEngine struct {
+	queueName     string
+	connstr       string
+	password      string
+	db            int
+	client        *redis.Client
+	taskNum       int
+	numForOneLoop int
 }
 
-func putFailOneBack(i int) {
+func NewRedisEngine(queueName string, connstr string, password string, db int, numForOneLoop int) *RedisEngine {
+	t := new(RedisEngine)
 
-	if tasks[i].times == 5 {
-		//fmt.Println("[Error] fail exceed,drop: ", tasks[i].pushStr, tasks[i].insertStr)
-		return
-	}
-	client := connect(c.redisConn)
-	var pushStr string = ""
-	if (jobType == "multi") || (jobType == "single") {
-		pushStr = tasks[i].pushStr
-	} else {
-		pushStr = tasks[i].insertStr
+	if queueName == "" || connstr == "" || numForOneLoop <= 0 {
+		return nil
 	}
 
-	//add times into it
-	newTimes := tasks[i].times + 1
-	pushStr = pushStr + "^" + strconv.Itoa(newTimes)
+	t.queueName = queueName
+	t.connstr = connstr
+	t.password = password
+	t.db = db
+	t.numForOneLoop = numForOneLoop
 
-	err := (*client).RPush(redisQueueName, pushStr).Err()
+	err := t.connect()
 	if err != nil {
-		//fmt.Println("[Error] push str into redis error:  ", pushStr)
+		fmt.Println("[Error] redis connect error", err)
+		return nil
 	}
 
-	client.Close()
-
+	return t
 }
 
-func connect(conn string) (client *redis.Client) {
-	client = redis.NewClient(&redis.Options{
-		Addr:     conn,
-		Password: "", // no password set
-		DB:       0,  // use default DB
+func (t *RedisEngine) putFailOneBack(backstr string) {
+}
+
+func (t *RedisEngine) connect(conn string) error {
+	t.client = redis.NewClient(&redis.Options{
+		Addr:     t.conn,
+		Password: t.password, // no password set
+		DB:       t.db,       // use default DB
 	})
-	_, err := client.Ping().Result()
+	_, err := t.client.Ping().Result()
 	if err != nil {
-		fmt.Println("[Error] redis connect error")
+		return errors.New("[Error] redis connect error")
 	}
-	return client
+	return nil
 }
 
-func testLlen(client *redis.Client) {
-	len := (*client).LLen(redisQueueName).Val()
+func (t *RedisEngine) getTaskNum() {
+	len := (*t.client).LLen(redisQueueName).Val()
 	if int(len) > numForOneLoop {
-		taskNum = numForOneLoop
+		t.taskNum = numForOneLoop
 	} else {
-		taskNum = int(len)
+		t.taskNum = int(len)
 	}
 }
 
-func croutinePopRedisMultiData(c chan int, client *redis.Client, i int) {
-	fmt.Println("[notice] pop mcMulti")
-	redisStr := (*client).LPop("mcMulti").Val()
+func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
+	fmt.Println("[notice] pop " + t.queueName)
+	redisStr := (*t.client).LPop(t.queueName).Val()
 	if redisStr == "" {
 		fmt.Println("[notice] got nothing")
 		c <- 1
 		return
 	}
-	redisArr := strings.Split(redisStr, "^")
-	tasks[i].pushStr = redisArr[0]
-	tasks[i].insertStr = ""
-	if len(redisArr) == 2 {
-		tasks[i].times, _ = strconv.Atoi(redisArr[1])
-	} else {
-		tasks[i].times = 1
-	}
+
+	//doing job
 
 	c <- 1
 }
 
-func lopMulti(client *redis.Client) {
+func (t *RedisEngine) Loop() {
+}
+
+//it's for doing job at one time using tasknum's croutine
+func (t *RedisEngine) doOneLoop() {
 	c := make(chan int, taskNum)
 	for i := 0; i < taskNum; i++ {
-		go croutinePopRedisMultiData(c, client, i)
+		go croutinePopJobData(c, i)
 	}
 
 	for i := 0; i < taskNum; i++ {
 		<-c
 	}
-}
-
-func croutinePopRedisSingleData(c chan int, client *redis.Client, i int) {
-	redisStr := (*client).LPop("mcSingle").Val()
-	if redisStr == "" {
-		fmt.Println("[notice] got nothing")
-		c <- 1
-		return
-	}
-	redisArr := strings.Split(redisStr, "^")
-	tasks[i].pushStr = redisArr[0]
-	tasks[i].insertStr = ""
-	if len(redisArr) == 2 {
-		tasks[i].times, _ = strconv.Atoi(redisArr[1])
-	} else {
-		tasks[i].times = 1
-	}
-
-	c <- 1
-}
-
-func lopSingle(client *redis.Client) {
-	c := make(chan int, taskNum)
-	for i := 0; i < taskNum; i++ {
-		go croutinePopRedisSingleData(c, client, i)
-	}
-
-	for i := 0; i < taskNum; i++ {
-		<-c
-	}
-}
-
-func croutinePopRedisInsertData(c chan int, client *redis.Client, i int) {
-	redisStr := (*client).LPop("mcInsert").Val()
-	if redisStr == "" {
-		fmt.Println("[notice] got nothing")
-		c <- 1
-		return
-	}
-	redisArr := strings.Split(redisStr, "^")
-	tasks[i].insertStr = redisArr[0]
-	tasks[i].pushStr = ""
-	if len(redisArr) == 2 {
-		tasks[i].times, _ = strconv.Atoi(redisArr[1])
-	} else {
-		tasks[i].times = 1
-	}
-
-	c <- 1
-}
-
-func lopInsert(client *redis.Client) {
-	c := make(chan int, taskNum)
-	for i := 0; i < taskNum; i++ {
-		go croutinePopRedisInsertData(c, client, i)
-	}
-
-	for i := 0; i < taskNum; i++ {
-		<-c
-	}
-}
-
-func loadDataFromRedis() {
-	client := connect(c.redisConn)
-	testLlen(client)
-	fmt.Println(taskNum)
-	switch jobType {
-	case "multi":
-		lopMulti(client)
-	case "single":
-		lopSingle(client)
-	case "insert":
-		lopInsert(client)
-
-	default:
-		fmt.Println("[notice] no use to get data from redis")
-	}
-
-	client.Close()
 }
