@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"strconv"
 )
 
@@ -14,8 +16,10 @@ func getTask(page int) []int64 {
 	defer db.Close()
 
 	offset := page * numloops
-	rows, err := db.Query("select tid from pre_forum_thread order by tid asc limit " + strconv.Itoa(offset) +
-		" offset " + strconv.Itoa(offset))
+	sql := "select tid from pre_forum_thread where tid < " + strconv.Itoa(lastTid) + " and tid >= " + strconv.Itoa(firstTid) + " order by tid asc limit " + strconv.Itoa(numloops) + " offset " + strconv.Itoa(offset)
+	fmt.Println(sql)
+	rows, err := db.Query(sql)
+
 	if err != nil {
 		fmt.Println("[error] query error")
 		return nil
@@ -38,5 +42,4 @@ func getTask(page int) []int64 {
 
 	}
 	return tids
-
 }

@@ -5,14 +5,14 @@ import (
 	"testing"
 )
 
-var dbAuth string = "root:goumintech"
+var dbAuth string = "dog123:dog123"
 
-var dbDsn string = "192.168.86.72:3309"
-var dbName string = "test_dz2"
+var dbDsn string = "210.14.154.198:3306"
+var dbName string = "new_dog123"
 
 func TestGetPids(t *testing.T) {
 	//task := NewTask(2730146, dbAuth, dbDsn, dbName)
-	task := NewTask(2730142, dbAuth, dbDsn, dbName)
+	task := NewTask("2730142", dbAuth, dbDsn, dbName)
 	if task != nil {
 		fmt.Println(task.pids)
 	}
@@ -21,7 +21,7 @@ func TestGetPids(t *testing.T) {
 
 func TestDo(t *testing.T) {
 	//task := NewTask(2730146, dbAuth, dbDsn, dbName)
-	task := NewTask(2730142, dbAuth, dbDsn, dbName)
+	task := NewTask("2730142", dbAuth, dbDsn, dbName)
 	if task != nil {
 		fmt.Println(task.pids)
 	}

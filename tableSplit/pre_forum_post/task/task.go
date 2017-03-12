@@ -20,16 +20,21 @@ type Task struct {
 	pids    []int64
 }
 
-func NewTask(Tid int64, dbAuth string, dbDsn string, dbName string) *Task {
+func NewTask(tidStr string, dbAuth string, dbDsn string, dbName string) *Task {
 	//set value
+	tid, err := strconv.Atoi(tidStr)
+	if err != nil {
+		fmt.Println("[error]tid error")
+		return nil
+	}
 	t := new(Task)
-	t.Tid = Tid
+	t.Tid = int64(tid)
 	t.dbAuth = dbAuth
 	t.dbDsn = dbDsn
 	t.dbName = dbName
 
 	//make db comon value and check error
-	err := t.getDbCache()
+	err = t.getDbCache()
 	if err != nil {
 		fmt.Println("[error]get pid list error", err, t.Tid)
 		return nil

@@ -2,10 +2,9 @@ package redisLoopTask
 
 import (
 	"errors"
-	//"github.com/jackson198608/goProject/tableSplit/pre_forum_post/task"
+	"fmt"
+	"github.com/jackson198608/goProject/tableSplit/pre_forum_post/task"
 	redis "gopkg.in/redis.v4"
-	"strconv"
-	"strings"
 )
 
 type RedisEngine struct {
@@ -16,9 +15,16 @@ type RedisEngine struct {
 	client        *redis.Client
 	taskNum       int
 	numForOneLoop int
+	taskNewArgs   []interface{}
 }
 
-func NewRedisEngine(queueName string, connstr string, password string, db int, numForOneLoop int) *RedisEngine {
+func NewRedisEngine(
+	queueName string,
+	connstr string,
+	password string,
+	db int,
+	numForOneLoop int, taskarg ...interface{}) *RedisEngine {
+
 	t := new(RedisEngine)
 
 	if queueName == "" || connstr == "" || numForOneLoop <= 0 {
@@ -30,6 +36,7 @@ func NewRedisEngine(queueName string, connstr string, password string, db int, n
 	t.password = password
 	t.db = db
 	t.numForOneLoop = numForOneLoop
+	t.taskNewArgs = taskarg
 
 	err := t.connect()
 	if err != nil {
@@ -43,9 +50,9 @@ func NewRedisEngine(queueName string, connstr string, password string, db int, n
 func (t *RedisEngine) putFailOneBack(backstr string) {
 }
 
-func (t *RedisEngine) connect(conn string) error {
+func (t *RedisEngine) connect() error {
 	t.client = redis.NewClient(&redis.Options{
-		Addr:     t.conn,
+		Addr:     t.connstr,
 		Password: t.password, // no password set
 		DB:       t.db,       // use default DB
 	})
@@ -56,10 +63,40 @@ func (t *RedisEngine) connect(conn string) error {
 	return nil
 }
 
+func (t *RedisEngine) PushTaskData(tasks interface{}) bool {
+
+	switch realTasks := tasks.(type) {
+	case []string:
+		fmt.Println("this is string task", realTasks)
+		for i := 0; i < len(realTasks); i++ {
+			err := (*t.client).RPush(t.queueName, realTasks[i]).Err()
+			if err != nil {
+				fmt.Println("[error]insert redis error", err)
+			}
+		}
+
+	case []int64:
+		fmt.Println("this is int task", realTasks)
+		for i := 0; i < len(realTasks); i++ {
+			err := (*t.client).RPush(t.queueName, realTasks[i]).Err()
+			if err != nil {
+				fmt.Println("[error]insert redis error", err)
+			}
+		}
+
+	default:
+		fmt.Println("task is no normal format", realTasks)
+		return false
+	}
+
+	return true
+
+}
+
 func (t *RedisEngine) getTaskNum() {
-	len := (*t.client).LLen(redisQueueName).Val()
-	if int(len) > numForOneLoop {
-		t.taskNum = numForOneLoop
+	len := (*t.client).LLen(t.queueName).Val()
+	if int(len) > t.numForOneLoop {
+		t.taskNum = t.numForOneLoop
 	} else {
 		t.taskNum = int(len)
 	}
@@ -75,21 +112,26 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 	}
 
 	//doing job
-
+	task.NewTask(redisStr, "dog123:dog123", "210.14.154.198:3306", "new_dog123")
 	c <- 1
 }
 
 func (t *RedisEngine) Loop() {
+	fmt.Println("[notice]do in loop")
+	t.doOneLoop()
 }
 
 //it's for doing job at one time using tasknum's croutine
 func (t *RedisEngine) doOneLoop() {
-	c := make(chan int, taskNum)
-	for i := 0; i < taskNum; i++ {
-		go croutinePopJobData(c, i)
+	t.getTaskNum()
+	fmt.Println("[notice]do in oneloop tasknum", t.taskNum)
+
+	c := make(chan int, t.taskNum)
+	for i := 0; i < t.taskNum; i++ {
+		go t.croutinePopJobData(c, i)
 	}
 
-	for i := 0; i < taskNum; i++ {
+	for i := 0; i < t.taskNum; i++ {
 		<-c
 	}
 }
