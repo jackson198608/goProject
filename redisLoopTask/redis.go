@@ -112,7 +112,8 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 	}
 
 	//doing job
-	task.NewTask(redisStr, "dog123:dog123", "210.14.154.198:3306", "new_dog123")
+	//task.NewTask(redisStr, "dog123:dog123", "210.14.154.198:3306", "new_dog123")
+	task.NewTask(redisStr, t.taskNewArgs)
 	c <- 1
 }
 
