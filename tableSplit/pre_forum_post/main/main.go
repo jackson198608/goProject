@@ -1,21 +1,63 @@
 package main
 
 import (
+	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/redisLoopTask"
+	"os"
 )
 
-const dbDsn = "210.14.154.198:3306"
-const dbName = "new_dog123"
-const dbAuth = "dog123:dog123"
-const numloops = 20
-const lastTid = 2731136250
-const firstTid = 0
-const redisConn = "127.0.0.1:6379"
+var c Config = Config{
+	"210.14.154.198:3306",
+	"new_dog123",
+	"dog123:dog123",
+	100,
+	4392691,
+	0,
+	"127.0.0.1:6379",
+	"movePost",
+	"/tmp/move.log", 0}
+
+func pushALLTidFromStartToEnd() {
+	r := redisLoopTask.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
+
+	page := 0
+	for {
+		tids := getTask(page)
+		if tids == nil {
+			break
+		}
+		r.PushTaskData(tids)
+		page++
+	}
+}
+
+func do() {
+	r := redisLoopTask.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, 100, c.dbAuth, c.dbDsn, c.dbName)
+	r.Loop()
+}
+
+func Init() {
+
+	loadConfig()
+	logger.SetConsole(true)
+	logger.SetLevel(logger.DEBUG)
+	logger.Error(logger.DEBUG)
+
+}
 
 func main() {
-	r := redisLoopTask.NewRedisEngine("movePost", redisConn, "", 0, 100, dbAuth, dbDsn, dbName)
-	tids := getTask(10)
-	r.PushTaskData(tids)
-	r.Loop()
+	Init()
+	jobType := os.Args[1]
 
+	switch jobType {
+	case "create":
+		logger.Info("in the create", 10)
+		pushALLTidFromStartToEnd()
+
+	case "do":
+		logger.Info("in the do")
+		do()
+	default:
+
+	}
 }

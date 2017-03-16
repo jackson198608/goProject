@@ -1,10 +1,10 @@
 package post
 
 import (
+	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/squirrel"
 	"github.com/jackson198608/structable"
 	//_ "github.com/lib/pq"
-	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
 )
@@ -46,13 +46,17 @@ type Post struct {
 	Replycredit int    `stbl:"replycredit"`
 	Position    int64  `stbl:"position"`
 	isSplit     bool
+	logLevel    int
 }
 
 // NewUser creates a new Structable wrapper for a user.
 //
 // Of particular importance, watch how we intialize the Recorder.
-func NewPost(db squirrel.DBProxyBeginner, dbFlavor string, pid int64, tid int64, isSplit bool) *Post {
+func NewPost(logLevel int, db squirrel.DBProxyBeginner, dbFlavor string, pid int64, tid int64, isSplit bool) *Post {
 	u := new(Post)
+	logger.SetRollingDaily("/tmp", "1.log")
+	logger.SetLevel(logger.LEVEL(logLevel))
+
 	u.isSplit = isSplit
 	if (pid > 0) && (tid > 0) {
 		u.Pid = pid
@@ -68,19 +72,21 @@ func NewPost(db squirrel.DBProxyBeginner, dbFlavor string, pid int64, tid int64,
 		u.LoadByPid()
 	}
 
+	u.logLevel = logLevel
+
 	return u
 }
 
 func (p *Post) PidExists() bool {
 	isExist, err := p.ExistsWhere("pid = ?", p.Pid)
 	if err != nil {
-		fmt.Println("[error] find exists error", err)
+		logger.Error("find exists error", p.Tid, p.Pid, p.TableName(), err)
 	}
 	return isExist
 }
 func (p *Post) hasChanged() bool {
 	if p.Pid <= 0 || p.Tid <= 0 {
-		fmt.Println("[error] have no pid or tid can not continute")
+		logger.Error("have no pid or tid can not continute")
 		return false
 	}
 	if !p.isSplit {
@@ -104,7 +110,7 @@ func (p *Post) backToMain() bool {
 
 func (p *Post) MoveToSplit() bool {
 	if p.hasChanged() {
-		fmt.Println("[info] has changed", p.Pid, p.Tid)
+		logger.Info("has changed", p.Pid, p.Tid)
 		return true
 	} else {
 		PostTable = p.getTableSplitName()
@@ -113,7 +119,7 @@ func (p *Post) MoveToSplit() bool {
 		p.isSplit = true
 		err := p.Insert()
 		if err != nil {
-			fmt.Println("[error] insert error", p.Pid, p.Tid, err)
+			logger.Error("insert error", p.Pid, p.Tid, p.TableName(), err)
 			return false
 		}
 		return true

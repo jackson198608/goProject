@@ -8,8 +8,8 @@ import (
 )
 
 func getDbCache() squirrel.DBProxyBeginner {
-	dbName := "test_dz2"
-	con, err := sql.Open("mysql", "root:goumintech@tcp(192.168.86.72:3309)/"+dbName+"?charset=utf8")
+	dbName := "new_dog123"
+	con, err := sql.Open("mysql", "dog123:dog123@tcp(210.14.154.198:3306)/"+dbName+"?charset=utf8")
 	if err != nil {
 		fmt.Printf("connect err")
 		return nil
@@ -21,7 +21,7 @@ func getDbCache() squirrel.DBProxyBeginner {
 
 func NewWithTidPid() (*Post, bool) {
 	cache := getDbCache()
-	post := NewPost(cache, "mysql", 47993506, 2731136240, false)
+	post := NewPost(0, cache, "mysql", 426, 104, false)
 	exist := post.PidExists()
 	if exist {
 		fmt.Println(post.Message)
@@ -51,7 +51,7 @@ func TestInsert(t *testing.T) {
 	// Second, we need a database connection.
 	// Create an empty new user and give it some properties.
 	cache := getDbCache()
-	post := NewPost(cache, "mysql", 0, 0, false)
+	post := NewPost(0, cache, "mysql", 0, 0, false)
 	post.Pid = 65441670
 	post.Fid = 38
 	post.Tid = 4411466
