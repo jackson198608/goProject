@@ -69,6 +69,11 @@ func NewTask(logLevel int, tidStr string, args []string) *Task {
 	return t
 }
 
+func (t *Task) Over() {
+	if t.con != nil {
+		t.con.Close()
+	}
+}
 func (t *Task) getDbCache() error {
 	con, err := sql.Open("mysql", t.dbAuth+"@tcp("+t.dbDsn+")/"+t.dbName+"?charset=utf8")
 	if err != nil {
@@ -118,18 +123,8 @@ func (t *Task) handlePid(pid int64) error {
 }
 
 func (t *Task) getPids() error {
-	//connect db
-	db, err := sql.Open("mysql", t.dbAuth+"@tcp("+t.dbDsn+")/"+t.dbName+"?charset=utf8mb4")
-	if err != nil {
-		logger.Error("connect db error", t.dbDsn, t.dbAuth, t.dbName)
-
-		//fmt.Println("[error] connect db err")
-		return errors.New("connect db error")
-	}
-	defer db.Close()
-
 	//do query part
-	rows, err := db.Query("select pid from pre_forum_post where tid=" + strconv.Itoa(int(t.Tid)))
+	rows, err := t.con.Query("select pid from pre_forum_post where tid=" + strconv.Itoa(int(t.Tid)))
 	if err != nil {
 		logger.Error("get pids by tid error", t.Tid, err)
 		return errors.New("get pids error")

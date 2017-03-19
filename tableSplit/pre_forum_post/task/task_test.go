@@ -37,6 +37,7 @@ func TestDo(t *testing.T) {
 		fmt.Println(task.pids)
 	}
 	task.Do()
+	task.Over()
 
 }
 

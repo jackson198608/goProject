@@ -1,2 +1,2 @@
-#go test -test.run  TestGetPids
-go test -test.run  TestDo
+#go test -test.run  TestNewWithTidPid 
+go test -test.run  TestDo 

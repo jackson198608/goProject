@@ -11,7 +11,6 @@ import (
 
 // For convenience, we declare the table name as a constant.
 var baseTable string = "pre_forum_post"
-var PostTable string = "pre_forum_post"
 var tableBaseNum int = 100
 
 // This is our struct. Notice that we make this a structable.Recorder.
@@ -23,30 +22,31 @@ type Post struct {
 	Pid         int64  `stbl:"pid"`
 	Fid         int64  `stbl:"fid"`
 	Tid         int64  `stbl:"tid"`
-	First       bool   `stbl:"first"`
+	First       int    `stbl:"first"`
 	Author      string `stbl:"author"`
 	Authorid    int64  `stbl:"authorid"`
 	Subject     string `stbl:"subject"`
 	Dateline    int64  `stbl:"dateline"`
 	Message     string `stbl:"message"`
 	Useip       string `stbl:"useip"`
-	Invisible   bool   `stbl:"invisible"`
-	Anonymous   bool   `stbl:"anonymous"`
-	Usesig      bool   `stbl:"usesig"`
-	Htmlon      bool   `stbl:"htmlon"`
-	Bbcodeoff   bool   `stbl:"bbcodeoff"`
-	Smileyoff   bool   `stbl:"smileyoff"`
-	Parseurloff bool   `stbl:"parseurloff"`
-	Attachment  bool   `stbl:"attachment"`
+	Invisible   int    `stbl:"invisible"`
+	Anonymous   int    `stbl:"anonymous"`
+	Usesig      int    `stbl:"usesig"`
+	Htmlon      int    `stbl:"htmlon"`
+	Bbcodeoff   int    `stbl:"bbcodeoff"`
+	Smileyoff   int    `stbl:"smileyoff"`
+	Parseurloff int    `stbl:"parseurloff"`
+	Attachment  int    `stbl:"attachment"`
 	Rate        int    `stbl:"rate"`
 	Ratetimes   int    `stbl:"ratetimes"`
 	Status      int    `stbl:"status"`
 	Tags        string `stbl:"tags"`
-	Comment     bool   `stbl:"comment"`
+	Comment     int    `stbl:"comment"`
 	Replycredit int    `stbl:"replycredit"`
-	Position    int64  `stbl:"position"`
-	isSplit     bool
-	logLevel    int
+	//Position    int64  `stbl:"position"`
+	isSplit   bool
+	logLevel  int
+	postTable string
 }
 
 // NewUser creates a new Structable wrapper for a user.
@@ -54,7 +54,7 @@ type Post struct {
 // Of particular importance, watch how we intialize the Recorder.
 func NewPost(logLevel int, db squirrel.DBProxyBeginner, dbFlavor string, pid int64, tid int64, isSplit bool) *Post {
 	u := new(Post)
-	logger.SetRollingDaily("/tmp", "1.log")
+	//logger.SetRollingDaily("/tmp", "1.log")
 	logger.SetLevel(logger.LEVEL(logLevel))
 
 	u.isSplit = isSplit
@@ -63,10 +63,13 @@ func NewPost(logLevel int, db squirrel.DBProxyBeginner, dbFlavor string, pid int
 		u.Tid = tid
 	}
 
+	u.postTable = baseTable
+
 	if isSplit && (tid > 0) {
-		PostTable = u.getTableSplitName()
+		u.postTable = u.getTableSplitName()
 	}
-	u.Recorder = structable.New(db, dbFlavor).Bind(PostTable, u)
+	logger.Info(u.postTable)
+	u.Recorder = structable.New(db, dbFlavor).Bind(u.postTable, u)
 
 	if (pid > 0) && (tid > 0) {
 		u.LoadByPid()
@@ -90,8 +93,8 @@ func (p *Post) hasChanged() bool {
 		return false
 	}
 	if !p.isSplit {
-		PostTable = p.getTableSplitName()
-		p.Recorder.ChangeBindTableName(PostTable)
+		p.postTable = p.getTableSplitName()
+		p.Recorder.ChangeBindTableName(p.postTable)
 		p.isSplit = true
 	}
 	isExist := p.PidExists()
@@ -102,9 +105,9 @@ func (p *Post) hasChanged() bool {
 }
 
 func (p *Post) backToMain() bool {
-	PostTable = baseTable
+	p.postTable = baseTable
 	p.isSplit = false
-	p.Recorder.ChangeBindTableName(PostTable)
+	p.Recorder.ChangeBindTableName(p.postTable)
 	return true
 }
 
@@ -113,8 +116,8 @@ func (p *Post) MoveToSplit() bool {
 		logger.Info("has changed", p.Pid, p.Tid)
 		return true
 	} else {
-		PostTable = p.getTableSplitName()
-		p.Recorder.ChangeBindTableName(PostTable)
+		p.postTable = p.getTableSplitName()
+		p.Recorder.ChangeBindTableName(p.postTable)
 		defer p.backToMain()
 		p.isSplit = true
 		err := p.Insert()
@@ -132,7 +135,7 @@ func (p *Post) getTableSplitName() string {
 		tableNum = int64(tableBaseNum)
 	}
 	tableNumStr := strconv.Itoa(int(tableNum))
-	PostTableSplit := PostTable + "_" + tableNumStr
+	PostTableSplit := baseTable + "_" + tableNumStr
 	return PostTableSplit
 }
 
