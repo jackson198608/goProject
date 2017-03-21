@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/donnie4w/go-logger/logger"
-	"github.com/jackson198608/goProject/redisLoopTask"
+	"github.com/jackson198608/goProject/tableSplit/pre_forum_post/redisLoopTask"
 	"os"
 )
 
