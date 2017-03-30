@@ -6,8 +6,8 @@ import (
 )
 
 func TestSend(t *testing.T) {
-	m := NewMontnets(0, "18210091845", "1319")
+	m := NewMontnets(0, "18210091845", "[铃铛宠物] 您好，1391（验证码不要告诉别人哦，5分钟内有效）小铃铛等你很久了，快去登录领豆吧！可以兑换商品抽取大奖呢！【狗民网】")
 	if m != nil {
-		m.send()
+		m.Send()
 	}
 }

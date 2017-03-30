@@ -1,7 +1,7 @@
 package Montnets
 
 import (
-	"fmt"
+	"errors"
 	"github.com/donnie4w/go-logger/logger"
 	"io/ioutil"
 	"net/http"
@@ -10,16 +10,16 @@ import (
 	"strings"
 )
 
-const interfaceUrl = "1"
-const userId = "2"
-const password = "3"
+const interfaceUrl = ""
+const userId = ""
+const password = ""
 
 type Montnets struct {
 	phone   string
 	message string
 }
 
-func NewMontnets(logLevel int, phone string, message string) *Montnets {
+func NewMontnets(logLevel logger.LEVEL, phone string, message string) *Montnets {
 	logger.SetLevel(logger.LEVEL(logLevel))
 
 	//check params
@@ -44,7 +44,7 @@ func NewMontnets(logLevel int, phone string, message string) *Montnets {
 
 }
 
-func (m *Montnets) send() {
+func (m *Montnets) Send() error {
 
 	v := url.Values{}
 	v.Set("userId", userId)
@@ -61,14 +61,17 @@ func (m *Montnets) send() {
 	client := &http.Client{}
 	req, _ := http.NewRequest("POST", interfaceUrl, body)
 
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded") //这个一定要加，不加form的值post不过去，被坑了两小时
-	req.Header.Set("Host", "61.135.198.131")                            //这个一定要加，不加form的值post不过去，被坑了两小时
-	//req.Header.Set("Content-Length", strconv.Itoa(len(bodyStr)))        //这个一定要加，不加form的值post不过去，被坑了两小时
-	fmt.Printf("%+v\n", req) //看下发送的结构
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Host", "61.135.198.131")
+	//req.Header.Set("Content-Length", strconv.Itoa(len(bodyStr)))
 
 	resp, err := client.Do(req) //发送
-	defer resp.Body.Close()     //一定要关闭resp.Body
+	if err != nil {
+		logger.Error("connect to remote err", err)
+		return errors.New("connect to remote err")
+	}
+	defer resp.Body.Close() //一定要关闭resp.Body
 	data, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(data), err)
-
+	logger.Debug("this data we got is :", string(data))
+	return nil
 }
