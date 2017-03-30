@@ -3,12 +3,12 @@ package redisLoopTask
 import (
 	"errors"
 	"github.com/donnie4w/go-logger/logger"
-	"github.com/jackson198608/goProject/tableSplit/pre_forum_post/task"
+	"github.com/jackson198608/goProject/gouminMobileMessageSender/task"
 	redis "gopkg.in/redis.v4"
 )
 
 type RedisEngine struct {
-	logLevel      int
+	logLevel      logger.LEVEL
 	queueName     string
 	connstr       string
 	password      string
@@ -20,7 +20,7 @@ type RedisEngine struct {
 }
 
 func NewRedisEngine(
-	logLevel int,
+	logLevel logger.LEVEL,
 	queueName string,
 	connstr string,
 	password string,
@@ -118,10 +118,9 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 
 	//doing job
 	//task.NewTask(redisStr, "dog123:dog123", "210.14.154.198:3306", "new_dog123")
-	task := task.NewTask(t.logLevel, redisStr, t.taskNewArgs)
+	task := task.NewTask(t.logLevel, redisStr)
 	if task != nil {
 		task.Do()
-		task.Over()
 	}
 
 	c <- 1
