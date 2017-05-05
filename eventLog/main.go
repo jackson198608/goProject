@@ -1,11 +1,11 @@
 package main
 
-import(
-    "github.com/donnie4w/go-logger/logger"
-    // "github.com/jackson198608/goProject/eventLog/task"
-    "os"
-    "fmt"
-    // "log"
+import (
+	"github.com/donnie4w/go-logger/logger"
+	// "github.com/jackson198608/goProject/eventLog/task"
+	"fmt"
+	"os"
+	// "log"
 )
 
 // var dbAuth string = "root:goumintech"
@@ -14,61 +14,67 @@ import(
 // var logger *log.Logger
 // var logPath string = "/tmp/spider.log"
 var c Config = Config{
-    "192.168.86.72:3309",
-    "test_dz2",
-    "root:goumintech",
-    1,
-    10,//2545,
-    1,
-    "127.0.0.1:6379",
-    "moveEvent",
-    "/tmp/moveEvent.log", 0}
+	"192.168.86.72:3309",
+	"test_dz2",
+	"root:goumintech",
+	1,
+	10, //2545,
+	1,
+	"127.0.0.1:6379",
+	"moveEvent",
+	"/tmp/moveEvent.log", 0, "4", "2014-01-01", "1", "192.168.86.68:27017"}
+
+var taskNum int = 0
+
+var filename = "/tmp/event.log"
+
+// var dateLimit string = "2014-01-01"
 
 func pushALLEventIdFromStartToEnd() {
-    r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
-    page := 0
-    for {
-        ids := getTask(page)
-        if len(ids) == 0 {
-            break
-        }
-        if ids == nil {
-            break
-        }
-        r.PushTaskData(ids)
-        page++
-    }
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit)
+	page := 0
+	for {
+		ids := getTask(page)
+		if len(ids) == 0 {
+			break
+		}
+		if ids == nil {
+			break
+		}
+		r.PushTaskData(ids)
+		page++
+	}
 }
 
 func do() {
-    r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
-    r.Loop()
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit)
+	r.Loop()
 }
 
 func Init() {
 
-    loadConfig()
-    logger.SetConsole(true)
-    logger.SetLevel(logger.DEBUG)
-    logger.Error(logger.DEBUG)
+	loadConfig()
+	logger.SetConsole(true)
+	logger.SetLevel(logger.DEBUG)
+	logger.Error(logger.DEBUG)
 
 }
 func main() {
-    Init()
-    // data := getEventLogData(1,10,10,0)
-    // fmt.Println(data)
-    // NewTask(1)
-    jobType := os.Args[1]
-    fmt.Println(jobType)
-    switch jobType {
-    case "create":
-        logger.Info("in the create", 10)
-        pushALLEventIdFromStartToEnd()
+	Init()
+	// data := getEventLogData(1,10,10,0)
+	// fmt.Println(data)
+	// NewTask(1)
+	jobType := os.Args[1]
+	fmt.Println(jobType)
+	switch jobType {
+	case "create":
+		logger.Info("in the create", 10)
+		pushALLEventIdFromStartToEnd()
 
-    case "do":
-        logger.Info("in the do")
-        do()
-    default:
+	case "do":
+		logger.Info("in the do")
+		do()
+	default:
 
-    }
+	}
 }
