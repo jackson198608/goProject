@@ -10,6 +10,7 @@ import (
 	"os"
 	// "reflect"
 	"strconv"
+	"time"
 )
 
 type RedisEngine struct {
@@ -167,11 +168,19 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 		// w.Flush()
 	}
 }
-
 func (t *RedisEngine) Loop() {
 	logger.Info("do in the loop")
-	t.taskNum = t.numForOneLoop
-	t.doOneLoop()
+	// t.taskNum = t.numForOneLoop
+	// t.doOneLoop()
+	for {
+		t.getTaskNum()
+		fmt.Println(t.taskNum)
+		if t.taskNum == 0 {
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		t.doOneLoop()
+	}
 }
 
 //it's for doing job at one time using tasknum's croutine

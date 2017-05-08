@@ -26,7 +26,7 @@ var c Config = Config{
 
 var taskNum int = 0
 
-var filename = "/tmp/event.log"
+var filename = c.logFile
 
 // var dateLimit string = "2014-01-01"
 
