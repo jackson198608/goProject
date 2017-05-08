@@ -1,1 +1,1 @@
-{"dbDsn":"192.168.86.72:3309","dbName":"test_dz2","dbAuth":"root:goumintech","numloops":1,"lastId":2545,"firstId":0,"redisConn":"127.0.0.1:6379","queueName":"moveEvent","logFile":"/tmp/moveEvent.log","logLevel":1}
+{"dbDsn":"192.168.86.72:3309","dbName":"test_dz2","dbAuth":"root:goumintech","numloops":1,"lastId":2545,"firstId":0,"redisConn":"127.0.0.1:6379","queueName":"moveEvent","logFile":"/tmp/moveEvent.log","logLevel":1,"fanslimit":"4","datelimit":"currentNum","currentNum":"1","mongoConn":"192.168.86.68:27017"}

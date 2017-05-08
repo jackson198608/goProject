@@ -24,7 +24,7 @@ var c Config = Config{
 	"moveEvent",
 	"/tmp/moveEvent.log", 0, "4", "2014-01-01", "1", "192.168.86.68:27017"}
 
-var taskNum int = 0
+// var taskNum int = 0
 
 var filename = c.logFile
 

@@ -25,6 +25,17 @@ type EventLogX struct {
 	Tid     int           "tid"
 }
 
+type EventLogNew struct {
+	Id      bson.ObjectId "_id"
+	TypeId  int           "type"
+	Uid     int           "uid"
+	Info    string        "info"
+	Created string        "created"
+	Infoid  int           "infoid"
+	Status  int           "status"
+	Tid     int           "tid"
+}
+
 func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 	session, err := mgo.Dial(c.mongoConn)
 	if err != nil {
@@ -37,16 +48,17 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 	if tableNum == 0 {
 		tableNum = 100
 	}
-	tableName := "event_log_" + strconv.Itoa(tableNum)
+	// tableName := "event_log_" + strconv.Itoa(tableNum)
+	tableName := "event_log" //动态表
 	c := session.DB("EventLog").C(tableName)
 
-	m1 := EventLogX{bson.NewObjectId(), event.typeId, event.uid, event.uid, event.info, event.created, event.infoid, event.status, event.tid}
+	m1 := EventLogNew{bson.NewObjectId(), event.typeId, event.uid, event.info, event.created, event.infoid, event.status, event.tid}
 	logger.Info(m1)
 	//判断数据是否存在
 	eventIsExist := checkMongoIsExist(c, event, event.uid)
 	fmt.Println(eventIsExist)
 	if eventIsExist == false {
-		// err = c.Insert(&m1) //插入数据
+		err = c.Insert(&m1) //插入数据
 		if err != nil {
 			logger.Info("mongo insert one data error:", err)
 		}
@@ -127,131 +139,3 @@ func check(e error) {
 		logger.Info("check file error", e)
 	}
 }
-
-// func NewEvent(logLevel int, dbFlavor string, id int64) *EventLog {
-// 	u := new(EventLog)
-// 	logger.SetLevel(logger.LEVEL(logLevel))
-
-// 	// u.isSplit = isSplit
-// 	// if id > 0 {
-// 	// 	u.id = id
-// 	// }
-
-// 	if id > 0 {
-// 		u = u.LoadById()
-// 	}
-
-// 	u.logLevel = logLevel
-
-// 	return u
-// }
-
-// func (p *EventLog) LoadById() *EventLog {
-// 	db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
-// 	if err != nil {
-// 		logger.Error("[error] connect db err")
-// 	}
-// 	defer db.Close()
-// 	tableName := "event_log"
-// 	rows, err := db.Query("select id,type as typeId,uid,info,created,infoid,status,tid from `" + tableName + "` where id=" + strconv.Itoa(int(p.id)) + "")
-// 	defer rows.Close()
-// 	if err != nil {
-// 		logger.Error("[error] check event_log sql prepare error: ", err)
-// 		return nil
-// 	}
-// 	for rows.Next() {
-// 		var row = new(EventLog)
-// 		rows.Scan(&row.id, &row.typeId, &row.uid, &row.info, &row.created, &row.infoid, &row.status, &row.tid)
-// 		return row
-// 	}
-// 	return &EventLog{}
-// }
-
-// func (p *EventLog) MoveToSplit() bool {
-// 	session, err := mgo.Dial(c.mongoConn)
-// 	if err != nil {
-// 		return
-// 	}
-// 	defer session.Close()
-
-// 	// Optional. Switch the session to a monotonic behavior.
-// 	session.SetMode(mgo.Monotonic, true)
-
-// 	//create channel
-// 	c := make(chan int, taskNum)
-
-// 	for i := 0; i < taskNum; i++ {
-// 		go doInMongo(c, session, i)
-// 	}
-// 	for i := 0; i < taskNum; i++ {
-// 		<-c
-// 	}
-// }
-
-// func doInMongo(c chan int, session *mgo.Session, i int) {
-// 	mongoStr := tasks[i].insertStr
-// 	if mongoStr == "0" {
-// 		c <- 1
-// 		return
-// 	}
-// 	t := NewMongoTask(mongoStr)
-// 	w := NewWorker(t)
-// 	w.Insert(session)
-
-// 	c <- 1
-// }
-
-// func insertMongo() {
-// 	//init session
-// 	session, err := mgo.Dial(c.mongoConn)
-// 	if err != nil {
-// 		return
-// 	}
-// 	defer session.Close()
-
-// 	// Optional. Switch the session to a monotonic behavior.
-// 	session.SetMode(mgo.Monotonic, true)
-
-// 	//create channel
-// 	c := make(chan int, taskNum)
-
-// 	for i := 0; i < taskNum; i++ {
-// 		go doInMongo(c, session, i)
-// 	}
-// 	for i := 0; i < taskNum; i++ {
-// 		<-c
-// 	}
-// }
-
-// type Worker struct {
-// 	t *Task
-// }
-
-// func NewWorker(t *Task) (w *Worker) {
-// 	//init the worker
-// 	var wR Worker
-// 	wR.t = t
-// 	return &wR
-// }
-
-// func (w Worker) Insert(session *mgo.Session) {
-// 	//convert json string to struct
-// 	var m row
-// 	if err := json.Unmarshal([]byte(w.t.columData), &m); err != nil {
-// 		//fmt.Println("[error] mongo json error", err, w.t.columData)
-// 		return
-// 	}
-
-// 	//get the table name
-// 	tableNumber := strconv.Itoa(m.Uid % 1000)
-// 	tableName := "message_push_record_" + tableNumber
-
-// 	//create mongo session
-// 	c := session.DB("MessageCenter").C(tableName)
-
-// 	err := c.Insert(&m)
-// 	if err != nil {
-// 		//fmt.Println("[Error]insert into mongo error", err)
-// 		return
-// 	}
-// }

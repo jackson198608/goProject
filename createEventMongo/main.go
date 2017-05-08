@@ -4,7 +4,7 @@ import (
 	"fmt"
 	mgo "gopkg.in/mgo.v2"
 	"os"
-	"strconv"
+	// "strconv"
 )
 
 var fileName = "/tmp/event.log"
@@ -34,10 +34,22 @@ func main() {
 	defer session.Close()
 	// Optional. Switch the session to a monotonic behavior.
 	session.SetMode(mgo.Monotonic, true)
+	tableName := "event_log" //动态表
+	fmt.Println(tableName)
+	c := session.DB("EventLog").C(tableName)
+	c.EnsureIndexKey("id")
+	c.EnsureIndexKey("type")
+	c.EnsureIndexKey("uid")
+	c.EnsureIndexKey("info")
+	c.EnsureIndexKey("created")
+	c.EnsureIndexKey("infoid")
+	c.EnsureIndexKey("status")
+	c.EnsureIndexKey("tid")
+
 	for i := 1; i <= 100; i++ {
-		tableName := "event_log_" + strconv.Itoa(i)
-		fmt.Println(tableName)
-		c := session.DB("EventLog").C(tableName)
+		tableName1 := "event_log_" + strconv.Itoa(i) //粉丝表
+		fmt.Println(tableName1)
+		c := session.DB("EventLog").C(tableName1)
 		c.EnsureIndexKey("id")
 		c.EnsureIndexKey("type")
 		c.EnsureIndexKey("uid")
