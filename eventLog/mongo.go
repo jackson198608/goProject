@@ -15,14 +15,14 @@ import (
 
 type EventLogX struct {
 	Id      bson.ObjectId "_id"
-	TypeId  int
-	Uid     int
-	Fuid    int //fans id
-	Info    string
-	Created string
-	Infoid  int
-	Status  int
-	Tid     int
+	TypeId  int           "type"
+	Uid     int           "uid"
+	Fuid    int           "fuid" //fans id
+	Info    string        "info"
+	Created string        "created"
+	Infoid  int           "infoid"
+	Status  int           "status"
+	Tid     int           "tid"
 }
 
 func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
@@ -42,19 +42,17 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 
 	m1 := EventLogX{bson.NewObjectId(), event.typeId, event.uid, event.uid, event.info, event.created, event.infoid, event.status, event.tid}
 	logger.Info(m1)
-	// err = c.Insert(&m1)
 	//判断数据是否存在
 	eventIsExist := checkMongoIsExist(c, event, event.uid)
 	fmt.Println(eventIsExist)
 	if eventIsExist == false {
-		err = c.Insert(&m1)
+		err = c.Insert(&m1) //插入数据
 		if err != nil {
-			logger.Info("mongo insert error:", err)
+			logger.Info("mongo insert one data error:", err)
 		}
 	}
 	// fmt.Println("type:", reflect.TypeOf(c))
 	lineStr1 := fmt.Sprintf("%s", m1)
-	// /*fmt.Fprintln(w, lineStr1)*/
 	// 查找文件末尾的偏移量
 	n, _ := w.Seek(0, os.SEEK_END)
 	// 从末尾的偏移量开始写入内容
@@ -65,31 +63,24 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 			tableNum1 = 100
 		}
 		tableName1 := "event_log_" + strconv.Itoa(tableNum1)
-		fmt.Println(tableName1)
 		c := session.DB("EventLog").C(tableName1)
 		m := EventLogX{bson.NewObjectId(), event.typeId, event.uid, ar.follow_id, event.info, event.created, event.infoid, event.status, event.tid}
-		// err = c.Insert(&m)
 		eventIsExist := checkMongoIsExist(c, event, ar.follow_id)
-		fmt.Println(eventIsExist)
 		if eventIsExist == false {
-			err = c.Insert(&m)
-			logger.Info("mongo insert error:", err)
+			err = c.Insert(&m) //插入数据
+			if err != nil {
+				logger.Info("mongodb insert fans data", err, c)
+			}
 		}
-		logger.Info(m)
-		if err != nil {
-			logger.Info("mongodb insert data", err, c)
-		}
+		// logger.Info(m)
 		n1, _ := w.Seek(0, os.SEEK_END)
 		lineStr := fmt.Sprintf("%s", m)
 		_, err = w.WriteAt([]byte(lineStr+"\n"), n1)
 		if err != nil {
-			logger.Info("mongodb insert data", err, c)
+			logger.Info("mongodb write data", err, c)
 		}
-		// fmt.Fprintln(w, lineStr)
-		// writeFile(fmt.Sprintln(m))
 	}
-	// w.Flush()
-	// fmt.Println("type:", reflect.TypeOf(w))
+
 }
 
 func checkMongoIsExist(c *mgo.Collection, event *EventLog, fuid int) bool {
@@ -97,7 +88,7 @@ func checkMongoIsExist(c *mgo.Collection, event *EventLog, fuid int) bool {
 	err1 := c.Find(&bson.M{"uid": event.uid, "fuid": fuid, "created": event.created, "infoid": event.infoid}).All(&ms)
 
 	if err1 != nil {
-		logger.Info("mongodb insert data", err1, c)
+		logger.Info("mongodb find data", err1, c)
 		return false
 	}
 	if len(ms) == 0 {

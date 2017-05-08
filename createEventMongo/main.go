@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	// mgo "gopkg.in/mgo.v2"
-	// "strconv"
+	mgo "gopkg.in/mgo.v2"
 	"os"
+	"strconv"
 )
 
 var fileName = "/tmp/event.log"
@@ -25,27 +25,27 @@ func appendToFile(fileName string, content string) error {
 }
 
 func main() {
-	err := appendToFile(fileName, "dfdf")
-	fmt.Println(err)
-	// session, err := mgo.Dial("192.168.86.68:27017")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer session.Close()
-	// // Optional. Switch the session to a monotonic behavior.
-	// session.SetMode(mgo.Monotonic, true)
-	// for i := 1; i <= 100; i++ {
-	// 	tableName := "event_log_" + strconv.Itoa(i)
-	// 	fmt.Println(tableName)
-	// 	c := session.DB("EventLog").C(tableName)
-	// 	c.EnsureIndexKey("id")
-	// 	c.EnsureIndexKey("type")
-	// 	c.EnsureIndexKey("uid")
-	// 	c.EnsureIndexKey("fuid")
-	// 	c.EnsureIndexKey("info")
-	// 	c.EnsureIndexKey("created")
-	// 	c.EnsureIndexKey("infoid")
-	// 	c.EnsureIndexKey("status")
-	// 	c.EnsureIndexKey("tid")
-	// }
+	// err := appendToFile(fileName, "dfdf")
+	// fmt.Println(err)
+	session, err := mgo.Dial("192.168.86.68:27017")
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+	// Optional. Switch the session to a monotonic behavior.
+	session.SetMode(mgo.Monotonic, true)
+	for i := 1; i <= 100; i++ {
+		tableName := "event_log_" + strconv.Itoa(i)
+		fmt.Println(tableName)
+		c := session.DB("EventLog").C(tableName)
+		c.EnsureIndexKey("id")
+		c.EnsureIndexKey("type")
+		c.EnsureIndexKey("uid")
+		c.EnsureIndexKey("fuid")
+		c.EnsureIndexKey("info")
+		c.EnsureIndexKey("created")
+		c.EnsureIndexKey("infoid")
+		c.EnsureIndexKey("status")
+		c.EnsureIndexKey("tid")
+	}
 }

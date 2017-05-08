@@ -8,7 +8,7 @@ import (
 	"fmt"
 	redis "gopkg.in/redis.v4"
 	"os"
-	"reflect"
+	// "reflect"
 	"strconv"
 )
 
@@ -93,7 +93,7 @@ func (t *RedisEngine) PushTaskData(tasks interface{}) bool {
 	case []string:
 		logger.Info("this is string task", realTasks)
 		for i := 0; i < len(realTasks); i++ {
-			queueName := t.getTaskQueueName(realTasks[i])
+			queueName := t.queueName //t.getTaskQueueName(realTasks[i])
 			err := (*t.client).RPush(queueName, realTasks[i]).Err()
 			if err != nil {
 				logger.Error("insert redis error", err)
@@ -103,8 +103,8 @@ func (t *RedisEngine) PushTaskData(tasks interface{}) bool {
 	case []int64:
 		logger.Info("this is int task", realTasks)
 		for i := 0; i < len(realTasks); i++ {
-			redisStr := strconv.Itoa(int(realTasks[i]))
-			queueName := t.getTaskQueueName(redisStr)
+			// redisStr := strconv.Itoa(int(realTasks[i]))
+			queueName := t.queueName //t.getTaskQueueName(redisStr)
 			err := (*t.client).RPush(queueName, realTasks[i]).Err()
 			if err != nil {
 				logger.Error("insert redis error", err)
@@ -145,32 +145,23 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 		}
 
 		//doing job
-		// task.NewTask(redisStr, "dog123:dog123", "210.14.154.198:3306", "new_dog123")
-		// task := NewTask(t.logLevel, redisStr, t.taskNewArgs)
-		// if task != nil {
-		//     task.Do()
-		//     task.Over()
-		// }
-		//
 		id, _ := strconv.Atoi(redisStr)
 		u := LoadById(id)
 		fans := GetFansData(u.uid)
 		// fmt.Println("type:", reflect.TypeOf(fans))
-
-		/*f, err := os.Create(filename)
-		if err != nil {
-			fmt.Printf("create map file error: %v\n", err)
-			logger.Info("mongodb insert data", err)
-			// return err
+		var err1 error
+		var f *os.File
+		if checkFileIsExist(filename) { //如果文件存在
+			f, err1 = os.OpenFile(filename, os.O_WRONLY, 0666) //打开文件
+		} else {
+			f, err1 = os.Create(filename) //创建文件
 		}
-		defer f.Close()
 
-		w := bufio.NewWriter(f)*/
-		f, err := os.OpenFile(filename, os.O_WRONLY, 0644)
-		if err != nil {
-			fmt.Println("cacheFileList.yml file create failed. err: " + err.Error())
+		// f, err := os.OpenFile(filename, os.O_WRONLY, 0644)
+		if err1 != nil {
+			fmt.Println("cacheFileList.yml file create failed. err: " + err1.Error())
 		}
-		fmt.Println("type:", reflect.TypeOf(f))
+		// fmt.Println("type:", reflect.TypeOf(f))
 		SaveMongoEventLog(u, fans, f)
 		defer f.Close()
 		// w.Flush()
@@ -186,7 +177,6 @@ func (t *RedisEngine) Loop() {
 //it's for doing job at one time using tasknum's croutine
 func (t *RedisEngine) doOneLoop() {
 	logger.Info("do in oneloop taskNum", t.taskNum)
-
 	c := make(chan int, t.taskNum)
 	for i := 0; i < t.taskNum; i++ {
 		go t.croutinePopJobData(c, i)
