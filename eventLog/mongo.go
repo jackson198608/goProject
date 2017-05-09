@@ -14,26 +14,26 @@ import (
 )
 
 type EventLogX struct {
-	Id      bson.ObjectId "_id"
-	TypeId  int           "type"
-	Uid     int           "uid"
-	Fuid    int           "fuid" //fans id
-	Info    string        "info"
-	Created string        "created"
-	Infoid  int           "infoid"
-	Status  int           "status"
-	Tid     int           "tid"
+	Id     bson.ObjectId "_id"
+	TypeId int           "type"
+	Uid    int           "uid"
+	Fuid   int           "fuid" //fans id
+	// Info    string        "info"
+	Created string "created"
+	Infoid  int    "infoid"
+	Status  int    "status"
+	Tid     int    "tid"
 }
 
 type EventLogNew struct {
-	Id      bson.ObjectId "_id"
-	TypeId  int           "type"
-	Uid     int           "uid"
-	Info    string        "info"
-	Created string        "created"
-	Infoid  int           "infoid"
-	Status  int           "status"
-	Tid     int           "tid"
+	Id     bson.ObjectId "_id"
+	TypeId int           "type"
+	Uid    int           "uid"
+	// Info    string        "info"
+	Created string "created"
+	Infoid  int    "infoid"
+	Status  int    "status"
+	Tid     int    "tid"
 }
 
 func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
@@ -52,10 +52,10 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 	tableName := "event_log" //动态表
 	c := session.DB("EventLog").C(tableName)
 
-	m1 := EventLogNew{bson.NewObjectId(), event.typeId, event.uid, event.info, event.created, event.infoid, event.status, event.tid}
+	m1 := EventLogNew{bson.NewObjectId(), event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
 	logger.Info(m1)
 	//判断数据是否存在
-	eventIsExist := checkMongoIsExist(c, event, event.uid)
+	eventIsExist := checkLogMongoIsExist(c, event, event.uid)
 	// fmt.Println(eventIsExist)
 	if eventIsExist == false {
 		err = c.Insert(&m1) //插入数据
@@ -76,10 +76,10 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 		}
 		tableName1 := "event_log_" + strconv.Itoa(tableNum1) //粉丝表
 		c := session.DB("EventLog").C(tableName1)
-		m := EventLogX{bson.NewObjectId(), event.typeId, event.uid, ar.follow_id, event.info, event.created, event.infoid, event.status, event.tid}
+		m := EventLogX{bson.NewObjectId(), event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
 		eventIsExist := checkMongoIsExist(c, event, ar.follow_id)
 		if eventIsExist == false {
-			// err = c.Insert(&m) //插入数据
+			err = c.Insert(&m) //插入数据
 			if err != nil {
 				logger.Info("mongodb insert fans data", err, c)
 			}
@@ -95,9 +95,23 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 
 }
 
+func checkLogMongoIsExist(c *mgo.Collection, event *EventLog, fuid int) bool {
+	ms := []EventLogX{}
+	err1 := c.Find(&bson.M{"type": event.typeId, "uid": event.uid, "created": event.created, "infoid": event.infoid, "status": event.status}).All(&ms)
+
+	if err1 != nil {
+		logger.Info("mongodb find data", err1, c)
+		return false
+	}
+	if len(ms) == 0 {
+		return false
+	}
+	return true
+}
+
 func checkMongoIsExist(c *mgo.Collection, event *EventLog, fuid int) bool {
 	ms := []EventLogX{}
-	err1 := c.Find(&bson.M{"uid": event.uid, "fuid": fuid, "created": event.created, "infoid": event.infoid}).All(&ms)
+	err1 := c.Find(&bson.M{"type": event.typeId, "uid": event.uid, "fuid": fuid, "created": event.created, "infoid": event.infoid, "status": event.status}).All(&ms)
 
 	if err1 != nil {
 		logger.Info("mongodb find data", err1, c)

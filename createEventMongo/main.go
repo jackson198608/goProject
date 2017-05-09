@@ -4,7 +4,7 @@ import (
 	"fmt"
 	mgo "gopkg.in/mgo.v2"
 	"os"
-	// "strconv"
+	"strconv"
 )
 
 var fileName = "/tmp/event.log"
@@ -40,7 +40,7 @@ func main() {
 	c.EnsureIndexKey("id")
 	c.EnsureIndexKey("type")
 	c.EnsureIndexKey("uid")
-	c.EnsureIndexKey("info")
+	// c.EnsureIndexKey("info")
 	c.EnsureIndexKey("created")
 	c.EnsureIndexKey("infoid")
 	c.EnsureIndexKey("status")
@@ -54,7 +54,7 @@ func main() {
 		c.EnsureIndexKey("type")
 		c.EnsureIndexKey("uid")
 		c.EnsureIndexKey("fuid")
-		c.EnsureIndexKey("info")
+		// c.EnsureIndexKey("info")
 		c.EnsureIndexKey("created")
 		c.EnsureIndexKey("infoid")
 		c.EnsureIndexKey("status")
