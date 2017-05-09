@@ -24,6 +24,7 @@ func appendToFile(fileName string, content string) error {
 	return err
 }
 
+//创建索引
 func main() {
 	// err := appendToFile(fileName, "dfdf")
 	// fmt.Println(err)
@@ -37,7 +38,7 @@ func main() {
 	tableName := "event_log" //动态表
 	fmt.Println(tableName)
 	c := session.DB("EventLog").C(tableName)
-	c.EnsureIndexKey("id")
+	// c.EnsureIndexKey("id")
 	c.EnsureIndexKey("type")
 	c.EnsureIndexKey("uid")
 	// c.EnsureIndexKey("info")
@@ -50,7 +51,7 @@ func main() {
 		tableName1 := "event_log_" + strconv.Itoa(i) //粉丝表
 		fmt.Println(tableName1)
 		c := session.DB("EventLog").C(tableName1)
-		c.EnsureIndexKey("id")
+		// c.EnsureIndexKey("id")
 		c.EnsureIndexKey("type")
 		c.EnsureIndexKey("uid")
 		c.EnsureIndexKey("fuid")

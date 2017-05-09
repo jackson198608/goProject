@@ -19,6 +19,7 @@ type Config struct {
 	dateLimit  string
 	currentNum string
 	mongoConn  string
+	mongoDb    string
 }
 
 func loadConfig() {
@@ -37,4 +38,5 @@ func loadConfig() {
 	c.dateLimit = config.GetString("dateLimit")
 	c.currentNum = config.GetString("currentNum")
 	c.mongoConn = config.GetString("mongoConn")
+	c.mongoDb = config.GetString("mongoDb")
 }

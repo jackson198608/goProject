@@ -10,6 +10,7 @@ import (
 	"os"
 	// "reflect"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -48,7 +49,6 @@ func NewRedisEngine(
 	t.db = db
 	t.numForOneLoop = numForOneLoop
 	t.taskNewArgs = taskarg
-
 	err := t.connect()
 	if err != nil {
 		logger.Error("redis connect error", err)
@@ -57,9 +57,6 @@ func NewRedisEngine(
 
 	return t
 }
-
-// func (t *RedisEngine) putFailOneBack(backstr string) {
-// }
 
 func (t *RedisEngine) connect() error {
 	t.client = redis.NewClient(&redis.Options{
@@ -130,7 +127,7 @@ func (t *RedisEngine) getTaskNum() {
 	}
 }
 
-func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
+func (t *RedisEngine) croutinePopJobData(x chan int, i int) {
 	// tableNumInt := i + 1
 	// tableNumStr := strconv.Itoa(tableNumInt)
 	queueName := t.queueName //+ "_" + tableNumStr
@@ -141,31 +138,36 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 		redisStr := (*t.client).LPop(queueName).Val()
 		if redisStr == "" {
 			logger.Info("got nothing", queueName)
-			c <- 1
+			x <- 1
 			return
 		}
-
+		redisArr := strings.Split(redisStr, "|")
+		if len(redisArr) == 2 {
+			u := LoadMongoById(redisArr[0])
+			fans := GetFansData(u.Uid)
+			status := redisArr[1] //要执行的操作:0:删除,-1隐藏,1显示,2动态推送给粉丝
+			UpdateMongoEventLogStatus(u, fans, status)
+		}
 		//doing job
-		id, _ := strconv.Atoi(redisStr)
-		u := LoadById(id)
-		fans := GetFansData(u.uid)
-		// fmt.Println("type:", reflect.TypeOf(fans))
-		var err1 error
-		var f *os.File
-		if checkFileIsExist(filename) { //如果文件存在
-			f, err1 = os.OpenFile(filename, os.O_WRONLY, 0666) //打开文件
-		} else {
-			f, err1 = os.Create(filename) //创建文件
-		}
+		if len(redisArr) == 1 {
+			id, _ := strconv.Atoi(redisStr)
+			u := LoadById(id)
+			fans := GetFansData(u.uid)
+			// fmt.Println("type:", reflect.TypeOf(fans))
+			var err1 error
+			var f *os.File
+			if checkFileIsExist(c.logFile) { //如果文件存在
+				f, err1 = os.OpenFile(c.logFile, os.O_WRONLY, 0666) //打开文件
+			} else {
+				f, err1 = os.Create(c.logFile) //创建文件
+			}
 
-		// f, err := os.OpenFile(filename, os.O_WRONLY, 0644)
-		if err1 != nil {
-			fmt.Println("cacheFileList.yml file create failed. err: " + err1.Error())
+			if err1 != nil {
+				fmt.Println("cacheFileList.yml file create failed. err: " + err1.Error())
+			}
+			SaveMongoEventLog(u, fans, f)
+			defer f.Close()
 		}
-		// fmt.Println("type:", reflect.TypeOf(f))
-		SaveMongoEventLog(u, fans, f)
-		defer f.Close()
-		// w.Flush()
 	}
 }
 func (t *RedisEngine) Loop() {

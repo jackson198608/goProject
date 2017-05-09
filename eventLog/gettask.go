@@ -18,6 +18,7 @@ func getTask(page int) []int64 {
 	defer db.Close()
 
 	offset := page * c.numloops
+	//获取正常显示和隐藏的数据
 	sql := "select id,uid,created from event_log where status in (-1,1) and id < " + strconv.Itoa(c.lastId) + " and id >= " + strconv.Itoa(c.firstId) + " order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
 	logger.Info(sql)
 	rows, err := db.Query(sql)

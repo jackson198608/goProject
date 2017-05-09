@@ -8,11 +8,6 @@ import (
 	// "log"
 )
 
-// var dbAuth string = "root:goumintech"
-// var dbDsn string = "192.168.86.72:3309"
-// var dbName string = "test_dz2"
-// var logger *log.Logger
-// var logPath string = "/tmp/spider.log"
 var c Config = Config{
 	"192.168.86.72:3309",
 	"test_dz2",
@@ -22,13 +17,7 @@ var c Config = Config{
 	1,
 	"127.0.0.1:6379",
 	"moveEvent",
-	"/tmp/moveEvent.log", 0, "4", "2014-01-01", "1", "192.168.86.68:27017"}
-
-// var taskNum int = 0
-
-var filename = c.logFile
-
-// var dateLimit string = "2014-01-01"
+	"/tmp/moveEdddvent.log", 0, "3", "2014-01-01", "1", "192.168.86.68:27017", "Event"}
 
 func pushALLEventIdFromStartToEnd() {
 	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit)
@@ -51,7 +40,7 @@ func pushALLEventIdFromStartToEnd() {
 }
 
 func do() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit)
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit, c.logFile)
 	r.Loop()
 }
 
