@@ -18,7 +18,7 @@ func getTask(page int) []int64 {
 	defer db.Close()
 
 	offset := page * c.numloops
-	sql := "select id,uid,created from event_log where id < " + strconv.Itoa(c.lastId) + " and id >= " + strconv.Itoa(c.firstId) + " order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+	sql := "select id,uid,created from event_log where status in (-1,1) and id < " + strconv.Itoa(c.lastId) + " and id >= " + strconv.Itoa(c.firstId) + " order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
 	logger.Info(sql)
 	rows, err := db.Query(sql)
 
