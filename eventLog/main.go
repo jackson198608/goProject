@@ -35,8 +35,12 @@ func pushALLEventIdFromStartToEnd() {
 	page := 0
 	for {
 		ids := getTask(page)
-		if len(ids) == 0 {
+		if page*c.numloops > c.lastId {
 			break
+		}
+		if len(ids) == 0 {
+			page++
+			continue
 		}
 		if ids == nil {
 			break

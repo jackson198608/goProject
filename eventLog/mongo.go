@@ -56,7 +56,7 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 	logger.Info(m1)
 	//判断数据是否存在
 	eventIsExist := checkMongoIsExist(c, event, event.uid)
-	fmt.Println(eventIsExist)
+	// fmt.Println(eventIsExist)
 	if eventIsExist == false {
 		err = c.Insert(&m1) //插入数据
 		if err != nil {
@@ -74,7 +74,7 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 		if tableNum1 == 0 {
 			tableNum1 = 100
 		}
-		tableName1 := "event_log_" + strconv.Itoa(tableNum1)
+		tableName1 := "event_log_" + strconv.Itoa(tableNum1) //粉丝表
 		c := session.DB("EventLog").C(tableName1)
 		m := EventLogX{bson.NewObjectId(), event.typeId, event.uid, ar.follow_id, event.info, event.created, event.infoid, event.status, event.tid}
 		eventIsExist := checkMongoIsExist(c, event, ar.follow_id)

@@ -42,7 +42,7 @@ func getTask(page int) []int64 {
 		fan := db.QueryRow("SELECT count(*) as counts FROM `follow` where user_id=" + uid)
 		fan.Scan(&fans)
 		fansLimit, _ := strconv.Atoi(c.fansLimit)
-		if fans > fansLimit {
+		if fansLimit > 0 && fans > fansLimit {
 			if created > c.dateLimit {
 				ids = append(ids, id)
 			}
