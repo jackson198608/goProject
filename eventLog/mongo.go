@@ -14,10 +14,11 @@ import (
 )
 
 type EventLogX struct {
-	Id     bson.ObjectId "_id"
-	TypeId int           "type"
-	Uid    int           "uid"
-	Fuid   int           "fuid" //fans id
+	// Oid    bson.ObjectId "_id"
+	Id     int "_id"
+	TypeId int "type"
+	Uid    int "uid"
+	Fuid   int "fuid" //fans id
 	// Info    string        "info"
 	Created string "created"
 	Infoid  int    "infoid"
@@ -26,9 +27,11 @@ type EventLogX struct {
 }
 
 type EventLogNew struct {
-	Id     bson.ObjectId "_id"
-	TypeId int           "type"
-	Uid    int           "uid"
+	// Oid bson.ObjectId "_id"
+	Id int "_id"
+	// Id     int           "id"
+	TypeId int "type"
+	Uid    int "uid"
 	// Info    string        "info"
 	Created string "created"
 	Infoid  int    "infoid"
@@ -46,7 +49,9 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 
 	tableName := "event_log" //动态表
 	c := session.DB(c.mongoDb).C(tableName)
-	m1 := EventLogNew{bson.NewObjectId(), event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
+	Id := createAutoIncrementId("")
+	// m1 := EventLogNew{bson.NewObjectId(), Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
+	m1 := EventLogNew{Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
 	logger.Info(m1)
 	//判断数据是否存在
 	eventIsExist := checkEventLogIsExist(c, event)
@@ -69,7 +74,9 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 		}
 		tableName1 := "event_log_" + strconv.Itoa(tableNum1) //粉丝表
 		c := session.DB("EventLog").C(tableName1)
-		m := EventLogX{bson.NewObjectId(), event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
+		IdX := createAutoIncrementId(strconv.Itoa(tableNum1))
+		// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
+		m := EventLogX{IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
 		eventIsExist := checkFansDataIsExist(c, event, ar.follow_id)
 		if eventIsExist == false {
 			err = c.Insert(&m) //插入数据
@@ -101,7 +108,9 @@ func PushFansEventLog(event *EventLogNew, fans []*Follow) error {
 		}
 		tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
 		c := session.DB("EventLog").C(tableNameX)
-		m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, event.Status, event.Tid}
+		IdX := createAutoIncrementId(strconv.Itoa(tableNumX))
+		// m := EventLogX{bson.NewObjectId(), IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, event.Status, event.Tid}
+		m := EventLogX{IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, event.Status, event.Tid}
 		eventIsExist := checkMongoFansDataIsExist(c, event, ar.follow_id)
 		if eventIsExist == false && event.Status == 1 {
 			err = c.Insert(&m) //插入数据
@@ -173,7 +182,9 @@ func HideOrShowEventLog(event *EventLogNew, fans []*Follow, status int) error {
 			}
 		}
 		if eventIsExist == false && status == 1 {
-			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, status, event.Tid}
+			IdX := createAutoIncrementId(strconv.Itoa(tableNumX))
+			// m := EventLogX{bson.NewObjectId(), IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, status, event.Tid}
+			m := EventLogX{IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, status, event.Tid}
 			err = c.Insert(&m) //插入数据
 			if err != nil {
 				logger.Info("mongodb insert fans data", err, c)
@@ -182,6 +193,27 @@ func HideOrShowEventLog(event *EventLogNew, fans []*Follow, status int) error {
 		}
 	}
 	return nil
+}
+
+func createAutoIncrementId(tableNum string) int {
+	session, err := mgo.Dial(c.mongoConn)
+	if err != nil {
+		logger.Info("mongodb connect fail", err)
+		// return nil
+	}
+	defer session.Close()
+	c := session.DB(c.mongoDb).C("ids" + tableNum)
+	change := mgo.Change{
+		Update:    bson.M{"$inc": bson.M{"id": 1}},
+		Upsert:    true,
+		ReturnNew: true,
+	}
+	doc := struct{ Id int }{}
+	_, err = c.Find(bson.M{"_id": 0}).Apply(change, &doc)
+	if err != nil {
+		logger.Info("get counter failed:", err)
+	}
+	return doc.Id
 }
 
 //根据mysql中的数据检查mongo中是否存在该条数据
@@ -243,7 +275,8 @@ func checkFansDataIsExist(c *mgo.Collection, event *EventLog, fuid int) bool {
 }
 
 func LoadMongoById(Id string) *EventLogNew {
-	objectId := bson.ObjectIdHex(Id)
+	// objectId := bson.ObjectIdHex(Id)
+	objectId, _ := strconv.Atoi(Id)
 	event := new(EventLogNew)
 	query := func(c *mgo.Collection) error {
 		return c.FindId(objectId).One(&event)

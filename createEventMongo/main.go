@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"os"
 	"strconv"
 )
@@ -38,7 +39,7 @@ func main() {
 	tableName := "event_log" //动态表
 	fmt.Println(tableName)
 	c := session.DB("EventLog").C(tableName)
-	// c.EnsureIndexKey("id")
+	c.EnsureIndexKey("id")
 	c.EnsureIndexKey("type")
 	c.EnsureIndexKey("uid")
 	// c.EnsureIndexKey("info")
@@ -47,11 +48,14 @@ func main() {
 	c.EnsureIndexKey("status")
 	c.EnsureIndexKey("tid")
 
+	x := session.DB("EventLog").C("ids")
+	x.Insert(bson.M{"_id": 0, "id": 0})
+
 	for i := 1; i <= 100; i++ {
 		tableName1 := "event_log_" + strconv.Itoa(i) //粉丝表
 		fmt.Println(tableName1)
 		c := session.DB("EventLog").C(tableName1)
-		// c.EnsureIndexKey("id")
+		c.EnsureIndexKey("id")
 		c.EnsureIndexKey("type")
 		c.EnsureIndexKey("uid")
 		c.EnsureIndexKey("fuid")
@@ -60,5 +64,8 @@ func main() {
 		c.EnsureIndexKey("infoid")
 		c.EnsureIndexKey("status")
 		c.EnsureIndexKey("tid")
+		x := session.DB("EventLog").C("ids" + strconv.Itoa(i))
+		x.Insert(bson.M{"_id": 0, "id": 0})
 	}
+
 }
