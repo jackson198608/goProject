@@ -151,11 +151,11 @@ func HideOrShowEventLog(event *EventLogNew, fans []*Follow, status int) error {
 	//判断数据是否存在
 	eventIsExist := checkMongoEventLogIsExist(c, event)
 	if eventIsExist == true {
-		err = c.Update(bson.M{"_id": event.Id}, bson.M{"$set": bson.M{"status": status}}) //插入数据
-		if err != nil {
-			logger.Info("mongo insert one data error:", err)
-			return err
-		}
+		// err = c.Update(bson.M{"_id": event.Id}, bson.M{"$set": bson.M{"status": status}}) //插入数据
+		// if err != nil {
+		// 	logger.Info("mongo insert one data error:", err)
+		// 	return err
+		// }
 	}
 	for _, ar := range fans {
 		tableNumX := ar.follow_id % 100
