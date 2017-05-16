@@ -124,7 +124,7 @@ func PushFansEventLog(event *EventLogNew, fans []*Follow) error {
 }
 
 func UpdateMongoEventLogStatus(event *EventLogNew, fans []*Follow, status string) {
-	//-1隐藏,0:删除,1显示,2动态推送给粉丝
+	//-1隐藏,0:删除,1显示,2动态推送给粉丝,3取消关注
 	if status == "-1" {
 		HideOrShowEventLog(event, fans, -1)
 	}
@@ -137,6 +137,31 @@ func UpdateMongoEventLogStatus(event *EventLogNew, fans []*Follow, status string
 	if status == "2" {
 		PushFansEventLog(event, fans)
 	}
+}
+
+func RemoveFansEventLog(fuid string, uid string) error {
+	session, err := mgo.Dial(c.mongoConn)
+	if err != nil {
+		logger.Info("mongodb connect fail", err)
+		return err
+	}
+	defer session.Close()
+
+	uidN, _ := strconv.Atoi(uid)
+	fuidN, _ := strconv.Atoi(fuid)
+	tableNumX := fuidN % 100
+	if tableNumX == 0 {
+		tableNumX = 100
+	}
+	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
+	c := session.DB("EventLog").C(tableNameX)
+	_, err = c.RemoveAll(bson.M{"uid": uidN, "fuid": fuidN}) //取消关注删除数据
+	if err != nil {
+		logger.Info("mongodb insert fans data", err, c)
+		return err
+	}
+
+	return nil
 }
 
 func HideOrShowEventLog(event *EventLogNew, fans []*Follow, status int) error {

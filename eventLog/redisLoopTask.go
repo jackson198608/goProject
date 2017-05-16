@@ -143,10 +143,15 @@ func (t *RedisEngine) croutinePopJobData(x chan int, i int) {
 		}
 		redisArr := strings.Split(redisStr, "|")
 		if len(redisArr) == 2 {
-			u := LoadMongoById(redisArr[0])
-			fans := GetFansData(u.Uid)
-			status := redisArr[1] //要执行的操作:0:删除,-1隐藏,1显示,2动态推送给粉丝
-			UpdateMongoEventLogStatus(u, fans, status)
+			if redisArr[1] == "3" {
+				uids := strings.Split(redisArr[0], "&")
+				RemoveFansEventLog(uids[0], uids[1]) //fuid,uid
+			} else {
+				u := LoadMongoById(redisArr[0])
+				fans := GetFansData(u.Uid)
+				status := redisArr[1] //要执行的操作:0:删除,-1隐藏,1显示,2动态推送给粉丝
+				UpdateMongoEventLogStatus(u, fans, status)
+			}
 		}
 		//doing job
 		if len(redisArr) == 1 {
