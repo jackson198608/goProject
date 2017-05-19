@@ -56,10 +56,10 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 	//判断数据是否存在
 	eventIsExist := checkEventLogIsExist(c, event)
 	if eventIsExist == false {
-		err = c.Insert(&m1) //插入数据
-		if err != nil {
-			logger.Info("mongo insert one data error:", err)
-		}
+		// err = c.Insert(&m1) //插入数据
+		// if err != nil {
+		// 	logger.Info("mongo insert one data error:", err)
+		// }
 	}
 	// fmt.Println("type:", reflect.TypeOf(c))
 	lineStr1 := fmt.Sprintf("%s", m1)
@@ -79,10 +79,10 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 		m := EventLogX{IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
 		eventIsExist := checkFansDataIsExist(c, event, ar.follow_id)
 		if eventIsExist == false {
-			err = c.Insert(&m) //插入数据
-			if err != nil {
-				logger.Info("mongodb insert fans data", err, c)
-			}
+			// err = c.Insert(&m) //插入数据
+			// if err != nil {
+			// 	logger.Info("mongodb insert fans data", err, c)
+			// }
 		}
 		n1, _ := w.Seek(0, os.SEEK_END)
 		lineStr := fmt.Sprintf("%s", m)
