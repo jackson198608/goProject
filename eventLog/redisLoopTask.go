@@ -7,7 +7,7 @@ import (
 	// "github.com/jackson198608/goProject/eventLog/task"
 	"fmt"
 	redis "gopkg.in/redis.v4"
-	"os"
+	// "os"
 	// "reflect"
 	"strconv"
 	"strings"
@@ -159,19 +159,19 @@ func (t *RedisEngine) croutinePopJobData(x chan int, i int) {
 			u := LoadById(id)
 			fans := GetFansData(u.uid)
 			// fmt.Println("type:", reflect.TypeOf(fans))
-			var err1 error
-			var f *os.File
-			if checkFileIsExist(c.logFile) { //如果文件存在
-				f, err1 = os.OpenFile(c.logFile, os.O_WRONLY, 0666) //打开文件
-			} else {
-				f, err1 = os.Create(c.logFile) //创建文件
-			}
+			// var err1 error
+			// var f *os.File
+			// if checkFileIsExist(c.logFile) { //如果文件存在
+			// 	f, err1 = os.OpenFile(c.logFile, os.O_WRONLY, 0666) //打开文件
+			// } else {
+			// 	f, err1 = os.Create(c.logFile) //创建文件
+			// }
 
-			if err1 != nil {
-				fmt.Println("cacheFileList.yml file create failed. err: " + err1.Error())
-			}
-			SaveMongoEventLog(u, fans, f)
-			defer f.Close()
+			// if err1 != nil {
+			// 	fmt.Println("cacheFileList.yml file create failed. err: " + err1.Error())
+			// }
+			SaveMongoEventLog(u, fans)
+			// defer f.Close()
 		}
 	}
 }

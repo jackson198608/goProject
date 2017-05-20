@@ -22,3 +22,4 @@ work/src$ ../bin/exportData "mall" "select * from \`order\` limit 10"
 work/src$ go install github.com/jackson198608/goProject/eventLog/
 work/src$ ../bin/eventLog create
 work/src$ ../bin/eventLog do
+    nohup eventLog create >/tmp/eventlog.log 2>&1 &

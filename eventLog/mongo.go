@@ -3,7 +3,7 @@ package main
 import (
 	// "encoding/json"
 	// "bufio"
-	"fmt"
+	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -39,7 +39,7 @@ type EventLogNew struct {
 	Tid     int    "tid"
 }
 
-func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
+func SaveMongoEventLog(event *EventLog, fans []*Follow) {
 	session, err := mgo.Dial(c.mongoConn)
 	if err != nil {
 		logger.Info("mongodb connect fail", err)
@@ -48,50 +48,73 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, w *os.File) {
 	defer session.Close()
 
 	tableName := "event_log" //动态表
-	c := session.DB(c.mongoDb).C(tableName)
-	Id := createAutoIncrementId("")
+	x := session.DB(c.mongoDb).C(tableName)
+	Id := createAutoIncrementId(session, "")
 	// m1 := EventLogNew{bson.NewObjectId(), Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
 	m1 := EventLogNew{Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
-	logger.Info(m1)
 	//判断数据是否存在
-	eventIsExist := checkEventLogIsExist(c, event)
+	eventIsExist := checkEventLogIsExist(x, event)
 	if eventIsExist == false {
+		logger.Info(m1)
 		// err = c.Insert(&m1) //插入数据
 		// if err != nil {
 		// 	logger.Info("mongo insert one data error:", err)
 		// }
 	}
-	// fmt.Println("type:", reflect.TypeOf(c))
-	lineStr1 := fmt.Sprintf("%s", m1)
-	// 查找文件末尾的偏移量
-	n, _ := w.Seek(0, os.SEEK_END)
-	// 从末尾的偏移量开始写入内容
-	_, err = w.WriteAt([]byte(lineStr1+"\n"), n)
+	fansLimit, _ := strconv.Atoi(c.fansLimit)
+	if fansLimit > 0 && len(fans) > fansLimit {
+		if event.created > c.dateLimit {
+			saveFansEventLog(fans, session, event)
+		}
+	} else if fansLimit == 0 && c.dateLimit > "0" {
+		if event.created > c.dateLimit {
+			saveFansEventLog(fans, session, event)
+		}
+	} else {
+		saveFansEventLog(fans, session, event)
+	}
+	// for _, ar := range fans {
+	// 	tableNum1 := ar.follow_id % 100
+	// 	if tableNum1 == 0 {
+	// 		tableNum1 = 100
+	// 	}
+	// 	tableName1 := "event_log_" + strconv.Itoa(tableNum1) //粉丝表
+	// 	x := session.DB("EventLog").C(tableName1)
+	// 	IdX := createAutoIncrementId(session, strconv.Itoa(tableNum1))
+	// 	// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
+	// 	m := EventLogX{IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
+	// 	eventIsExist := checkFansDataIsExist(x, event, ar.follow_id)
+	// 	if eventIsExist == false {
+	// 		logger.Info(m)
+	// 		// err = c.Insert(&m) //插入数据
+	// 		// if err != nil {
+	// 		// 	logger.Info("mongodb insert fans data", err, c)
+	// 		// }
+	// 	}
+	// }
+
+}
+
+func saveFansEventLog(fans []*Follow, session *mgo.Session, event *EventLog) {
 	for _, ar := range fans {
 		tableNum1 := ar.follow_id % 100
 		if tableNum1 == 0 {
 			tableNum1 = 100
 		}
 		tableName1 := "event_log_" + strconv.Itoa(tableNum1) //粉丝表
-		c := session.DB("EventLog").C(tableName1)
-		IdX := createAutoIncrementId(strconv.Itoa(tableNum1))
+		x := session.DB("EventLog").C(tableName1)
+		IdX := createAutoIncrementId(session, strconv.Itoa(tableNum1))
 		// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
 		m := EventLogX{IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
-		eventIsExist := checkFansDataIsExist(c, event, ar.follow_id)
+		eventIsExist := checkFansDataIsExist(x, event, ar.follow_id)
 		if eventIsExist == false {
+			logger.Info(m)
 			// err = c.Insert(&m) //插入数据
 			// if err != nil {
 			// 	logger.Info("mongodb insert fans data", err, c)
 			// }
 		}
-		n1, _ := w.Seek(0, os.SEEK_END)
-		lineStr := fmt.Sprintf("%s", m)
-		_, err = w.WriteAt([]byte(lineStr+"\n"), n1)
-		if err != nil {
-			logger.Info("mongodb write data", err, c)
-		}
 	}
-
 }
 
 func PushFansEventLog(event *EventLogNew, fans []*Follow) error {
@@ -108,7 +131,7 @@ func PushFansEventLog(event *EventLogNew, fans []*Follow) error {
 		}
 		tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
 		c := session.DB("EventLog").C(tableNameX)
-		IdX := createAutoIncrementId(strconv.Itoa(tableNumX))
+		IdX := createAutoIncrementId(session, strconv.Itoa(tableNumX))
 		// m := EventLogX{bson.NewObjectId(), IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, event.Status, event.Tid}
 		m := EventLogX{IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, event.Status, event.Tid}
 		eventIsExist := checkMongoFansDataIsExist(c, event, ar.follow_id)
@@ -207,7 +230,7 @@ func HideOrShowEventLog(event *EventLogNew, fans []*Follow, status int) error {
 			}
 		}
 		if eventIsExist == false && status == 1 {
-			IdX := createAutoIncrementId(strconv.Itoa(tableNumX))
+			IdX := createAutoIncrementId(session, strconv.Itoa(tableNumX))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, status, event.Tid}
 			m := EventLogX{IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, status, event.Tid}
 			err = c.Insert(&m) //插入数据
@@ -220,13 +243,13 @@ func HideOrShowEventLog(event *EventLogNew, fans []*Follow, status int) error {
 	return nil
 }
 
-func createAutoIncrementId(tableNum string) int {
-	session, err := mgo.Dial(c.mongoConn)
-	if err != nil {
-		logger.Info("mongodb connect fail", err)
-		// return nil
-	}
-	defer session.Close()
+func createAutoIncrementId(session *mgo.Session, tableNum string) int {
+	// session, err := mgo.Dial(c.mongoConn)
+	// if err != nil {
+	// 	logger.Info("mongodb connect fail", err)
+	// 	// return nil
+	// }
+	// defer session.Close()
 	c := session.DB(c.mongoDb).C("ids" + tableNum)
 	change := mgo.Change{
 		Update:    bson.M{"$inc": bson.M{"id": 1}},
@@ -234,7 +257,7 @@ func createAutoIncrementId(tableNum string) int {
 		ReturnNew: true,
 	}
 	doc := struct{ Id int }{}
-	_, err = c.Find(bson.M{"_id": 0}).Apply(change, &doc)
+	_, err := c.Find(bson.M{"_id": 0}).Apply(change, &doc)
 	if err != nil {
 		logger.Info("get counter failed:", err)
 	}

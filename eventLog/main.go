@@ -5,6 +5,7 @@ import (
 	// "github.com/jackson198608/goProject/eventLog/task"
 	"fmt"
 	"os"
+	"time"
 	// "log"
 )
 
@@ -23,8 +24,19 @@ func pushALLEventIdFromStartToEnd() {
 	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit)
 	page := 0
 	for {
+		for {
+			lens := (*r.client).LLen(c.queueName).Val()
+			fmt.Println(lens)
+			if int(lens) > 3000 {
+				time.Sleep(5 * time.Second)
+				continue
+			} else {
+				break
+			}
+		}
 		ids := getTask(page)
-		if page*c.numloops > c.lastId {
+		offset := page * c.numloops
+		if offset > c.lastId {
 			break
 		}
 		if len(ids) == 0 {
