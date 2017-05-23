@@ -23,12 +23,12 @@ type EventLog struct {
 	postTable string
 }
 
-func LoadById(id int) *EventLog {
-	db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
-	if err != nil {
-		logger.Error("[error] connect db err")
-	}
-	defer db.Close()
+func LoadById(id int, db *sql.DB) *EventLog {
+	// db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
+	// if err != nil {
+	// 	logger.Error("[error] connect db err")
+	// }
+	// defer db.Close()
 	tableName := "event_log"
 	rows, err := db.Query("select id,type as typeId,uid,info,created,infoid,status,tid from `" + tableName + "` where id=" + strconv.Itoa(int(id)) + "")
 	defer rows.Close()
@@ -53,12 +53,12 @@ type Follow struct {
 	// user_id   int
 }
 
-func GetFansData(uid int) []*Follow {
-	db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
-	if err != nil {
-		logger.Error("[error] connect db err")
-	}
-	defer db.Close()
+func GetFansData(uid int, db *sql.DB) []*Follow {
+	// db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
+	// if err != nil {
+	// 	logger.Error("[error] connect db err")
+	// }
+	// defer db.Close()
 	tableName := "follow"
 	rows, err := db.Query("select follow_id from `" + tableName + "` where user_id=" + strconv.Itoa(int(uid)) + "")
 	defer rows.Close()
@@ -70,6 +70,31 @@ func GetFansData(uid int) []*Follow {
 	for rows.Next() {
 		var row = new(Follow)
 		rows.Scan(&row.follow_id)
+		rowsData = append(rowsData, row)
+	}
+	return rowsData
+}
+
+func getMysqlData(fans string, uid string, page int, db *sql.DB) []*EventLog {
+	offset := page * c.numloops
+	var sql string
+	fansNum, _ := strconv.Atoi(fans)
+	fansLimitNum, _ := strconv.Atoi(c.fansLimit)
+	if fansNum > fansLimitNum {
+		sql = "select type,uid,created,infoid,status,tid from `event_log` where uid=" + uid + " order by id desc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+	} else {
+		sql = "select type,uid,created,infoid,status,tid from `event_log` where uid=" + uid + " and created >='" + c.dateLimit + "' limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+	}
+	rows, err := db.Query(sql)
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check event_log sql prepare error: ", err)
+		return nil
+	}
+	var rowsData []*EventLog
+	for rows.Next() {
+		var row = new(EventLog)
+		rows.Scan(&row.typeId, &row.uid, &row.created, &row.infoid, &row.status, &row.tid)
 		rowsData = append(rowsData, row)
 	}
 	return rowsData

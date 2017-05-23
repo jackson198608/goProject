@@ -5,21 +5,24 @@ import (
 )
 
 type Config struct {
-	dbDsn      string
-	dbName     string
-	dbAuth     string
-	numloops   int
-	lastId     int
-	firstId    int
-	redisConn  string
-	queueName  string
-	logFile    string
-	logLevel   int
-	fansLimit  string
-	dateLimit  string
-	currentNum string
-	mongoConn  string
-	mongoDb    string
+	dbDsn         string
+	dbName        string
+	dbAuth        string
+	numloops      int
+	lastId        int
+	firstId       int
+	redisConn     string
+	queueName     string
+	logFile       string
+	logLevel      int
+	fansLimit     string
+	dateLimit     string
+	currentNum    string
+	mongoConn     string
+	mongoDb       string
+	followFirstId int
+	followLastId  int
+	eventLimit    int
 }
 
 func loadConfig() {
@@ -39,4 +42,7 @@ func loadConfig() {
 	c.currentNum = config.GetString("currentNum")
 	c.mongoConn = config.GetString("mongoConn")
 	c.mongoDb = config.GetString("mongoDb")
+	c.followFirstId = config.GetInt("followFirstId")
+	c.followLastId = config.GetInt("followLastId")
+	c.eventLimit = config.GetInt("eventLimit")
 }

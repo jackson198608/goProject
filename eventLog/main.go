@@ -18,7 +18,9 @@ var c Config = Config{
 	1,
 	"127.0.0.1:6379",
 	"moveEvent",
-	"/tmp/moveEdddvent.log", 0, "3", "2014-01-01", "1", "192.168.86.68:27017", "Event"}
+	"/tmp/moveEdddvent.log", 0, "3", "2014-01-01", "1", "192.168.86.68:27017", "Event", 10, 1, 200}
+
+var followQueue = "followData"
 
 func pushALLEventIdFromStartToEnd() {
 	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit)
@@ -27,8 +29,8 @@ func pushALLEventIdFromStartToEnd() {
 		for {
 			lens := (*r.client).LLen(c.queueName).Val()
 			fmt.Println(lens)
-			if int(lens) > 3000 {
-				time.Sleep(5 * time.Second)
+			if int(lens) > 10000 {
+				time.Sleep(2 * time.Second)
 				continue
 			} else {
 				break
@@ -51,9 +53,44 @@ func pushALLEventIdFromStartToEnd() {
 	}
 }
 
+func pushAllFollowUserToRedis() {
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit)
+	page := 0
+	for {
+		for {
+			lens := (*r.client).LLen(followQueue).Val()
+			fmt.Println(lens)
+			if int(lens) > 10 {
+				time.Sleep(5 * time.Second)
+				continue
+			} else {
+				break
+			}
+		}
+		ids := getFollowTask(page)
+		offset := page * c.numloops
+		if offset > c.followLastId {
+			break
+		}
+		if len(ids) == 0 {
+			page++
+			continue
+		}
+		if ids == nil {
+			break
+		}
+		r.PushFollowTaskData(ids)
+		page++
+	}
+}
+
 func do() {
 	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit, c.logFile)
 	r.Loop()
+}
+func push() {
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit, c.logFile)
+	r.LoopPush()
 }
 
 func Init() {
@@ -79,6 +116,12 @@ func main() {
 	case "do":
 		logger.Info("in the do")
 		do()
+	case "follow":
+		logger.Info("in the follow create")
+		pushAllFollowUserToRedis()
+	case "push":
+		logger.Info("in the push fans data")
+		push()
 	default:
 
 	}

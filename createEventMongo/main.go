@@ -30,6 +30,7 @@ func main() {
 	// err := appendToFile(fileName, "dfdf")
 	// fmt.Println(err)
 	session, err := mgo.Dial("192.168.5.200:27017")
+	// session, err := mgo.Dial("192.168.86.68:27017")
 	if err != nil {
 		panic(err)
 	}
