@@ -120,6 +120,18 @@ func (t *RedisEngine) PushTaskData(tasks interface{}) bool {
 
 }
 
+func (t *RedisEngine) PushData() bool {
+	for i := c.redisStart; i < c.redisEnd; i++ {
+		queueName := t.queueName //t.getTaskQueueName(realTasks[i])
+		err := (*t.client).RPush(queueName, i).Err()
+		if err != nil {
+			logger.Error("insert redis error", err)
+		}
+	}
+	return true
+
+}
+
 func (t *RedisEngine) PushFollowTaskData(tasks interface{}) bool {
 	switch realTasks := tasks.(type) {
 	case []string:
@@ -290,10 +302,11 @@ func (t *RedisEngine) croutinePopJobFollowData(x chan int, i int) {
 			return
 		}
 		redisArr := strings.Split(redisStr, "|")
-		if len(redisArr) == 2 {
-			uid := redisArr[0]  //用户uid
-			fans := redisArr[1] //粉丝数
-			pushEventToFansTask(fans, uid, session, db)
+		if len(redisArr) == 3 {
+			uid := redisArr[0]   //用户uid
+			fans := redisArr[1]  //粉丝数
+			count := redisArr[2] //粉丝数
+			pushEventToFansTask(fans, uid, count, session, db)
 		}
 
 	}

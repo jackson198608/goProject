@@ -15,7 +15,7 @@ type Config struct {
 	queueName     string
 	logFile       string
 	logLevel      int
-	fansLimit     string
+	fansLimit     int
 	dateLimit     string
 	currentNum    string
 	mongoConn     string
@@ -23,6 +23,9 @@ type Config struct {
 	followFirstId int
 	followLastId  int
 	eventLimit    int
+	redisStart    int
+	redisEnd      int
+	pushLimit     int
 }
 
 func loadConfig() {
@@ -37,7 +40,7 @@ func loadConfig() {
 	c.queueName = config.GetString("queueName")
 	c.logFile = config.GetString("logFile")
 	c.logLevel = config.GetInt("logLevel")
-	c.fansLimit = config.GetString("fansLimit")
+	c.fansLimit = config.GetInt("fansLimit")
 	c.dateLimit = config.GetString("dateLimit")
 	c.currentNum = config.GetString("currentNum")
 	c.mongoConn = config.GetString("mongoConn")
@@ -45,4 +48,7 @@ func loadConfig() {
 	c.followFirstId = config.GetInt("followFirstId")
 	c.followLastId = config.GetInt("followLastId")
 	c.eventLimit = config.GetInt("eventLimit")
+	c.redisStart = config.GetInt("redisStart")
+	c.redisEnd = config.GetInt("redisEnd")
+	c.pushLimit = config.GetInt("pushLimit")
 }

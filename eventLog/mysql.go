@@ -75,15 +75,16 @@ func GetFansData(uid int, db *sql.DB) []*Follow {
 	return rowsData
 }
 
-func getMysqlData(fans string, uid string, page int, db *sql.DB) []*EventLog {
+func getMysqlData(fans int, uid int, count int, page int, db *sql.DB) []*EventLog {
 	offset := page * c.numloops
 	var sql string
-	fansNum, _ := strconv.Atoi(fans)
-	fansLimitNum, _ := strconv.Atoi(c.fansLimit)
-	if fansNum > fansLimitNum {
-		sql = "select type,uid,created,infoid,status,tid from `event_log` where uid=" + uid + " order by id desc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+	if fans >= c.fansLimit {
+		sql = "select type,uid,created,infoid,status,tid from `event_log` where uid=" + strconv.Itoa(uid) + " order by id desc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+	} else if fans < c.fansLimit && count > c.pushLimit {
+		// sql = "select type,uid,created,infoid,status,tid from `event_log` where uid=" + strconv.Itoa(uid) + " and created >='" + c.dateLimit + "' order by id desc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+		sql = "select type,uid,created,infoid,status,tid from `event_log` where uid=" + strconv.Itoa(uid) + " order by id desc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
 	} else {
-		sql = "select type,uid,created,infoid,status,tid from `event_log` where uid=" + uid + " and created >='" + c.dateLimit + "' limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+		sql = "select type,uid,created,infoid,status,tid from `event_log` where uid=" + strconv.Itoa(uid) + " and created >='" + c.dateLimit + "' limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
 	}
 	rows, err := db.Query(sql)
 	defer rows.Close()

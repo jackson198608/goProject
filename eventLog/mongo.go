@@ -48,20 +48,22 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, session *mgo.Session) {
 	// }
 	// defer session.Close()
 
-	tableName := "event_log" //动态表
-	x := session.DB(c.mongoDb).C(tableName)
-	Id := createAutoIncrementId(session, "")
-	// Id := 0
-	// m1 := EventLogNew{bson.NewObjectId(), Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
-	m1 := EventLogNew{Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
-	//判断数据是否存在
-	// eventIsExist := checkEventLogIsExist(x, event)
-	// if eventIsExist == false {
-	// logger.Info(x)
-	logger.Info(m1)
-	err := x.Insert(&m1) //插入数据
-	if err != nil {
-		logger.Info("mongo insert one data error:", err)
+	if event.uid > 0 {
+		tableName := "event_log" //动态表
+		x := session.DB(c.mongoDb).C(tableName)
+		Id := createAutoIncrementId(session, "")
+		// Id := 0
+		// m1 := EventLogNew{bson.NewObjectId(), Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
+		m1 := EventLogNew{Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
+		//判断数据是否存在
+		// eventIsExist := checkEventLogIsExist(x, event)
+		// if eventIsExist == false {
+		// logger.Info(x)
+		logger.Info(m1)
+		err := x.Insert(&m1) //插入数据
+		if err != nil {
+			logger.Info("mongo insert one data error:", err)
+		}
 	}
 	// }
 	/*fansLimit, _ := strconv.Atoi(c.fansLimit)
@@ -87,16 +89,17 @@ func saveFansEventLog(fans []*Follow, session *mgo.Session, event *EventLog) {
 		}
 		tableName1 := "event_log_" + strconv.Itoa(tableNum1) //粉丝表
 		x := session.DB("EventLog").C(tableName1)
-		IdX := createAutoIncrementId(session, strconv.Itoa(tableNum1))
+		// IdX := createAutoIncrementId(session, strconv.Itoa(tableNum1))
+		IdX := 0
 		// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
 		m := EventLogX{IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
 		eventIsExist := checkFansDataIsExist(x, event, ar.follow_id)
 		if eventIsExist == false {
 			logger.Info(m)
-			err := x.Insert(&m) //插入数据
-			if err != nil {
-				logger.Info("mongodb insert fans data", err, x)
-			}
+			// err := x.Insert(&m) //插入数据
+			// if err != nil {
+			// 	logger.Info("mongodb insert fans data", err, x)
+			// }
 		}
 	}
 }
@@ -325,30 +328,36 @@ func check(e error) {
 	}
 }
 
-func pushEventToFansTask(fans string, uid string, session *mgo.Session, db *sql.DB) {
+func pushEventToFansTask(fans string, uid string, count string, session *mgo.Session, db *sql.DB) {
 	page := 0
 	for {
-		if fans > c.fansLimit {
+		countNum, _ := strconv.Atoi(count)
+		fansNum, _ := strconv.Atoi(fans)
+		if fansNum >= c.fansLimit {
 			offset := page * c.numloops
 			if offset >= c.eventLimit {
 				break
 			}
 		}
-		datas := getMysqlData(fans, uid, page, db)
+		if fansNum < c.fansLimit && countNum > c.pushLimit {
+			offset := page * c.numloops
+			if offset >= c.pushLimit {
+				break
+			}
+		}
+		user_id, _ := strconv.Atoi(uid)
+		datas := getMysqlData(fansNum, user_id, countNum, page, db)
 		if len(datas) == 0 {
 			break
 		}
 		if datas == nil {
 			break
 		}
-		user_id, _ := strconv.Atoi(uid)
 		fansData := GetFansData(user_id, db)
-		// logger.Info("fans", fansData)
 		for _, event := range datas {
 			// fmt.Println(event.created)
 			// logger.Info("event", ar)
 			// fmt.Println(reflect.TypeOf(ar))
-			// c := session.DB(c.mongoDb).C(collection)
 			saveFansEventLog(fansData, session, event)
 		}
 		page++

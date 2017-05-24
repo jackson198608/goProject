@@ -18,12 +18,14 @@ var c Config = Config{
 	1,
 	"127.0.0.1:6379",
 	"moveEvent",
-	"/tmp/moveEdddvent.log", 0, "3", "2014-01-01", "1", "192.168.86.68:27017", "Event", 10, 1, 200}
+	"/tmp/moveEdddvent.log", 0, 3, "2014-01-01", "1", "192.168.86.68:27017", "Event", 10, 1, 200, 1, 100, 1000}
 
 var followQueue = "followData"
 
+// var pushLimit = 30
+
 func pushALLEventIdFromStartToEnd() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit)
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
 	page := 0
 	for {
 		for {
@@ -53,28 +55,32 @@ func pushALLEventIdFromStartToEnd() {
 	}
 }
 
+func createRedis() {
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
+	r.PushData()
+}
+
 func pushAllFollowUserToRedis() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit)
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
 	page := 0
 	for {
-		for {
-			lens := (*r.client).LLen(followQueue).Val()
-			fmt.Println(lens)
-			if int(lens) > 10 {
-				time.Sleep(5 * time.Second)
-				continue
-			} else {
-				break
-			}
-		}
+		// for {
+		// 	lens := (*r.client).LLen(followQueue).Val()
+		// 	fmt.Println(lens)
+		// 	if int(lens) > 10 {
+		// 		time.Sleep(5 * time.Second)
+		// 		continue
+		// 	} else {
+		// 		break
+		// 	}
+		// }
 		ids := getFollowTask(page)
 		offset := page * c.numloops
 		if offset > c.followLastId {
 			break
 		}
 		if len(ids) == 0 {
-			page++
-			continue
+			break
 		}
 		if ids == nil {
 			break
@@ -85,11 +91,11 @@ func pushAllFollowUserToRedis() {
 }
 
 func do() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit, c.logFile)
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.logFile)
 	r.Loop()
 }
 func push() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.fansLimit, c.dateLimit, c.logFile)
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.logFile)
 	r.LoopPush()
 }
 
@@ -112,7 +118,9 @@ func main() {
 	case "create":
 		logger.Info("in the create", 10)
 		pushALLEventIdFromStartToEnd()
-
+	case "newcreate":
+		logger.Info("in the create", 10)
+		createRedis()
 	case "do":
 		logger.Info("in the do")
 		do()
