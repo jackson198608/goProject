@@ -89,17 +89,17 @@ func saveFansEventLog(fans []*Follow, session *mgo.Session, event *EventLog) {
 		}
 		tableName1 := "event_log_" + strconv.Itoa(tableNum1) //粉丝表
 		x := session.DB("EventLog").C(tableName1)
-		// IdX := createAutoIncrementId(session, strconv.Itoa(tableNum1))
-		IdX := 0
-		// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
-		m := EventLogX{IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
 		eventIsExist := checkFansDataIsExist(x, event, ar.follow_id)
 		if eventIsExist == false {
+			// IdX := 0
+			IdX := createAutoIncrementId(session, strconv.Itoa(tableNum1))
+			// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
+			m := EventLogX{IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
 			logger.Info(m)
-			// err := x.Insert(&m) //插入数据
-			// if err != nil {
-			// 	logger.Info("mongodb insert fans data", err, x)
-			// }
+			err := x.Insert(&m) //插入数据
+			if err != nil {
+				logger.Info("mongodb insert fans data", err, x)
+			}
 		}
 	}
 }
