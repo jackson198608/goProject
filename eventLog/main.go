@@ -60,6 +60,11 @@ func createRedis() {
 	r.PushData()
 }
 
+func createPushRedis() {
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
+	r.PushFansData()
+}
+
 func pushAllFollowUserToRedis() {
 	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
 	page := 0
@@ -121,6 +126,9 @@ func main() {
 	case "newcreate":
 		logger.Info("in the create", 10)
 		createRedis()
+	case "addcreate": //动态粉丝增量
+		logger.Info("in the create", 10)
+		createPushRedis()
 	case "do":
 		logger.Info("in the do")
 		do()

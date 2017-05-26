@@ -121,9 +121,21 @@ func (t *RedisEngine) PushTaskData(tasks interface{}) bool {
 }
 
 func (t *RedisEngine) PushData() bool {
-	for i := c.redisStart; i < c.redisEnd; i++ {
+	for i := c.redisStart; i <= c.redisEnd; i++ {
 		queueName := t.queueName //t.getTaskQueueName(realTasks[i])
 		err := (*t.client).RPush(queueName, i).Err()
+		if err != nil {
+			logger.Error("insert redis error", err)
+		}
+	}
+	return true
+
+}
+
+func (t *RedisEngine) PushFansData() bool {
+	for i := c.redisStart; i <= c.redisEnd; i++ {
+		queueName := t.queueName //t.getTaskQueueName(realTasks[i])
+		err := (*t.client).RPush(queueName, strconv.Itoa(i)+"|2").Err()
 		if err != nil {
 			logger.Error("insert redis error", err)
 		}
