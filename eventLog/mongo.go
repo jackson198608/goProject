@@ -51,18 +51,19 @@ func SaveMongoEventLog(event *EventLog, fans []*Follow, session *mgo.Session) {
 	if event.uid > 0 {
 		tableName := "event_log" //动态表
 		x := session.DB(c.mongoDb).C(tableName)
-		Id := createAutoIncrementId(session, "")
-		// Id := 0
-		// m1 := EventLogNew{bson.NewObjectId(), Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
-		m1 := EventLogNew{Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
 		//判断数据是否存在
-		// eventIsExist := checkEventLogIsExist(x, event)
-		// if eventIsExist == false {
-		// logger.Info(x)
-		logger.Info(m1)
-		err := x.Insert(&m1) //插入数据
-		if err != nil {
-			logger.Info("mongo insert one data error:", err)
+		eventIsExist := checkEventLogIsExist(x, event)
+		if eventIsExist == false {
+			Id := createAutoIncrementId(session, "")
+			// Id := 0
+			// m1 := EventLogNew{bson.NewObjectId(), Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
+			m1 := EventLogNew{Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
+			// logger.Info(x)
+			logger.Info(m1)
+			err := x.Insert(&m1) //插入数据
+			if err != nil {
+				logger.Info("mongo insert one data error:", err)
+			}
 		}
 	}
 	// }
@@ -91,15 +92,15 @@ func saveFansEventLog(fans []*Follow, session *mgo.Session, event *EventLog) {
 		x := session.DB("EventLog").C(tableName1)
 		eventIsExist := checkFansDataIsExist(x, event, ar.follow_id)
 		if eventIsExist == false {
-			IdX := 0
-			// IdX := createAutoIncrementId(session, strconv.Itoa(tableNum1))
+			// IdX := 0
+			IdX := createAutoIncrementId(session, strconv.Itoa(tableNum1))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
 			m := EventLogX{IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
+			err := x.Insert(&m) //插入数据
 			logger.Info(m)
-			// err := x.Insert(&m) //插入数据
-			// if err != nil {
-			// 	logger.Info("mongodb insert fans data", err, x)
-			// }
+			if err != nil {
+				logger.Info("mongodb insert fans data", err, x)
+			}
 		}
 	}
 }
