@@ -60,7 +60,7 @@ func GetFansData(uid int, db *sql.DB) []*Follow {
 	// }
 	// defer db.Close()
 	tableName := "follow"
-	rows, err := db.Query("select follow_id from `" + tableName + "` where user_id=" + strconv.Itoa(int(uid)) + "")
+	rows, err := db.Query("select distinct(follow_id) from `" + tableName + "` where user_id=" + strconv.Itoa(int(uid)) + "")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check event_log sql prepare error: ", err)
