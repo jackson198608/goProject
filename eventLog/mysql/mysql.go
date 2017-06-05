@@ -29,11 +29,6 @@ type Follow struct {
 }
 
 func GetFansData(uid int, db *sql.DB) []int {
-	// db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
-	// if err != nil {
-	//  logger.Error("[error] connect db err")
-	// }
-	// defer db.Close()
 	tableName := "follow"
 	rows, err := db.Query("select distinct(follow_id) from `" + tableName + "` where user_id=" + strconv.Itoa(int(uid)) + "")
 	defer rows.Close()

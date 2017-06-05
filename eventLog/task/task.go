@@ -77,12 +77,6 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session)
 	t.db = db
 	t.fans = fans
 	t.ecount = ecount
-	// t.loopNum = loopNum
-	// t.fansLimit = fansLimit
-	// t.eventLimit = eventLimit
-	// t.pushLimit = pushLimit
-	// t.pushLimit = pushLimit
-	// t.dateLimit = dateLimit
 	return t
 
 }
@@ -91,12 +85,15 @@ func (t *Task) Do() {
 	m := Pushdata.NewEventLogNew(t.loggerLevel, t.oid, t.id, t.db, t.session)
 	if m != nil {
 		if t.oid > 0 {
+			logger.Info("export event to mongo")
 			m.SaveMongoEventLog(t.oid)
 		}
 		if t.id > 0 {
+			logger.Info("update mongo event status")
 			m.UpdateMongoEventLogStatus(t.id, t.status)
 		}
 		if t.fuid > 0 && t.uid > 0 {
+			logger.Info("remove fans event")
 			m.RemoveFansEventLog(t.fuid, t.uid)
 		}
 	}
