@@ -20,7 +20,7 @@ type RedisEngine struct {
 }
 
 func NewRedisEngine(
-	logLevel logger.LEVEL,
+	logLevel int,
 	queueName string,
 	connstr string,
 	password string,

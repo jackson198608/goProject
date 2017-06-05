@@ -3,9 +3,10 @@ package main
 import (
 	"github.com/donnie4w/go-logger/logger"
 	// "github.com/jackson198608/goProject/eventLog/task"
-	"fmt"
+	// "fmt"
+	"github.com/jackson198608/goProject/stayProcess"
 	"os"
-	"time"
+	// "time"
 	// "log"
 )
 
@@ -24,85 +25,76 @@ var followQueue = "followData"
 
 // var pushLimit = 30
 
-func pushALLEventIdFromStartToEnd() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
-	page := 0
-	for {
-		for {
-			lens := (*r.client).LLen(c.queueName).Val()
-			fmt.Println(lens)
-			if int(lens) > 10000 {
-				time.Sleep(2 * time.Second)
-				continue
-			} else {
-				break
-			}
-		}
-		ids := getTask(page)
-		offset := page * c.numloops
-		if offset > c.lastId {
-			break
-		}
-		if len(ids) == 0 {
-			page++
-			continue
-		}
-		if ids == nil {
-			break
-		}
-		r.PushTaskData(ids)
-		page++
-	}
-}
+// func pushALLEventIdFromStartToEnd() {
+// 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
+// 	page := 0
+// 	for {
+// 		for {
+// 			lens := (*r.client).LLen(c.queueName).Val()
+// 			fmt.Println(lens)
+// 			if int(lens) > 10000 {
+// 				time.Sleep(2 * time.Second)
+// 				continue
+// 			} else {
+// 				break
+// 			}
+// 		}
+// 		ids := getTask(page)
+// 		offset := page * c.numloops
+// 		if offset > c.lastId {
+// 			break
+// 		}
+// 		if len(ids) == 0 {
+// 			page++
+// 			continue
+// 		}
+// 		if ids == nil {
+// 			break
+// 		}
+// 		// r.PushTaskData(ids)
+// 		page++
+// 	}
+// }
 
-func createRedis() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
-	r.PushData()
-}
+// func createRedis() {
+// 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
+// 	r.PushData()
+// }
 
-func createPushRedis() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
-	r.PushFansData()
-}
+// func createPushRedis() {
+// 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
+// 	r.PushFansData()
+// }
 
-func pushAllFollowUserToRedis() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
-	page := 0
-	for {
-		// for {
-		// 	lens := (*r.client).LLen(followQueue).Val()
-		// 	fmt.Println(lens)
-		// 	if int(lens) > 10 {
-		// 		time.Sleep(5 * time.Second)
-		// 		continue
-		// 	} else {
-		// 		break
-		// 	}
-		// }
-		ids := getFollowTask(page)
-		offset := page * c.numloops
-		if offset > c.followLastId {
-			break
-		}
-		if len(ids) == 0 {
-			break
-		}
-		if ids == nil {
-			break
-		}
-		r.PushFollowTaskData(ids)
-		page++
-	}
-}
+// func pushAllFollowUserToRedis() {
+// 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
+// 	page := 0
+// 	for {
+// 		ids := getFollowTask(page)
+// 		offset := page * c.numloops
+// 		if offset > c.followLastId {
+// 			break
+// 		}
+// 		if len(ids) == 0 {
+// 			break
+// 		}
+// 		if ids == nil {
+// 			break
+// 		}
+// 		r.PushFollowTaskData(ids)
+// 		page++
+// 	}
+// }
 
 func do() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.logFile)
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.dateLimit, c.logFile)
 	r.Loop()
 }
-func push() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.logFile)
-	r.LoopPush()
-}
+
+// func push() {
+// 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.logFile)
+// 	r.LoopPush()
+// }
 
 func Init() {
 
@@ -118,26 +110,25 @@ func main() {
 	// fmt.Println(data)
 	// NewTask(1)
 	jobType := os.Args[1]
-	fmt.Println(jobType)
 	switch jobType {
-	case "create":
-		logger.Info("in the create", 10)
-		pushALLEventIdFromStartToEnd()
-	case "newcreate":
-		logger.Info("in the create", 10)
-		createRedis()
-	case "addcreate": //动态粉丝增量
-		logger.Info("in the create", 10)
-		createPushRedis()
+	// case "create":
+	// 	logger.Info("in the create", 10)
+	// 	pushALLEventIdFromStartToEnd()
+	// case "newcreate":
+	// 	logger.Info("in the create", 10)
+	// 	createRedis()
+	// case "addcreate": //动态粉丝增量
+	// 	logger.Info("in the create", 10)
+	// 	createPushRedis()
 	case "do":
 		logger.Info("in the do")
 		do()
-	case "follow":
-		logger.Info("in the follow create")
-		pushAllFollowUserToRedis()
-	case "push":
-		logger.Info("in the push fans data")
-		push()
+	// case "follow":
+	// 	logger.Info("in the follow create")
+	// 	pushAllFollowUserToRedis()
+	// case "push":
+	// 	logger.Info("in the push fans data")
+	// 	push()
 	default:
 
 	}
