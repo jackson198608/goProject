@@ -73,3 +73,30 @@ func LoadById(id int, db *sql.DB) *EventLog {
 	}
 	return &EventLog{}
 }
+
+func GetMysqlData(fans int, uid int, count int, page int, db *sql.DB, loopNum int, fansLimit int, eventLimit int, pushLimit int, dateLimit string) []*EventLog {
+	offset := page * loopNum
+	var sql string
+	if fans >= fansLimit {
+		sql = "select type,uid,created,infoid,status,tid from `event_log` where status=1 and uid=" + strconv.Itoa(uid) + " order by id desc limit " + strconv.Itoa(loopNum) + " offset " + strconv.Itoa(offset)
+		// sql = "select type,uid,created,infoid,status,tid from `event_log` where uid=" + strconv.Itoa(uid) + " and created >='" + c.dateLimit + "' order by id desc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+	} else if fans < fansLimit && count > pushLimit {
+		sql = "select type,uid,created,infoid,status,tid from `event_log` where status=1 and uid=" + strconv.Itoa(uid) + " and created >='" + dateLimit + "' order by id desc limit " + strconv.Itoa(loopNum) + " offset " + strconv.Itoa(offset)
+		// sql = "select type,uid,created,infoid,status,tid from `event_log` where uid=" + strconv.Itoa(uid) + " order by id desc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+	} else {
+		sql = "select type,uid,created,infoid,status,tid from `event_log` where status=1 and uid=" + strconv.Itoa(uid) + " and created >='" + dateLimit + "' order by id desc limit " + strconv.Itoa(loopNum) + " offset " + strconv.Itoa(offset)
+	}
+	rows, err := db.Query(sql)
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check event_log sql prepare error: ", err)
+		return nil
+	}
+	var rowsData []*EventLog
+	for rows.Next() {
+		var row = new(EventLog)
+		rows.Scan(&row.TypeId, &row.Uid, &row.Created, &row.Infoid, &row.Status, &row.Tid)
+		rowsData = append(rowsData, row)
+	}
+	return rowsData
+}

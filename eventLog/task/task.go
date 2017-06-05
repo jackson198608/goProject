@@ -15,13 +15,19 @@ type Task struct {
 	oid         int
 	uid         int
 	fuid        int
-	fans        []*Follow
+	fans        string //粉丝数
+	ecount      string //动态数
 	status      string
 	db          *sql.DB
 	session     *mgo.Session
 	// event       *EventLogNew
-	count   int
-	fansnum int
+	count      int
+	fansnum    int
+	loopNum    int
+	fansLimit  int
+	eventLimit int
+	pushLimit  int
+	dateLimit  string
 }
 type Follow struct {
 	follow_id int
@@ -39,9 +45,11 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session)
 	var id int
 	var oid int
 	var status string
+	var fans string
+	var ecount string
 	if len(redisArr) == 2 {
 		if redisArr[1] == "3" {
-			uids := strings.Split(redisArr[1], "&")
+			uids := strings.Split(redisArr[0], "&")
 			fuid, _ = strconv.Atoi(uids[0])
 			uid, _ = strconv.Atoi(uids[1])
 		} else {
@@ -54,6 +62,11 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session)
 		oid, _ = strconv.Atoi(redisStr)
 	}
 
+	if len(redisArr) == 3 {
+		uid, _ = strconv.Atoi(redisArr[0]) //用户uid
+		fans = redisArr[1]                 //粉丝数
+		ecount = redisArr[2]               //动态数
+	}
 	t := new(Task)
 	t.oid = oid
 	t.id = id
@@ -62,7 +75,14 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session)
 	t.status = status
 	t.session = session
 	t.db = db
-	// t.event = LoadById(id, db)
+	t.fans = fans
+	t.ecount = ecount
+	// t.loopNum = loopNum
+	// t.fansLimit = fansLimit
+	// t.eventLimit = eventLimit
+	// t.pushLimit = pushLimit
+	// t.pushLimit = pushLimit
+	// t.dateLimit = dateLimit
 	return t
 
 }
@@ -82,44 +102,8 @@ func (t *Task) Do() {
 	}
 }
 
-// queueName := t.queueName //+ "_" + tableNumStr
-//     logger.Info("pop ", queueName)
-//     db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
-//     if err != nil {
-//         logger.Error("[error] connect db err")
-//     }
-//     defer db.Close()
-//     session, err := mgo.Dial(c.mongoConn)
-//     if err != nil {
-//         return
-//     }
-//     defer session.Close()
-//     for {
-//         //doing until got nothing
-//         redisStr := (*t.client).LPop(queueName).Val()
-//         if redisStr == "" {
-//             logger.Info("got nothing", queueName)
-//             x <- 1
-//             return
-//         }
-//         redisArr := strings.Split(redisStr, "|")
-//         if len(redisArr) == 2 {
-//             if redisArr[1] == "3" {
-//                 uids := strings.Split(redisArr[0], "&")
-//                 RemoveFansEventLog(uids[0], uids[1], session) //fuid,uid
-//             } else {
-//                 u := LoadMongoById(redisArr[0], session)
-//                 fans := GetFansData(u.Uid, db)
-//                 status := redisArr[1] //要执行的操作:0:删除,-1隐藏,1显示,2动态推送给粉丝
-//                 UpdateMongoEventLogStatus(u, fans, status, session)
-//             }
-//         }
-//         //doing job
-//         if len(redisArr) == 1 {
-//             id, _ := strconv.Atoi(redisStr)
-//             u := LoadById(id, db)
-//             // fans := GetFansData(u.uid, db)
-//             var fans []*Follow
-//             SaveMongoEventLog(u, fans, session)
-//         }
-//     }
+func (t *Task) Dopush(dateLimit string, loopNum int, fansLimit string, eventLimit string, pushLimit string) {
+	m := Pushdata.NewEventLogNew(t.loggerLevel, t.oid, t.id, t.db, t.session)
+	m.PushEventToFansTask(t.fans, t.uid, t.ecount, loopNum, fansLimit, eventLimit, pushLimit, dateLimit)
+
+}

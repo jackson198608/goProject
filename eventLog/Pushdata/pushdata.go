@@ -97,6 +97,7 @@ func (e *EventLogNew) SaveMongoEventLog(oid int) error {
 func checkEventLogIsExist(c *mgo.Collection, event *mysql.EventLog) bool {
 	ms := []EventLogNew{}
 	err1 := c.Find(&bson.M{"type": event.TypeId, "uid": event.Uid, "created": event.Created, "infoid": event.Infoid, "status": event.Status}).All(&ms)
+	// logger.Info("check event_log data is exist")
 	if err1 != nil {
 		logger.Info("mongodb find data", err1, c)
 		return false
@@ -201,7 +202,7 @@ func (e *EventLogNew) RemoveFansEventLog(fuid int, uid int) error {
 		logger.Info("mongodb insert fans data", err, c)
 		return err
 	}
-
+	logger.Info("remove event is success")
 	return nil
 }
 
@@ -263,6 +264,82 @@ func createAutoIncrementId(session *mgo.Session, tableNum string) int {
 func checkMongoFansDataIsExist(c *mgo.Collection, event *EventLogLast, fuid int) bool {
 	ms := []EventLogX{}
 	err1 := c.Find(&bson.M{"type": event.TypeId, "uid": event.Uid, "fuid": fuid, "created": event.Created, "infoid": event.Infoid, "tid": event.Tid}).All(&ms)
+
+	if err1 != nil {
+		logger.Info("mongodb find data", err1, c)
+		return false
+	}
+	if len(ms) == 0 {
+		return false
+	}
+	return true
+}
+
+func (e *EventLogNew) PushEventToFansTask(fans string, user_id int, count string, numLoop int, fansLimit string, eventLimit string, pushLimit string, dateLimit string) {
+	page := 0
+	for {
+		countNum, _ := strconv.Atoi(count)
+		fansNum, _ := strconv.Atoi(fans)
+		fansLimitNum, _ := strconv.Atoi(fansLimit)
+		eventLimitNum, _ := strconv.Atoi(eventLimit)
+		pushLimit, _ := strconv.Atoi(pushLimit)
+		if fansNum >= fansLimitNum {
+			offset := page * numLoop
+			if offset >= eventLimitNum {
+				break
+			}
+		}
+		if fansNum < fansLimitNum && countNum > pushLimit {
+			offset := page * numLoop
+			if offset >= pushLimit {
+				break
+			}
+		}
+		// user_id, _ := strconv.Atoi(uid)
+		datas := mysql.GetMysqlData(fansNum, user_id, countNum, page, e.db, numLoop, fansLimitNum, eventLimitNum, pushLimit, dateLimit)
+		if len(datas) == 0 {
+			break
+		}
+		if datas == nil {
+			break
+		}
+		fansData := mysql.GetFansData(user_id, e.db)
+		for _, event := range datas {
+			// fmt.Println(reflect.TypeOf(ar))
+			e.saveFansEventLog(fansData, event)
+		}
+		page++
+	}
+}
+
+func (e *EventLogNew) saveFansEventLog(fans []int, event *mysql.EventLog) {
+	session := e.session
+	for _, ar := range fans {
+		tableNum1 := ar % 100
+		if tableNum1 == 0 {
+			tableNum1 = 100
+		}
+		tableName1 := "event_log_" + strconv.Itoa(tableNum1) //粉丝表
+		x := session.DB("EventLog").C(tableName1)
+		eventIsExist := checkFansDataIsExist(x, event, ar)
+		if eventIsExist == false {
+			// IdX := 0
+			IdX := createAutoIncrementId(session, strconv.Itoa(tableNum1))
+			// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
+			m := EventLogX{IdX, event.TypeId, event.Uid, ar, event.Created, event.Infoid, event.Status, event.Tid}
+			err := x.Insert(&m) //插入数据
+			logger.Info(m)
+			if err != nil {
+				logger.Info("mongodb insert fans data", err, x)
+			}
+		}
+	}
+}
+
+//根据mysql中的数据检查mongo中是否存在该条fans数据
+func checkFansDataIsExist(c *mgo.Collection, event *mysql.EventLog, fuid int) bool {
+	ms := []EventLogX{}
+	err1 := c.Find(&bson.M{"type": event.TypeId, "uid": event.Uid, "fuid": fuid, "created": event.Created, "infoid": event.Infoid, "status": event.Status}).All(&ms)
 
 	if err1 != nil {
 		logger.Info("mongodb find data", err1, c)

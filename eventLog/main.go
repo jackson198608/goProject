@@ -19,7 +19,7 @@ var c Config = Config{
 	1,
 	"127.0.0.1:6379",
 	"moveEvent",
-	"/tmp/moveEdddvent.log", 0, 3, "2014-01-01", "1", "192.168.86.68:27017", "Event", 10, 1, 200, 1, 100, 1000}
+	"/tmp/moveEdddvent.log", 0, "3", "2014-01-01", "1", "192.168.86.68:27017", "Event", 10, 1, "200", "1", "100", "1000"}
 
 var followQueue = "followData"
 
@@ -56,45 +56,46 @@ var followQueue = "followData"
 // 	}
 // }
 
-// func createRedis() {
-// 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
-// 	r.PushData()
-// }
+func createRedis() {
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.redisStart, c.redisEnd)
+	r.PushData()
+}
 
-// func createPushRedis() {
-// 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
-// 	r.PushFansData()
-// }
+//动态推送给用户的mongo动态id
+func createPushRedis() {
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.redisStart, c.redisEnd)
+	r.PushFansData()
+}
 
-// func pushAllFollowUserToRedis() {
-// 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit)
-// 	page := 0
-// 	for {
-// 		ids := getFollowTask(page)
-// 		offset := page * c.numloops
-// 		if offset > c.followLastId {
-// 			break
-// 		}
-// 		if len(ids) == 0 {
-// 			break
-// 		}
-// 		if ids == nil {
-// 			break
-// 		}
-// 		r.PushFollowTaskData(ids)
-// 		page++
-// 	}
-// }
+func pushAllFollowUserToRedis() {
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.redisStart, c.redisEnd)
+	page := 0
+	for {
+		ids := getFollowTask(page)
+		offset := page * c.numloops
+		if offset > c.followLastId {
+			break
+		}
+		if len(ids) == 0 {
+			break
+		}
+		if ids == nil {
+			break
+		}
+		r.PushFollowTaskData(ids)
+		page++
+	}
+}
 
 func do() {
-	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.dateLimit, c.logFile)
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.dateLimit, c.redisStart, c.redisEnd)
 	r.Loop()
 }
 
-// func push() {
-// 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.logFile)
-// 	r.LoopPush()
-// }
+func push() {
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.dateLimit, c.redisStart, c.redisEnd, c.fansLimit, c.eventLimit, c.pushLimit)
+	r.LoopPush()
+}
 
 func Init() {
 
@@ -106,29 +107,26 @@ func Init() {
 }
 func main() {
 	Init()
-	// data := getEventLogData(1,10,10,0)
-	// fmt.Println(data)
-	// NewTask(1)
 	jobType := os.Args[1]
 	switch jobType {
 	// case "create":
 	// 	logger.Info("in the create", 10)
 	// 	pushALLEventIdFromStartToEnd()
-	// case "newcreate":
-	// 	logger.Info("in the create", 10)
-	// 	createRedis()
-	// case "addcreate": //动态粉丝增量
-	// 	logger.Info("in the create", 10)
-	// 	createPushRedis()
+	case "newcreate":
+		logger.Info("in the create", 10)
+		createRedis()
+	case "addcreate": //动态粉丝增量
+		logger.Info("in the create", 10)
+		createPushRedis()
 	case "do":
 		logger.Info("in the do")
 		do()
-	// case "follow":
-	// 	logger.Info("in the follow create")
-	// 	pushAllFollowUserToRedis()
-	// case "push":
-	// 	logger.Info("in the push fans data")
-	// 	push()
+	case "follow":
+		logger.Info("in the follow create")
+		pushAllFollowUserToRedis()
+	case "push":
+		logger.Info("in the push fans data")
+		push()
 	default:
 
 	}
