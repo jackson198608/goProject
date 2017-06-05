@@ -29,7 +29,7 @@ type Config struct {
 }
 
 func loadConfig() {
-	config := jconfig.LoadConfig("/etc/moveEventLogConfig.json")
+	config := jconfig.LoadConfig("/etc/moveEventLogConfigNew.json")
 	c.dbDsn = config.GetString("dbDsn")
 	c.dbName = config.GetString("dbName")
 	c.dbAuth = config.GetString("dbAuth")
