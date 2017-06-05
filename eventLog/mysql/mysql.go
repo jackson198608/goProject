@@ -24,11 +24,11 @@ type EventLog struct {
 }
 
 type Follow struct {
-	follow_id int
+	Follow_id int
 	// user_id   int
 }
 
-func GetFansData(uid int, db *sql.DB) []int {
+func GetFansData(uid int, db *sql.DB) []*Follow {
 	tableName := "follow"
 	rows, err := db.Query("select distinct(follow_id) from `" + tableName + "` where user_id=" + strconv.Itoa(int(uid)) + "")
 	defer rows.Close()
@@ -36,21 +36,13 @@ func GetFansData(uid int, db *sql.DB) []int {
 		logger.Error("[error] check event_log sql prepare error: ", err)
 		return nil
 	}
-	// var rowsData []*Follow
-	// for rows.Next() {
-	// 	var row = new(Follow)
-	// 	rows.Scan(&row.follow_id)
-	// 	rowsData = append(rowsData, row)
-	// }
-	pids := make([]int, 0, 100)
+	var rowsData []*Follow
 	for rows.Next() {
-		var pid int
-		if err := rows.Scan(&pid); err != nil {
-			logger.Error("get pid error after row.next", err)
-		}
-		pids = append(pids, pid)
+		var row = new(Follow)
+		rows.Scan(&row.Follow_id)
+		rowsData = append(rowsData, row)
 	}
-	return pids
+	return rowsData
 }
 
 func LoadById(id int, db *sql.DB) *EventLog {
