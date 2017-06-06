@@ -106,6 +106,7 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 			c <- 1
 			return
 		}
+		logger.Info("got redisStr ", redisStr)
 		task := task.NewTask(t.logLevel, redisStr, db, session)
 		if task != nil {
 			task.Do()
