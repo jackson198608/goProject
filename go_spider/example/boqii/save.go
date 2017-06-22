@@ -271,26 +271,33 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 	// 颗粒度
 	var graininess *string = new(string)
 	
-	//insert record
-	shopDetailId := insertShopDetail(
-		*goodsName,
-		*goodsNumber,
-		*goodsSku,
-		*brand,
-		*firstCategory +" "+ *secondCategory +" "+ *thirdCategory,
-		*goodsPrice,
-		*salesVolume,
-		*commonNum,
-		*score,
-		*shape,
-		*age,
-		*goodsComponent,
-		*componentPercent,
-		*taste,
-		*grain,
-		*graininess,3,sourceUrl)
-
-	return shopDetailId, true
+	if *goodsName!="" {
+		//insert record
+		shopDetailId := insertShopDetail(
+			*goodsName,
+			*goodsNumber,
+			*goodsSku,
+			*brand,
+			*firstCategory +" "+ *secondCategory +" "+ *thirdCategory,
+			*goodsPrice,
+			*salesVolume,
+			*commonNum,
+			*score,
+			*shape,
+			*age,
+			*goodsComponent,
+			*componentPercent,
+			*taste,
+			*grain,
+			*graininess,3,sourceUrl)
+		return shopDetailId, true
+	}else{
+		logger.Println("[info]again find goods detail: ", sourceUrl)
+		realUrlTag := "shopDetail"
+		req := newRequest(realUrlTag, sourceUrl)
+		p.AddTargetRequestWithParams(req)
+	}
+	return 0,false
 }
 
 func save(p *page.Page) bool {

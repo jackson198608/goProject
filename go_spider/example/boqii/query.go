@@ -64,10 +64,13 @@ func qShopDetail(p *page.Page, shopDetailId int64) {
 	query.Find(".change_no a").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		url, isExsit := s.Attr("href")
 		if isExsit {
-			logger.Println("[info]find other sku: ", url)
-			realUrlTag := "shopDetail"
-			req := newRequest(realUrlTag, url)
-			p.AddTargetRequestWithParams(req)
+			_,isExist := checkShopExist(url)
+			if !isExist {
+				logger.Println("[info]find other sku: ", url)
+				realUrlTag := "shopDetail"
+				req := newRequest(realUrlTag, url)
+				p.AddTargetRequestWithParams(req)
+			}
 		}
 		return true
 	})
