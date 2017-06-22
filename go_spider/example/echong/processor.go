@@ -46,6 +46,7 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 			qShopDetail(p, shopDetailId)
 		}
 	} else if tag == "DogCateList" {
+		logger.Println("[error] get DogCateList id error", tag, p.GetRequest().Url)
 		qShopCateList(p)
 
 	}  else if tag == "shopList" {
@@ -72,6 +73,13 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 		}
 		saveShopCommentList(p, int64(shopDetailId))
 
+	} else if strings.Contains(tag, "shopDetailParams") {
+		shopDetailId, success := getDetailId(tag)
+		if !success {
+			logger.Println("[error] get detail id error", tag, p.GetRequest().Url)
+			return
+		}
+		saveShopDetailParams(p, int64(shopDetailId))
 	}
 }
 

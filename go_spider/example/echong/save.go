@@ -1,8 +1,8 @@
 package main
 
 import (
-	"crypto/md5"
-	"encoding/hex"
+	// "crypto/md5"
+	// "encoding/hex"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/jackson198608/gotest/go_spider/core/common/page"
 	"os"
@@ -136,20 +136,69 @@ func getGoodsSku(query *goquery.Document, goodsSku *string) {
 	*goodsSku = sku
 }
 
-//没有获取到数据
 func getAge(query *goquery.Document, age *string) {
-	query.Find(".left p span.cfe7247").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		*age = s.Text()
+	ageStr := ""
+	query.Find(".textR").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		if strings.Contains(s.Text(),"年龄") {
+			ageStr = s.Siblings().Text()
+			ageStr = strings.Replace(ageStr, " ", "", -1)
+			ageStr = strings.Replace(ageStr, "\n", "", -1)
+		}
 		return true
 	})
+	*age = ageStr
 }
 
-//没有获取到数据
-func getComponent(query *goquery.Document, component *string) {
-	query.Find(".left p span.cfe7247").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		*component = s.Text()
+func getShape(query *goquery.Document, shape *string) {
+	shapeStr := ""
+	query.Find(".textR").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		if strings.Contains(s.Text(),"体型") {
+			shapeStr = s.Siblings().Text()
+			shapeStr = strings.Replace(shapeStr, " ", "", -1)
+			shapeStr = strings.Replace(shapeStr, "\n", "", -1)
+		}
 		return true
 	})
+	*shape = shapeStr
+}
+
+func getComponent(query *goquery.Document, component *string) {
+	componentStr := ""
+	query.Find(".textR").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		if strings.Contains(s.Text(),"主要成份") {
+			componentStr = s.Siblings().Text()
+			componentStr = strings.Replace(componentStr, " ", "", -1)
+			componentStr = strings.Replace(componentStr, "\n", "", -1)
+		}
+		return true
+	})
+	*component = componentStr
+}
+
+func getComponentPercent(query *goquery.Document, component *string) {
+	componentStr := ""
+	query.Find(".textR").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		if strings.Contains(s.Text(),"成份含量") {
+			componentStr = s.Siblings().Text()
+			componentStr = strings.Replace(componentStr, " ", "", -1)
+			componentStr = strings.Replace(componentStr, "\n", "", -1)
+		}
+		return true
+	})
+	*component = componentStr
+}
+
+func getGraininess(query *goquery.Document, graininess *string) {
+	graininessStr := ""
+	query.Find(".textR").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		if strings.Contains(s.Text(),"颗粒大小") {
+			graininessStr = s.Siblings().Find("div span").Text()
+			graininessStr = strings.Replace(graininessStr, " ", "", -1)
+			graininessStr = strings.Replace(graininessStr, "\n", "", -1)
+		}
+		return true
+	})
+	*graininess = graininessStr
 }
 
 func getBrand(query *goquery.Document, brand *string) {
@@ -279,19 +328,6 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 	getGoodsSku(query, goodsSku)
 	logger.Println("[info] goods sku: ", *goodsSku)
 
-	// 适用犬型
-	var shape *string = new(string)
-
-	// 适用年龄
-	var age *string = new(string)
-	getAge(query, age)
-	logger.Println("[info] use age: ", *age)
-
- 	// 成分
-	var goodsComponent *string = new(string)
-	getComponent(query, goodsComponent)
-	logger.Println("[info] goods component: ", *goodsComponent)
-
 	// 品牌
 	var brand *string = new(string)
 	getBrand(query, brand)
@@ -317,75 +353,87 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 	getCommentNum(query, commonNum)
 	logger.Println("[info] common Num: ", *commonNum)
 
+	// 适用犬型
+	var shape *string = new(string)
+	// 适用年龄
+	var age *string = new(string)
+ 	// 成分
+	var goodsComponent *string = new(string)
 	// 成分含量
 	var componentPercent *string = new(string)
-
 	// 口味
 	var taste *string = new(string)
-
 	// 谷物成分
 	var grain *string = new(string)
-
 	// 颗粒度
 	var graininess *string = new(string)
 	
-	//insert record
-	shopDetailId := insertShopDetail(
-		*goodsName,
-		*goodsNumber,
-		*goodsSku,
-		*brand,
-		*firstCategory +" "+ *secondCategory +" "+ *thirdCategory,
-		*goodsPrice,
-		*salesVolume,
-		*commonNum,
-		*score,
+	if *goodsName!="" {
+		//insert record
+		shopDetailId := insertShopDetail(
+			*goodsName,
+			*goodsNumber,
+			*goodsSku,
+			*brand,
+			*firstCategory +" "+ *secondCategory +" "+ *thirdCategory,
+			*goodsPrice,
+			*salesVolume,
+			*commonNum,
+			*score,
+			*shape,
+			*age,
+			*goodsComponent,
+			*componentPercent,
+			*taste,
+			*grain,
+			*graininess,3,sourceUrl)
+
+		return shopDetailId, true
+	}else{
+		logger.Println("[info]again find goods detail: ", sourceUrl)
+		realUrlTag := "shopDetail"
+		req := newRequest(realUrlTag, sourceUrl)
+		p.AddTargetRequestWithParams(req)
+	}
+	return 0,false
+}
+
+func saveShopDetailParams(p *page.Page, shopDetailId int64) {
+	query := p.GetHtmlParser()
+
+	// 适用犬型
+	var shape *string = new(string)
+	getShape(query, shape)
+	logger.Println("[info] goods shape: ", *shape)
+
+	// 适用年龄
+	var age *string = new(string)
+	getAge(query, age)
+	logger.Println("[info] use age: ", *age)
+
+ 	// 成分
+	var goodsComponent *string = new(string)
+	getComponent(query, goodsComponent)
+	logger.Println("[info] goods component: ", *goodsComponent)
+
+	// 成分含量
+	var componentPercent *string = new(string)
+	getComponentPercent(query, componentPercent)
+	logger.Println("[info] goods component percent: ", *componentPercent)
+
+	// 颗粒度
+	var graininess *string = new(string)
+	getGraininess(query, graininess)
+	logger.Println("[info] goods graininess: ", *graininess)
+
+	updateShopDetail(
 		*shape,
 		*age,
 		*goodsComponent,
 		*componentPercent,
-		*taste,
-		*grain,
-		*graininess,3,sourceUrl)
+		*graininess,
+		shopDetailId)
 
-	return shopDetailId, true
-}
-
-func save(p *page.Page) bool {
-	//judge if status is 200
-	if !checkCanSave(p) {
-		return false
-	}
-
-	//get md5
-	h := md5.New()
-	url := p.GetRequest().Url
-	h.Write([]byte(url))
-	md5Str := hex.EncodeToString(h.Sum(nil))
-
-	//get fullpath
-	abPath := getPath(md5Str)
-	fullDirPath := saveDir + abPath
-	err := os.MkdirAll(fullDirPath, 0664)
-	if err != nil {
-		logger.Println("[error]create dir error:", err, " ", fullDirPath, " ", url)
-		return false
-	}
-
-	//save file
-	fileName := fullDirPath + "/" + path.Base(url)
-	result, err := os.Create(fileName)
-	if err != nil {
-		logger.Println("[error]create file error:", err, " ", fileName, " ", url)
-		return false
-	}
-	logger.Println("[info] save page:", url)
-	logger.Println("[info] save in:", fileName)
-	result.WriteString(url + "\n")
-	result.WriteString(p.GetBodyStr())
-	result.Close()
-
-	return true
 }
 
 func getPath(md5Str string) string {

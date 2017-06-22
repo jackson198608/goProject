@@ -15,7 +15,7 @@ func checkShopExist(sourceUrl string) (int64, bool) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("select id from shop where sourceUrl='" + sourceUrl + "'")
+	rows, err := db.Query("select id from goods_source_info where source_url='" + sourceUrl + "'")
 	if err != nil {
 		logger.Println("[error] check sql prepare error: ", err)
 		//fmt.Println("[error] check sql prepare error: ", err)
@@ -43,6 +43,41 @@ func checkShopExist(sourceUrl string) (int64, bool) {
 
 }
 
+func updateShopDetail(
+	shape string,
+	age string,
+	component string,
+	componentPercent string,
+	graininess string,
+	shopDetailId int64,
+) bool {
+
+	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+	if err != nil {
+		logger.Println("[error] connect db err")
+		return false
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("UPDATE goods_source_info SET shape=?,age=?,component=?, component_percent=?,graininess=? where id=?")
+	if err != nil {
+		logger.Println("[error] update prepare error: ", err)
+		return false
+	}
+
+	res, err := stmt.Exec(shape, age, component, componentPercent, graininess, shopDetailId)
+	if err != nil {
+		logger.Println("[error] update excute error: ", err)
+		return false
+	}
+
+	num, err := res.RowsAffected()
+	if err != nil {
+		logger.Println("[error] get insert id error: ", err, " num:", num)
+		return false
+	}
+	return true
+}
 func insertShopDetail(
 	goodsName string,
 	goodsNumber int,
@@ -64,36 +99,41 @@ func insertShopDetail(
 	sourceUrl string,
 ) int64 {
 
-	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
-	if err != nil {
-		logger.Println("[error] connect db err")
-		return 0
+	id,isExist := checkShopExist(sourceUrl)
+	if isExist {
+		logger.Println("[info] find goods")
+		return id
+	} else {
+		db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+		if err != nil {
+			logger.Println("[error] connect db err")
+			return 0
+		}
+		defer db.Close()
+
+		stmt, err := db.Prepare("INSERT goods_source_info SET goods_name=?, sku_id=?,sku_name=?, brand=?,category=?,price=?,sales_volume=?,comment_num=?,score=?,shape=?,age=?,component=?,component_percent=?,taste=?,grain=?,graininess=?,source=?,created=?,source_url=?")
+		if err != nil {
+			logger.Println("[error] insert prepare error: ", err)
+			return 0
+		}
+
+		tm := time.Unix(time.Now().Unix(), 0)
+
+	    createTime := tm.Format("2006-01-02 03:04:05")
+
+		res, err := stmt.Exec(goodsName, goodsNumber, goodsSku, brand, category, goodsPrice, salesVolume, commonNum, score, shape, age, component, componentPercent, taste, grain, graininess, source, createTime, sourceUrl)
+		if err != nil {
+			logger.Println("[error] insert excute error: ", err)
+			return 0
+		}
+
+		id, err := res.LastInsertId()
+		if err != nil {
+			logger.Println("[error] get insert id error: ", err)
+			return 0
+		}
+		return id
 	}
-	defer db.Close()
-
-	stmt, err := db.Prepare("INSERT goods_source_info SET goods_name=?, sku_id=?,sku_name=?, brand=?,category=?,price=?,sales_volume=?,comment_num=?,score=?,shape=?,age=?,component=?,component_percent=?,taste=?,grain=?,graininess=?,source=?,created=?,source_url=?")
-	if err != nil {
-		logger.Println("[error] insert prepare error: ", err)
-		return 0
-	}
-
-	tm := time.Unix(time.Now().Unix(), 0)
-
-    createTime := tm.Format("2006-01-02 03:04:05")
-
-	res, err := stmt.Exec(goodsName, goodsNumber, goodsSku, brand, category, goodsPrice, salesVolume, commonNum, score, shape, age, component, componentPercent, taste, grain, graininess, source, createTime, sourceUrl)
-	if err != nil {
-		logger.Println("[error] insert excute error: ", err)
-		return 0
-	}
-
-	id, err := res.LastInsertId()
-	if err != nil {
-		logger.Println("[error] get insert id error: ", err)
-		return 0
-	}
-	return id
-
 }
 
 func insertShopPhoto(

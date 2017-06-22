@@ -60,27 +60,19 @@ func qShopList(p *page.Page) {
 func qShopDetail(p *page.Page, shopDetailId int64) {
 	query := p.GetHtmlParser()
 	//其他规格
-	// query.Find(".norms-con a").EachWithBreak(func(i int, s *goquery.Selection) bool {
-	// 	url, isExsit := s.Attr("href")
-	// 	if isExsit {
-	// 		logger.Println("[info]find other sku: ", url)
-	// 		realUrlTag := "shopDetail"
-	// 		req := newRequest(realUrlTag, url)
-	// 		p.AddTargetRequestWithParams(req)
-	// 	}
-	// 	return true
-	// })
-
 	query.Find(".norms-con a.norms-a").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		if s.Find(".goods-select").Length() > 0 {
 
 		} else{
 			url, isExsit := s.Attr("href")
 			if isExsit {
-				logger.Println("[info]find other sku: ", url)
-				realUrlTag := "shopDetail"
-				req := newRequest(realUrlTag, url)
-				p.AddTargetRequestWithParams(req)
+				_,isExist := checkShopExist(url)
+				if !isExist {
+					logger.Println("[info]find other sku: ", url)
+					realUrlTag := "shopDetail"
+					req := newRequest(realUrlTag, url)
+					p.AddTargetRequestWithParams(req)
+				}
 			}
         }
 		return true
@@ -117,6 +109,24 @@ func qShopDetail(p *page.Page, shopDetailId int64) {
 		return true
 	})
 
+	//从爬取源URL获取id
+	sourceUrl := p.GetRequest().Url
+	urlArr := strings.Split(sourceUrl, "com/")
+	urlArr1 := strings.Split(urlArr[1], ".html")
+	id := urlArr1[0]
+
+	if id=="" {
+		logger.Println("[info]find goods id fail ", "")
+	}
+
+	// 商品参数
+	getParamsUrl := "http://item.epet.com/goods.html?do=GetParamsAndAnnounce&gid="+id
+	shopDetailIdStr := strconv.Itoa(int(shopDetailId))
+	paramsUrlTag := "shopDetailParams|" + shopDetailIdStr
+	logger.Println("[info]find goods params and announce page:", getParamsUrl)
+	req := newRequest(paramsUrlTag, getParamsUrl)
+	p.AddTargetRequestWithParams(req)
+
 	//商品评论数
 	commentNum := 0
 	query.Find(".ats-style .c300").EachWithBreak(func(i int, s *goquery.Selection) bool {
@@ -144,22 +154,10 @@ func qShopDetail(p *page.Page, shopDetailId int64) {
 	if commentNum>0 {
 		count := 15
 		page := int(math.Ceil(float64(commentNum) / float64(count)))
-
-		sourceUrl := p.GetRequest().Url
-		urlArr := strings.Split(sourceUrl, "com/")
-		urlArr1 := strings.Split(urlArr[1], ".html")
-
-		id := urlArr1[0]
-
-		if id=="" {
-			logger.Println("[info]find goods id fail ", "")
-		}
-		
+		shopDetailIdStr := strconv.Itoa(int(shopDetailId))
+		realUrlTag := "shopCommentList|" + shopDetailIdStr
 		for i := 1; i <= page; i++ {
 			url := "http://item.epet.com/goods.html?do=GetReplys&gid="+ id +"&app=review&page="+ strconv.Itoa(i) +"&is_img=0"
-			shopDetailIdStr := strconv.Itoa(int(shopDetailId))
-			realUrlTag := "shopCommentList|" + shopDetailIdStr
-
 			logger.Println("[info]find goods comment next page :", url)
 			req := newRequest(realUrlTag, url)
 			p.AddTargetRequestWithParams(req)

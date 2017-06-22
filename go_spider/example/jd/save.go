@@ -1,17 +1,38 @@
 package main
 
 import (
-	"crypto/md5"
-	"encoding/hex"
+	// "crypto/md5"
+	// "encoding/hex"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/jackson198608/gotest/go_spider/core/common/page"
 	"os"
 	"path"
 	"strconv"
 	"strings"
-	"net/http"
-	"io/ioutil"
+	"encoding/json"
 )
+
+type GoodsPrice struct {
+    P string `json:"p"`
+}
+
+type CommentsCount struct {
+    CommentCount int64
+    GoodRate   float64
+}
+
+type CommentsCountslice struct {
+    CommentsCount []CommentsCount
+}
+
+type Comments struct {
+    Content string `json:"content"`
+    CreationTime   string `json:"creationTime"`
+}
+
+type Commentsslice struct {
+    Comments []Comments `json:"comments"`
+}
 
 func checkCanSave(p *page.Page) bool {
 	return true
@@ -93,41 +114,35 @@ func getThirdCategory(query *goquery.Document, category *string) {
 
 //调用接口获取到数据
 func getGoodsPrice(query *goquery.Document, goodsPrice *float64) {
-	goodsSku := ""
-	query.Find(".p-choose .dd .item.selected").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		goodsSku, _ = s.Attr("data-value")
+	var price GoodsPrice
+	jsonStr := ""
+	query.Find("body").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		jsonStr = s.Text()
 		return true
 	})
-
-	url := "https://p.3.cn/prices/mgets?callback=jQuery9272433&type=1&area=1_72_2799_0&pdtk=Tb9taS%252BIexnBRFKsj189v9oGHpVaVXq4WXvMG%252BdvtPyh92O%252BPoSi2ySSqJYKBQOrVtTgJp%252FGekyZ%250A5hrmhI%252FMOQ%253D%253D&pduid=1486720070332751456873&pdpin=&pdbp=0&skuIds=J_"+ goodsSku +"&ext=10000000&source=item-pc"
-	resp, err := http.Get(url)
-    if err != nil {
-      *goodsPrice = 0.00
-    }
-
-    defer resp.Body.Close()
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-      *goodsPrice = 0.00
-    }
-
-    logger.Println("get goods price return : ",string(body))
-	*goodsPrice = 0.00
+	jsonStr = strings.Replace(jsonStr, "[", "", -1)
+	jsonStr = strings.Replace(jsonStr, "]", "", -1)
+	json.Unmarshal([]byte(jsonStr), &price)
+    priceF,_ := strconv.ParseFloat(price.P,64)
+	*goodsPrice = priceF
 }
 
 func getGoodsSku(query *goquery.Document, goodsSku *string) {
+	sku := ""
 	query.Find(".p-choose .dd .item.selected").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		*goodsSku, _ = s.Attr("data-value")
+		skuStr, _ := s.Attr("data-value")
+		sku += skuStr + " "
 		return true
 	})
+	*goodsSku = sku
 }
 
 func getShape(query *goquery.Document, shape *string) {
 	shapeStr := ""
-	query.Find(".left p span.cfe7247").EachWithBreak(func(i int, s *goquery.Selection) bool {
+	query.Find(".p-parameter .p-parameter-list li").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		text := s.Text()
         text1 := strings.Split(text, "：")
-        if strings.Contains(text1[0],"犬种") {
+        if strings.Contains(text1[0],"犬型") {
             shapeStr = text1[1]
         }
         return true
@@ -137,7 +152,7 @@ func getShape(query *goquery.Document, shape *string) {
 
 func getAge(query *goquery.Document, age *string) {
 	ageStr := ""
-	query.Find(".left p span.cfe7247").EachWithBreak(func(i int, s *goquery.Selection) bool {
+	query.Find(".p-parameter ul li").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		text := s.Text()
         text1 := strings.Split(text, "：")
         if strings.Contains(text1[0],"适用犬龄") {
@@ -148,54 +163,64 @@ func getAge(query *goquery.Document, age *string) {
 	*age = ageStr
 }
 
+func getTaste(query *goquery.Document, taste *string) {
+	tasteStr := ""
+	query.Find(".p-parameter ul li").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		text := s.Text()
+        text1 := strings.Split(text, "：")
+        if strings.Contains(text1[0],"口味") {
+            tasteStr = text1[1]
+        }
+        return true
+	})
+	*taste = tasteStr
+}
+
 func getComponent(query *goquery.Document, component *string) {
-	// query.Find(".left p span.cfe7247").EachWithBreak(func(i int, s *goquery.Selection) bool {
-	// 	*result = s.Text()
-	// 	return true
-	// }, component)
-	*component = ""
+	componentStr := ""
+	query.Find(".p-parameter ul li").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		text := s.Text()
+        text1 := strings.Split(text, "：")
+        if strings.Contains(text1[0],"功效") {
+            componentStr = text1[1]
+        }
+        return true
+	})
+	*component = componentStr
 }
 
 func getBrand(query *goquery.Document, brand *string) {
-	query.Find(".p-parameter-list li").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		text := s.Text()
-        brandStr :=  strings.Split(text,"品牌：")
-        brandStr1 :=  strings.Split(brandStr[1],"♥关注")
-        *brand = brandStr1[0]
-        *brand = strings.Replace(*brand, " ", "", -1)
-        *brand = strings.Replace(*brand, "\n", "", -1)
+	query.Find("#parameter-brand li").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		*brand,_ = s.Attr("title")
 		return true
 	})
 }
 
 func getGoodsNum(query *goquery.Document, goodsNum *int) {
-	query.Find(".p-choose .dd .item.selected").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		goodsNumStr, _ := s.Attr("data-sku")
-		*goodsNum,_ = strconv.Atoi(goodsNumStr)
+	goodsNumStr := ""
+	query.Find(".p-parameter ul li").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		text := s.Text()
+        text1 := strings.Split(text, "：")
+        if strings.Contains(text1[0],"商品编号") {
+            goodsNumStr = text1[1]
+        }
+        return true
+	})
+	*goodsNum,_ = strconv.Atoi(goodsNumStr)
+}
+
+//调用接口获取数据
+func getCommentNumScore(query *goquery.Document, commentNum *int64, score *float64) {
+	jsonStr := ""
+	query.Find("body").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		jsonStr = s.Text()
 		return true
 	})
-}
 
-func getSalesVolume(query *goquery.Document, salesVolume *int) {
-
-}
-
-func getScore(query *goquery.Document, score *float64) {
-	// query.Find(".pl_l .pl_score span").EachWithBreak(func(i int, s *goquery.Selection) bool {
-	// 	scoreStr := s.Text()
-	// 	scoreF,_ := strconv.ParseFloat(scoreStr, 64)
-	// 	*score = scoreF
-	// 	return true
-	// })
-}
-
-func getCommentNum(query *goquery.Document, commentNum *int) {
-	// query.Find(".pro_tag_cont a em").EachWithBreak(func(i int, s *goquery.Selection) bool {
-	// 	if i==0 {
-	// 		*result = s.Text()
-	// 	}
-	// 	return true
-	// })
+    var s CommentsCountslice
+    json.Unmarshal([]byte(jsonStr), &s)
+    *commentNum = s.CommentsCount[0].CommentCount
+    *score = s.CommentsCount[0].GoodRate
 }
 
 func saveShopDetail(p *page.Page) (int64, bool) {
@@ -221,26 +246,11 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 
 	// 售价
 	var goodsPrice *float64 = new(float64)
-	getGoodsPrice(query, goodsPrice)
-	logger.Println("[info] goods price: ", *goodsPrice)
 
  	// 规格
 	var goodsSku *string = new(string)
 	getGoodsSku(query, goodsSku)
 	logger.Println("[info] goods sku: ", *goodsSku)
-
-	// 适用犬型
-	var shape *string = new(string)
-
-	// 适用年龄
-	var age *string = new(string)
-	getAge(query, age)
-	logger.Println("[info] use age: ", *age)
-
- 	// 成分
-	var goodsComponent *string = new(string)
-	getComponent(query, goodsComponent)
-	logger.Println("[info] goods component: ", *goodsComponent)
 
 	// 品牌
 	var brand *string = new(string)
@@ -252,20 +262,29 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 	getGoodsNum(query, goodsNumber)
 	logger.Println("[info] goodsNumber: ", *goodsNumber)
 
+	// 适用犬型
+	var shape *string = new(string)
+	getShape(query, shape)
+	logger.Println("[info] goods shape: ", *shape)
+
+	// 适用年龄
+	var age *string = new(string)
+	getAge(query, age)
+	logger.Println("[info] use age: ", *age)
+
+ 	// 成分
+	var goodsComponent *string = new(string)
+	getComponent(query, goodsComponent)
+	logger.Println("[info] goods component: ", *goodsComponent)
+
 	// 销量
 	var salesVolume *int = new(int)
-	getSalesVolume(query, salesVolume)
-	logger.Println("[info] salesVolume: ", *salesVolume)
 
 	// 评分
 	var score *float64 = new(float64)
-	getScore(query, score)
-	logger.Println("[info] score: ", *score)
 
 	// 评论数
-	var commonNum *int = new(int)
-	getCommentNum(query, commonNum)
-	logger.Println("[info] common Num: ", commonNum)
+	var commentNum *int = new(int)
 
 	// 成分含量
 	var componentPercent *string = new(string)
@@ -279,63 +298,33 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 	// 颗粒度
 	var graininess *string = new(string)
 	
-	//insert record
-	shopDetailId := insertShopDetail(
-		*goodsName,
-		*goodsNumber,
-		*goodsSku,
-		*brand,
-		*firstCategory +" "+ *secondCategory +" "+ *thirdCategory,
-		*goodsPrice,
-		*salesVolume,
-		*commonNum,
-		*score,
-		*shape,
-		*age,
-		*goodsComponent,
-		*componentPercent,
-		*taste,
-		*grain,
-		*graininess,1,sourceUrl)
-
-	return shopDetailId, true
-}
-
-func save(p *page.Page) bool {
-	//judge if status is 200
-	if !checkCanSave(p) {
-		return false
+	if *goodsName!="" {
+		//insert record
+		shopDetailId := insertShopDetail(
+			*goodsName,
+			*goodsNumber,
+			*goodsSku,
+			*brand,
+			*firstCategory +" "+ *secondCategory +" "+ *thirdCategory,
+			*goodsPrice,
+			*salesVolume,
+			*commentNum,
+			*score,
+			*shape,
+			*age,
+			*goodsComponent,
+			*componentPercent,
+			*taste,
+			*grain,
+			*graininess,1,sourceUrl)
+		return shopDetailId, true
+	}else{
+		logger.Println("[info]again find goods detail: ", sourceUrl)
+		realUrlTag := "shopDetail"
+		req := newRequest(realUrlTag, sourceUrl)
+		p.AddTargetRequestWithParams(req)
 	}
-
-	//get md5
-	h := md5.New()
-	url := p.GetRequest().Url
-	h.Write([]byte(url))
-	md5Str := hex.EncodeToString(h.Sum(nil))
-
-	//get fullpath
-	abPath := getPath(md5Str)
-	fullDirPath := saveDir + abPath
-	err := os.MkdirAll(fullDirPath, 0664)
-	if err != nil {
-		logger.Println("[error]create dir error:", err, " ", fullDirPath, " ", url)
-		return false
-	}
-
-	//save file
-	fileName := fullDirPath + "/" + path.Base(url)
-	result, err := os.Create(fileName)
-	if err != nil {
-		logger.Println("[error]create file error:", err, " ", fileName, " ", url)
-		return false
-	}
-	logger.Println("[info] save page:", url)
-	logger.Println("[info] save in:", fileName)
-	result.WriteString(url + "\n")
-	result.WriteString(p.GetBodyStr())
-	result.Close()
-
-	return true
+	return 0,false
 }
 
 func getPath(md5Str string) string {
@@ -399,47 +388,55 @@ func getPathFromUrl(url string) string {
 		path := url[7:i]
 		return string(path)
 	}
-
 }
 
-func getCommentContent(p *page.Page, s *goquery.Selection) string {
-	// var content string
-	// s.Find(".pl_list .pl_right dl dd").EachWithBreak(func(i int, s *goquery.Selection) bool {
-	// 	if i%4 == 1 {
-	// 		content = s.Text()	
-	// 	}
-	// 	return false
-	// })
-	// return content
-	return ""
+func saveShopCommentList(p *page.Page, shopDetailId int64) {
+	query := p.GetHtmlParser()
+
+	var s Commentsslice
+	jsonStr := ""
+	query.Find("body").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		jsonStr = s.Text()
+		return true
+	})
+    json.Unmarshal([]byte(jsonStr), &s)
+    
+    for i := 0; i < len(s.Comments); i++ {
+    	logger.Println("[info] goods comment content: ",i, s.Comments[i].Content)
+    	logger.Println("[info] goods comment CreationTime: ",i, s.Comments[i].CreationTime)
+    	insertShopComment(
+    		shopDetailId,
+    		s.Comments[i].Content,
+    		1,
+    		s.Comments[i].CreationTime)
+    }
 }
 
-func getCommentTime(p *page.Page, s *goquery.Selection) string {
-	// var commentTime string
-	// s.Find(".pl_list .pl_right dl dd").EachWithBreak(func(i int, s *goquery.Selection) bool {
-	// 	if (i-2)%4 == 1 {
-	// 		content = s.Text()
-	// 		contents = strings.Split(content, "网站")
-	// 		commentTime = contents[1]
-	// 	}
-	// 	return false
-	// })
-	// return commentTime
-	return ""
+func saveGoodsPrice(p *page.Page, shopDetailId int64) {
+	query := p.GetHtmlParser()
+
+	// 售价
+	var goodsPrice *float64 = new(float64)
+	getGoodsPrice(query, goodsPrice)
+	logger.Println("[info] goods price: ", *goodsPrice)
+
+	updateGoodsPrice(*goodsPrice, shopDetailId)
 }
 
-func saveShopCommentList(p *page.Page, shopDetailId int64) bool {
-	// query := p.GetHtmlParser()
+func saveGoodsCommentNumAndScore(p *page.Page, shopDetailId int64) (bool){
+	query := p.GetHtmlParser()
 
-	// query.Find(".comment-list li").EachWithBreak(func(i int, s *goquery.Selection) bool {
-	// 	liId, isExist := s.Attr("id")
-	// 	if isExist && strings.Contains(liId, "rev_") {
-	// 		commentId := processEachComment(p, s, shopDetailId)
-	// 		logger.Println("[info] insert comment id:", commentId)
-	// 		qCommentPhotoPage(p, s, commentId)
-	// 	}
-	// 	return true
-	// })
+	// 评分
+	var score *float64 = new(float64)
 
-	return true
+	// 评论数
+	var commentNum *int64 = new(int64)
+
+	getCommentNumScore(query, commentNum, score)
+
+	logger.Println("[info] score: ", *score)
+	logger.Println("[info] common Num: ", *commentNum)
+
+	status := updateCommentNumAndScore(*score, *commentNum, shopDetailId)
+	return status
 }

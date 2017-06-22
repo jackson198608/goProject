@@ -6,7 +6,14 @@ import (
 	// "regexp"
 	"strconv"
 	"strings"
+	"math"
+	"encoding/json"
 )
+
+type GoodsDesc struct {
+    Date string `json:"date"`
+    Content string `json:"content"`
+}
 
 func getNextPageUrl(url string, page string) string {
 	paramsIndex := strings.IndexByte(url, '?')
@@ -37,7 +44,7 @@ func qShopCateList(p *page.Page) {
 	for i := 0; i < len(category); i++ {
 		keyword := category[i]
 		m := 1
-	    for ii := 0; ii < 20; ii++ {
+	    for ii := 0; ii < 200; ii++ {
 	        if ii%2 ==1 {
 	            page := strconv.Itoa(ii)
 	            if ii==1 {
@@ -53,7 +60,7 @@ func qShopCateList(p *page.Page) {
 		        p.AddTargetRequestWithParams(req)
 	        }
 	    }
-	    break 
+        
 	}
 }
 
@@ -73,23 +80,92 @@ func qShopList(p *page.Page) {
 		return true
 	})
 }
+func qGoodsCommentList(p *page.Page, shopDetailId int64) {
+	sku_id,_ := findSkuId(shopDetailId)
+
+	//商品评论数
+	commentNum,_ := findCommentNum(shopDetailId)
+
+	if commentNum==0 {
+		logger.Println("[info]find goods comment num is :", 0)
+	}
+	maxPage := 99
+	count := 10
+	page := int(math.Ceil(float64(commentNum) / float64(count)))
+	if page<99 {
+		maxPage = page
+	}
+	logger.Println("[info]find goods comment page is :", maxPage)
+
+	// jd评价最多可查看99页
+	for i := 1; i <= maxPage; i++ {
+		url := "https://sclub.jd.com/comment/productPageComments.action?productId="+ strconv.FormatInt(sku_id,10) +"&score=0&sortType=5&page="+ strconv.Itoa(i) +"&pageSize=10&isShadowSku=0&fold=1" //&callback=jQuery5551091
+		shopDetailIdStr := strconv.Itoa(int(shopDetailId))
+		realUrlTag := "shopCommentList|" + shopDetailIdStr
+		logger.Println("[info]find goods comment next page :", url)
+		req := newRequest(realUrlTag, url)
+		p.AddTargetRequestWithParams(req)
+	}
+}
+
+func qGoodsDescImage(p *page.Page, shopDetailId int64) {
+	query := p.GetHtmlParser()
+
+	var s GoodsDesc
+	jsonStr := ""
+	query.Find("body").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		jsonStr = s.Text()
+		return true
+	})
+    json.Unmarshal([]byte(jsonStr), &s)
+    // logger.Println(jsonStr)
+    // logger.Println("json ", s)
+	
+	// url := "https://sclub.jd.com/comment/productPageComments.action?productId="+ strconv.FormatInt(sku_id,10) +"&score=0&sortType=5&page="+ strconv.Itoa(i) +"&pageSize=10&isShadowSku=0&fold=1" //&callback=jQuery5551091
+	// shopDetailIdStr := strconv.Itoa(int(shopDetailId))
+	// realUrlTag := "shopImage|" + shopDetailIdStr
+	// logger.Println("[info]find goods comment next page :", url)
+	// req := newRequest(realUrlTag, url)
+	// p.AddTargetRequestWithParams(req)
+}
 
 func qShopDetail(p *page.Page, shopDetailId int64) {
 	query := p.GetHtmlParser()
+	//获取当前skuid
+	sku_id,_ := findSkuId(shopDetailId)
+
+	shopDetailIdStr := strconv.Itoa(int(shopDetailId))
+
+	//获取商品价格
+	getPriceUrl := "https://p.3.cn/prices/mgets?&type=1&area=1_72_2799_0&pdtk=Tb9taS%252BIexnBRFKsj189v9oGHpVaVXq4WXvMG%252BdvtPyh92O%252BPoSi2ySSqJYKBQOrVtTgJp%252FGekyZ%250A5hrmhI%252FMOQ%253D%253D&pduid=1486720070332751456873&pdpin=&pdbp=0&skuIds=J_"+ strconv.FormatInt(sku_id,10) +"&ext=10000000&source=item-pc" //callback=jQuery9272433
+
+	logger.Println("[info]find goods price: ", getPriceUrl)
+	priceTag := "goodsPrice|" + shopDetailIdStr
+	priceReq := newRequest(priceTag, getPriceUrl)
+	p.AddTargetRequestWithParams(priceReq)
+
+	//获取商品评论数、评分
+	getCommentCountUrl := "https://club.jd.com/comment/productCommentSummaries.action?referenceIds="+ strconv.FormatInt(sku_id, 10) +"&_=1497592374339" //&callback=jQuery5551091
+	logger.Println("[info]find comment num and score: ", getCommentCountUrl)
+	CommentCountTag := "goodsCommentNumScore|" + shopDetailIdStr
+	commentCountReq := newRequest(CommentCountTag, getCommentCountUrl)
+	p.AddTargetRequestWithParams(commentCountReq)
+
 	//其他规格
 	query.Find(".p-choose .dd .item").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		dataSku, isExsit := s.Attr("data-sku")
 		if isExsit {
-			sourceUrl := p.GetRequest().Url
-			urlArr := strings.Split(sourceUrl, "com/")
-			urlArr1 := strings.Split(urlArr[1], ".html")
-			id := urlArr1[0]
+			id := strconv.FormatInt(sku_id, 10)
 			if !strings.Contains(id,dataSku) {
 				url := "https://item.jd.com/"+ dataSku +".html"
-				logger.Println("[info]find other sku: ", url)
-				realUrlTag := "shopDetail"
-				req := newRequest(realUrlTag, url)
-				p.AddTargetRequestWithParams(req)
+				logger.Println("get goods sku url:", url)
+				_,isExist := checkShopExist(url)
+				if !isExist {
+					logger.Println("[info]find other sku: ", url)
+					realUrlTag := "shopDetail"
+					req := newRequest(realUrlTag, url)
+					p.AddTargetRequestWithParams(req)
+				}
 			}
 		}
 		return true
@@ -98,87 +174,23 @@ func qShopDetail(p *page.Page, shopDetailId int64) {
 	//商品图片
 	query.Find(".main-img img").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		url, isExsit := s.Attr("data-origin")
-		if isExsit {
-			logger.Println("[info]find goods first image : ", url)
-			shopDetailIdStr := strconv.Itoa(int(shopDetailId))
-			realUrlTag := "shopImage|" + shopDetailIdStr
-			req := newRequest(realUrlTag, url)
-			p.AddTargetRequestWithParams(req)
-			return false
+		if !isExsit {
+			//全球购
+			url, isExsit = s.Attr("src")
 		}
+		logger.Println("[info]find goods first image : ", "http:" + url)
+		shopDetailIdStr := strconv.Itoa(int(shopDetailId))
+		realUrlTag := "shopImage|" + shopDetailIdStr
+		req := newRequest(realUrlTag, "http:" + url)
+		p.AddTargetRequestWithParams(req)
 		return true
 	})
 
 	//商品详情图片
-	query.Find(".mt40 .mt15 div img").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		url, isExsit := s.Attr("href")
-		if isExsit {
-			realUrl := url
-			logger.Println("[info]find goods detail image : ", realUrl)
-			shopDetailIdStr := strconv.Itoa(int(shopDetailId))
-			realUrlTag := "shopImage|" + shopDetailIdStr
-			req := newRequest(realUrlTag, realUrl)
-			p.AddTargetRequestWithParams(req)
-			return false
-		}
-		return true
-	})
+	// getImageUrl := "https://cd.jd.com/description/channel?skuId="+ strconv.FormatInt(sku_id, 10) +"&mainSkuId="+ strconv.FormatInt(sku_id, 10) +"&cdn=2" //&callback=showdesc
 
-	// //评论页
-	// //商品评论数
-	// commentNum := 0
-	// query.Find(".pro_tag_cont a em").EachWithBreak(func(i int, s *goquery.Selection) bool {
-	// 	if i==0 {
-	// 		commentNum,_ =strconv.Atoi(s.Text())
-	// 		logger.Println("[info]find goods comment num is :", commentNum)
-	// 	}
-	// 	return true
-	// })
-	// if commentNum==0 {
-	// 	logger.Println("[info]find goods comment num is :", 0)
-	// }
-	// maxPage := 49
-	// count := 13
-	// page := int(math.Ceil(float64(commentNum) / float64(count)))
-	// if page<49 {
-	// 	maxPage = page
-	// }
-	// logger.Println("[info]find goods comment page is :", maxPage)
-	// sourceUrl := p.GetRequest().Url
-	// urlArr := strings.Split(sourceUrl, "-")
-	// urlArr1 := strings.Split(urlArr[1], ".")
-	// id := urlArr1[0]
-
-	// if id=="" {
-	// 	logger.Println("[info]find goods id fail ", "")
-	// }
-	// // 波奇评价最多可查看49页
-	// for i := 1; i <= maxPage; i++ {
-	// 	url := "http://shop.boqii.com/index.php?app=ajax&ctl=comment&act=commentList&id="+ id +"&cmtype=&action=comment&page="+ strconv.Itoa(i) +"&ordertype=1"	
-	// 	shopDetailIdStr := strconv.Itoa(int(shopDetailId))
-	// 	realUrlTag := "shopCommentList|" + shopDetailIdStr
-	// 	logger.Println("[info]find goods comment next page :", url)
-	// 	req := newRequest(realUrlTag, url)
-	// 	p.AddTargetRequestWithParams(req)
-	// }
-
-}
-
-func qShopCommentList(p *page.Page, shopDetailId int64) {
-	//get next page
-	// query := p.GetHtmlParser()
-	// url := p.GetRequest().Url
-	// query.Find(".NextPage").EachWithBreak(func(i int, s *goquery.Selection) bool {
-	// 	logger.Println("[info]in the next page")
-	// 	url, isExsit := s.Attr("href")
-	// 	if isExsit {
-	// 		realUrl := getNextPageUrl(*result, url)
-	// 		logger.Println("[info]find next page: ", realUrl)
-	// 		shopDetailIdStr := strconv.Itoa(int(shopDetailId))
-	// 		realUrlTag := "shopCommentList" + "|" + shopDetailIdStr
-	// 		req := newRequest(realUrlTag, realUrl)
-	// 		p.AddTargetRequestWithParams(req)
-	// 	}
-	// 	return false
-	// })
+	// logger.Println("[info]find goods detail image: ", getImageUrl)
+	// imageTag := "goodsDescImage|" + shopDetailIdStr
+	// imageReq := newRequest(imageTag, getImageUrl)
+	// p.AddTargetRequestWithParams(imageReq)
 }

@@ -46,7 +46,6 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 			qShopDetail(p, shopDetailId)
 		}
 	} else if tag == "DogCateList" {
-		logger.Println("[info]Get dog category list", tag)
 		qShopCateList(p)
 
 	}  else if tag == "shopList" {
@@ -56,13 +55,11 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 		saveImage(p)
 
 	} else if strings.Contains(tag, "shopImage") {
-
 		shopDetailId, success := getDetailId(tag)
 		if !success {
 			logger.Println("[error] get detail id error", tag, p.GetRequest().Url)
 			return
 		}
-		
 		saveShopImagePath(p, int64(shopDetailId))
 
 	} else if strings.Contains(tag, "shopCommentList") {
@@ -71,8 +68,33 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 			logger.Println("[error] get detail id error", tag, p.GetRequest().Url)
 			return
 		}
-		qShopCommentList(p, int64(shopDetailId))
 		saveShopCommentList(p, int64(shopDetailId))
+	} else if strings.Contains(tag, "goodsPrice") {
+		shopDetailId, success := getDetailId(tag)
+		if !success {
+			logger.Println("[error] get detail id error", tag, p.GetRequest().Url)
+			return
+		}
+		saveGoodsPrice(p, int64(shopDetailId))
+	} else if strings.Contains(tag, "goodsCommentNumScore") {
+		shopDetailId, success := getDetailId(tag)
+		if !success {
+			logger.Println("[error] get detail id error", tag, p.GetRequest().Url)
+			return
+		}
+		updateSuccess := saveGoodsCommentNumAndScore(p, int64(shopDetailId))
+		if !updateSuccess {
+			logger.Println("[error] update goods comment num and score fail ", tag, p.GetRequest().Url)
+			return
+		}
+		qGoodsCommentList(p, int64(shopDetailId))
+	} else if strings.Contains(tag, "goodsDescImage") {
+		shopDetailId, success := getDetailId(tag)
+		if !success {
+			logger.Println("[error] get detail id error", tag, p.GetRequest().Url)
+			return
+		}
+		qGoodsDescImage(p, int64(shopDetailId))
 	}
 }
 
