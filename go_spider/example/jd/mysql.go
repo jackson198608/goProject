@@ -172,7 +172,7 @@ func updateGoodsPrice(
 		return false
 	}
 
-	res, err := stmt.Exec(price, shopDetailId)
+	res, err := stmt.Exec(price*100, shopDetailId)
 	if err != nil {
 		logger.Println("[error] update excute error: ", err)
 		return false
@@ -204,7 +204,7 @@ func updateCommentNumAndScore(
 		return false
 	}
 
-	res, err := stmt.Exec(score, commentNum, shopDetailId)
+	res, err := stmt.Exec(score*100, commentNum, shopDetailId)
 	if err != nil {
 		logger.Println("[error] update excute error: ", err)
 		return false

@@ -215,8 +215,8 @@ func getBrand(query *goquery.Document, brand *string) {
 func getGoodsNum(query *goquery.Document, goodsNum *int) {
 	goodsNumInt := 0
 	query.Find(".ftc .xq-num").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		num,_:=strconv.Atoi(s.Text())
-		goodsNumInt = num
+		numStr := strings.Split(s.Text(), "编号：")
+		goodsNumInt,_ = strconv.Atoi(numStr[1])
 		return true
 	})
 
@@ -224,8 +224,7 @@ func getGoodsNum(query *goquery.Document, goodsNum *int) {
 		//直邮样式
 		query.Find(".clearfix .c999 span").EachWithBreak(func(i int, s *goquery.Selection) bool {
 			numStr := strings.Split(s.Text(), "商品编号：")
-			num,_:=strconv.Atoi(numStr[1])
-			goodsNumInt = num
+			goodsNumInt,_ = strconv.Atoi(numStr[1])
 			return true
 		})
 	}
@@ -256,18 +255,21 @@ func getSalesVolume(query *goquery.Document, salesVolume *int) {
 
 //没有获取到数据
 func getScore(query *goquery.Document, score *float64) {
-	// query.Find(".pl_l .pl_score span").EachWithBreak(func(i int, s *goquery.Selection) bool {
-	// 	*result = s.Text()
+	// *score = 0.0
+
+	// //直邮样式
+	// query.Find(".had-buy .clearfix .fl a span").EachWithBreak(func(i int, s *goquery.Selection) bool {
+	// 	text := s.Text() //4.8分 (3344条评论）
+	// 	num := strings.Split(text,"分")
+	// 	scoreF,_ := strconv.ParseFloat(num[0],64)
+ //    	*score = scoreF;
 	// 	return true
 	// })
-	*score = 0.0
 
-	//直邮样式
-	query.Find(".had-buy .clearfix .fl a span").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		text := s.Text() //4.8分 (3344条评论）
-		num := strings.Split(text,"分")
-		scoreF,_ := strconv.ParseFloat(num[0],64)
-    	*score = scoreF;
+	query.Find(".reply_head .gdpoint").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		numStr := strings.Split(s.Text(), "分")
+		scoreF,_:=strconv.ParseFloat(numStr[0], 64)
+		*score = scoreF;
 		return true
 	})
 }
@@ -345,8 +347,6 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 
 	// 评分
 	var score *float64 = new(float64)
-	getScore(query, score)
-	logger.Println("[info] score: ", *score)
 
 	// 评论数
 	var commonNum *int = new(int)
@@ -386,7 +386,7 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 			*componentPercent,
 			*taste,
 			*grain,
-			*graininess,3,sourceUrl)
+			*graininess,4,sourceUrl)
 
 		return shopDetailId, true
 	}else{
@@ -396,6 +396,20 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 		p.AddTargetRequestWithParams(req)
 	}
 	return 0,false
+}
+
+func saveShopDetailScore(p *page.Page, shopDetailId int64) {
+	query := p.GetHtmlParser()
+
+	// 评分
+	var score *float64 = new(float64)
+	getScore(query, score)
+	logger.Println("[info] score: ", *score)
+
+	updateShopDetailScore(
+		*score,
+		shopDetailId)
+
 }
 
 func saveShopDetailParams(p *page.Page, shopDetailId int64) {

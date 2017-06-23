@@ -9,15 +9,15 @@ import (
 	"strconv"
 )
 
-//var dbAuth string = "root:my-secret-pw"
+var dbAuth string = "dog123:dog123"
 
-var dbAuth string = "root:123456"
+var dbDsn string = "192.168.5.86:3306"
 
-var dbDsn string = "127.0.0.1:3306"
+// var dbAuth string = "root:123456"
 
-// var dbDsn string = "192.168.5.199:3306"
+// var dbDsn string = "127.0.0.1:3306"
 
-var dbName string = "mall"
+var dbName string = "big_data_mall"
 
 var saveDir string = "/tmp/jd/"
 
