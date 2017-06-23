@@ -80,6 +80,13 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 			return
 		}
 		saveShopDetailParams(p, int64(shopDetailId))
+	}  else if strings.Contains(tag, "shopDetailScore") {
+		shopDetailId, success := getDetailId(tag)
+		if !success {
+			logger.Println("[error] get detail id error", tag, p.GetRequest().Url)
+			return
+		}
+		saveShopDetailScore(p, int64(shopDetailId))
 	}
 }
 

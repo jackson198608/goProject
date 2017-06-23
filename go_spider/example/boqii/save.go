@@ -1,8 +1,8 @@
 package main
 
 import (
-	"crypto/md5"
-	"encoding/hex"
+	// "crypto/md5"
+	// "encoding/hex"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/jackson198608/gotest/go_spider/core/common/page"
 	"os"
@@ -42,6 +42,7 @@ func saveImage(p *page.Page) bool {
 	logger.Println("[info] save in:", fullPath)
 	logger.Println("[info] save len:", len(p.GetBodyStr()))
 	result.WriteString(p.GetBodyStr())
+	logger.Println("[info] save iamge WriteString:", len(p.GetBodyStr()))
 	result.Close()
 
 	return true
@@ -298,43 +299,6 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 		p.AddTargetRequestWithParams(req)
 	}
 	return 0,false
-}
-
-func save(p *page.Page) bool {
-	//judge if status is 200
-	if !checkCanSave(p) {
-		return false
-	}
-
-	//get md5
-	h := md5.New()
-	url := p.GetRequest().Url
-	h.Write([]byte(url))
-	md5Str := hex.EncodeToString(h.Sum(nil))
-
-	//get fullpath
-	abPath := getPath(md5Str)
-	fullDirPath := saveDir + abPath
-	err := os.MkdirAll(fullDirPath, 0664)
-	if err != nil {
-		logger.Println("[error]create dir error:", err, " ", fullDirPath, " ", url)
-		return false
-	}
-
-	//save file
-	fileName := fullDirPath + "/" + path.Base(url)
-	result, err := os.Create(fileName)
-	if err != nil {
-		logger.Println("[error]create file error:", err, " ", fileName, " ", url)
-		return false
-	}
-	logger.Println("[info] save page:", url)
-	logger.Println("[info] save in:", fileName)
-	result.WriteString(url + "\n")
-	result.WriteString(p.GetBodyStr())
-	result.Close()
-
-	return true
 }
 
 func getPath(md5Str string) string {

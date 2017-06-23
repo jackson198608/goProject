@@ -10,6 +10,7 @@ import (
 )
 
 func qShopCateList(p *page.Page) {
+	logger.Println("[info]find shop category list page: ", p.GetRequest().Url)
 	query := p.GetHtmlParser()
 	query.Find(".channel_left_menu a").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		url, isExsit := s.Attr("href")
@@ -24,6 +25,7 @@ func qShopCateList(p *page.Page) {
 }
 
 func qShopList(p *page.Page) {
+	logger.Println("[info]find shop list page: ", p.GetRequest().Url)
 	query := p.GetHtmlParser()
 
 	//find shop list
@@ -59,6 +61,7 @@ func qShopList(p *page.Page) {
 }
 
 func qShopDetail(p *page.Page, shopDetailId int64) {
+	logger.Println("[info]find shop detail page: ", p.GetRequest().Url)
 	query := p.GetHtmlParser()
 	//其他规格
 	query.Find(".change_no a").EachWithBreak(func(i int, s *goquery.Selection) bool {
@@ -113,6 +116,7 @@ func qShopDetail(p *page.Page, shopDetailId int64) {
 	})
 	if commentNum==0 {
 		logger.Println("[info]find goods comment num is :", 0)
+		return 
 	}
 	maxPage := 49
 	count := 13
@@ -128,6 +132,7 @@ func qShopDetail(p *page.Page, shopDetailId int64) {
 
 	if id=="" {
 		logger.Println("[info]find goods id fail ", "")
+		return
 	}
 	// 波奇评价最多可查看49页
 	for i := 1; i <= maxPage; i++ {

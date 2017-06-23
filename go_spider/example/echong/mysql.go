@@ -43,6 +43,38 @@ func checkShopExist(sourceUrl string) (int64, bool) {
 
 }
 
+func updateShopDetailScore(
+	score float64,
+	shopDetailId int64,
+) bool {
+
+	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+	if err != nil {
+		logger.Println("[error] connect db err")
+		return false
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("UPDATE goods_source_info SET score=? where id=?")
+	if err != nil {
+		logger.Println("[error] update prepare error: ", err)
+		return false
+	}
+
+	res, err := stmt.Exec(score*10, shopDetailId)
+	if err != nil {
+		logger.Println("[error] update excute error: ", err)
+		return false
+	}
+
+	num, err := res.RowsAffected()
+	if err != nil {
+		logger.Println("[error] get insert id error: ", err, " num:", num)
+		return false
+	}
+	return true
+}
+
 func updateShopDetail(
 	shape string,
 	age string,
@@ -121,7 +153,7 @@ func insertShopDetail(
 
 	    createTime := tm.Format("2006-01-02 03:04:05")
 
-		res, err := stmt.Exec(goodsName, goodsNumber, goodsSku, brand, category, goodsPrice, salesVolume, commonNum, score, shape, age, component, componentPercent, taste, grain, graininess, source, createTime, sourceUrl)
+		res, err := stmt.Exec(goodsName, goodsNumber, goodsSku, brand, category, goodsPrice*100, salesVolume, commonNum, score*10, shape, age, component, componentPercent, taste, grain, graininess, source, createTime, sourceUrl)
 		if err != nil {
 			logger.Println("[error] insert excute error: ", err)
 			return 0

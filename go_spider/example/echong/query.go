@@ -127,6 +127,13 @@ func qShopDetail(p *page.Page, shopDetailId int64) {
 	req := newRequest(paramsUrlTag, getParamsUrl)
 	p.AddTargetRequestWithParams(req)
 
+	// 商品评分
+	getScoreUrl := "http://item.epet.com/goods.html?do=GetReplys&gid="+ id +"&app=review&page=1&is_img=0"
+	scoreUrlTag := "shopDetailScore|" + shopDetailIdStr
+	logger.Println("[info]find goods score:", getScoreUrl)
+	scorereq := newRequest(scoreUrlTag, getScoreUrl)
+	p.AddTargetRequestWithParams(scorereq)
+
 	//商品评论数
 	commentNum := 0
 	query.Find(".ats-style .c300").EachWithBreak(func(i int, s *goquery.Selection) bool {
@@ -148,6 +155,7 @@ func qShopDetail(p *page.Page, shopDetailId int64) {
 			return true
 		})
 	}
+
 	if commentNum==0 {
 		logger.Println("[info]find goods comment num is :", 0)
 	}

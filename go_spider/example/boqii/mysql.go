@@ -121,7 +121,7 @@ func insertShopDetail(
 
 	    createTime := tm.Format("2006-01-02 03:04:05")
 
-		res, err := stmt.Exec(goodsName, goodsNumber, goodsSku, brand, category, goodsPrice, salesVolume, commonNum, score, shape, age, component, componentPercent, taste, grain, graininess, source, createTime, sourceUrl)
+		res, err := stmt.Exec(goodsName, goodsNumber, goodsSku, brand, category, goodsPrice*100, salesVolume, commonNum, score*10, shape, age, component, componentPercent, taste, grain, graininess, source, createTime, sourceUrl)
 		if err != nil {
 			logger.Println("[error] insert excute error: ", err)
 			return 0

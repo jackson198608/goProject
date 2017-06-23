@@ -45,26 +45,29 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 			qShopDetail(p, shopDetailId)
 		}
 	} else if tag == "DogCateList" {
-		logger.Println("[info]find category list by tag : ", tag)
+		logger.Println("[info]find category list by tag : ", tag, p.GetRequest().Url)
 		qShopCateList(p)
 
 	}  else if tag == "shopList" {
+		logger.Println("[info]find shop list by tag : ", tag, p.GetRequest().Url)
 		qShopList(p)
 
 	}else if tag == "shopImage" {
+		logger.Println("[info]save shop image by tag : ", tag, p.GetRequest().Url)
 		saveImage(p)
 
 	} else if strings.Contains(tag, "shopImage") {
+		logger.Println("[info]find shop image url by tag : ", tag, p.GetRequest().Url)
 
 		shopDetailId, success := getDetailId(tag)
 		if !success {
 			logger.Println("[error] get detail id error", tag, p.GetRequest().Url)
 			return
 		}
-		
 		saveShopImagePath(p, int64(shopDetailId))
 
 	} else if strings.Contains(tag, "shopCommentList") {
+		logger.Println("[info]find shop comment list url by tag : ", tag, p.GetRequest().Url)
 		shopDetailId, success := getDetailId(tag)
 		if !success {
 			logger.Println("[error] get detail id error", tag, p.GetRequest().Url)
