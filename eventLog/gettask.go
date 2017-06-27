@@ -121,10 +121,10 @@ func getFansTask(page int) []int64 {
 		return nil
 	}
 	defer db.Close()
-
-	offset := page * c.numloops
+	numloops := 100
+	offset := page * numloops
 	//获取正常显示和隐藏的数据
-	sql := "select distinct(follow_id) from follow order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+	sql := "select distinct(follow_id) from follow order by id asc limit " + strconv.Itoa(numloops) + " offset " + strconv.Itoa(offset)
 	// sql := "select distinct(user_id) from follow where id <= " + strconv.Itoa(c.followLastId) + " and id >= " + strconv.Itoa(c.followFirstId) + " order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
 	// sql := "select distinct(user_id) from follow where user_id in(1,881050,881052,1138687,49567,1138689,1140002,1140013,1140001,1140009,1139968,1139934,1139976) and id < " + strconv.Itoa(c.followLastId) + " and id >= " + strconv.Itoa(c.followFirstId) + " order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
 	logger.Info(sql)
@@ -135,7 +135,7 @@ func getFansTask(page int) []int64 {
 		return nil
 	}
 
-	uids := make([]int64, 0, c.numloops)
+	uids := make([]int64, 0, numloops)
 
 	for rows.Next() {
 		var follow_id int64
