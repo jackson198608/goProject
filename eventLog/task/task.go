@@ -104,3 +104,9 @@ func (t *Task) Dopush(dateLimit string, loopNum int, fansLimit string, eventLimi
 	m.PushEventToFansTask(t.fans, t.uid, t.ecount, loopNum, fansLimit, eventLimit, pushLimit, dateLimit)
 
 }
+
+func (t *Task) Doremove(loopNum int, eventLimit string) {
+	m := Pushdata.NewEventLogNew(t.loggerLevel, t.oid, t.id, t.db, t.session)
+	m.RemoveEventToFansTask(t.oid, loopNum, eventLimit)
+
+}

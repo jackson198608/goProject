@@ -87,6 +87,26 @@ func pushAllFollowUserToRedis() {
 	}
 }
 
+func getFansUserToRedis() {
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.redisStart, c.redisEnd)
+	page := 0
+	for {
+		ids := getFansTask(page)
+		offset := page * c.numloops
+		if offset > c.followLastId {
+			break
+		}
+		if len(ids) == 0 {
+			break
+		}
+		if ids == nil {
+			break
+		}
+		r.PushFollowTaskData(ids)
+		page++
+	}
+}
+
 func do() {
 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.dateLimit, c.redisStart, c.redisEnd)
 	r.Loop()
@@ -95,6 +115,11 @@ func do() {
 func push() {
 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.dateLimit, c.redisStart, c.redisEnd, c.fansLimit, c.eventLimit, c.pushLimit)
 	r.LoopPush()
+}
+
+func removeData() {
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.dateLimit, c.redisStart, c.redisEnd, c.fansLimit, c.eventLimit, c.pushLimit)
+	r.RemoveFansData()
 }
 
 func Init() {
@@ -127,6 +152,12 @@ func main() {
 	case "push":
 		logger.Info("in the push fans data")
 		push()
+	case "fans":
+		logger.Info("in the fans create")
+		getFansUserToRedis()
+	case "remove":
+		logger.Info("in the fans create")
+		removeData()
 	default:
 
 	}

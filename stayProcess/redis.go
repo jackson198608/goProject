@@ -211,6 +211,31 @@ func (t *RedisEngine) LoopPush() {
 	}
 }
 
+func (t *RedisEngine) RemoveFansData() {
+	// for {
+	t.getPushTaskNum()
+	if t.taskNum == 0 {
+		logger.Info("got nothing followData queue")
+		return
+		// time.Sleep(5 * time.Second)
+		// continue
+	}
+	t.removeDataLoop()
+	// }
+}
+
+func (t *RedisEngine) removeDataLoop() {
+	logger.Info("do in oneloop taskNum", t.taskNum)
+	c := make(chan int, t.taskNum)
+	for i := 0; i < t.taskNum; i++ {
+		go t.croutinePopJobRemoveFansData(c, i)
+	}
+
+	for i := 0; i < t.taskNum; i++ {
+		<-c
+	}
+}
+
 //it's for doing job at one time using tasknum's croutine
 func (t *RedisEngine) doOneLoopPush() {
 	logger.Info("do in oneloop taskNum", t.taskNum)
@@ -263,6 +288,40 @@ func (t *RedisEngine) croutinePopJobFollowData(x chan int, i int) {
 		task := task.NewTask(t.logLevel, redisStr, db, session)
 		if task != nil {
 			task.Dopush(t.taskNewArgs[4], t.numForOneLoop, t.taskNewArgs[7], t.taskNewArgs[8], t.taskNewArgs[9])
+		}
+
+	}
+}
+
+func (t *RedisEngine) croutinePopJobRemoveFansData(x chan int, i int) {
+	dbAuth := t.taskNewArgs[0]
+	dbDsn := t.taskNewArgs[1]
+	dbName := t.taskNewArgs[2]
+	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+	if err != nil {
+		logger.Error("[error] connect db err")
+	}
+	defer db.Close()
+	mongoConn := t.taskNewArgs[3]
+	session, err := mgo.Dial(mongoConn)
+	if err != nil {
+		logger.Error("[error] connect mongodb err")
+		return
+	}
+	defer session.Close()
+	for {
+		//doing until got nothing]
+		followQueue := "followData"
+		redisStr := (*t.client).LPop(followQueue).Val()
+		if redisStr == "" {
+			logger.Info("got nothing", followQueue)
+			x <- 1
+			return
+		}
+
+		task := task.NewTask(t.logLevel, redisStr, db, session)
+		if task != nil {
+			task.Doremove(t.numForOneLoop, t.taskNewArgs[8])
 		}
 
 	}

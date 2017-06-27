@@ -350,3 +350,26 @@ func checkFansDataIsExist(c *mgo.Collection, event *mysql.EventLog, fuid int) bo
 	}
 	return true
 }
+
+func (e *EventLogNew) RemoveEventToFansTask(fans_uid int, numloop int, eventLimit string) {
+	session := e.session
+	tableNumX := fans_uid % 100
+	if tableNumX == 0 {
+		tableNumX = 100
+	}
+	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
+	c := session.DB("EventLog").C(tableNameX)
+	count, _ := c.Find(&bson.M{"fuid": fans_uid}).Count()
+	eventLimitNum, _ := strconv.Atoi(eventLimit)
+	logger.Info("mongodb fans event_log uid total nums", fans_uid, count)
+	if count > eventLimitNum {
+		removeNum := count - eventLimitNum
+		logger.Info("mongodb remove fans event_log data nums", fans_uid, removeNum)
+		ms := []EventLogX{}
+		c.Find(&bson.M{"fuid": fans_uid}).Sort("created").Limit(removeNum).All(&ms)
+		for _, v := range ms {
+			logger.Info("mongodb remove fans event_log data", v)
+			c.Remove(&bson.M{"_id": v.Id, "fuid": fans_uid})
+		}
+	}
+}
