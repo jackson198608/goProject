@@ -1,0 +1,1 @@
+GOOS=windows GOARCH=amd64 go build -o getBaiduResult.exe github.com/jackson198608/goProject/getBaiduResult 
