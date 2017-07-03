@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/jackson198608/gotest/go_spider/core/common/page"
+	"strconv"
+	"strings"
 )
 
 type MyPageProcesser struct {
@@ -21,12 +23,24 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 	}
 
 	tag := p.GetUrlTag()
-	if tag == "searchList" || tag == "searchListNextPage" {
-		qBaiduList(p)
+
+	if tag == "searchList" {
+		qBaiduList(p, 0)
+	}
+	strArr := strings.Split(tag, "|")
+	if strArr[0] == "searchListNextPage" {
+		if len(strArr) == 2 {
+			num, _ := strconv.Atoi(strArr[1])
+			fmt.Println(num)
+			if num < 10 {
+				qBaiduList(p, num)
+			}
+		}
 	}
 
-	if tag == "gouminDetail" {
-		fmt.Println(p.GetHeader())
+	if strArr[0] == "domainUrl" {
+		rank, _ := strconv.Atoi(strArr[1])
+		saveKeyWordRank(p, rank, strArr[2])
 	}
 }
 
