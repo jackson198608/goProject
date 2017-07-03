@@ -23,6 +23,15 @@ func qBaiduList(p *page.Page, num int) {
 	fmt.Println(p.GetUrlTag())
 	query.Find(".result").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		// For each item found, get the band and title
+		d, _ := url.Parse(p.GetRequest().Url)
+		m, _ := url.ParseQuery(d.RawQuery)
+		var keyword string = ""
+		for k, v := range m {
+			if k == "wd" || k == "word" {
+				keyword = v[0]
+			}
+		}
+		logger.Println("get keyword baidu rank : ", keyword)
 		datalog, _ := s.Attr("data-log")
 		str := strings.Replace(datalog, "'", "\"", -1)
 		fmt.Println(str)
@@ -38,14 +47,6 @@ func qBaiduList(p *page.Page, num int) {
 		if rankReal != 11 {
 			orderRank = rankReal + (10 * num)
 			logger.Println("realurl rank : ", orderRank) //真实rank
-		}
-		d, _ := url.Parse(p.GetRequest().Url)
-		m, _ := url.ParseQuery(d.RawQuery)
-		var keyword string = ""
-		for k, v := range m {
-			if k == "wd" || k == "word" {
-				keyword = v[0]
-			}
 		}
 		if realurl != "" {
 			saveRealUrl(realurl, keyword, orderRank)
