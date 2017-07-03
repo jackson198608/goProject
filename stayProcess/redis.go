@@ -333,6 +333,12 @@ func (t *RedisEngine) GetKeywordData(queueName string, start int64, stop int64) 
 	return arr
 }
 
+//baidu rank
+func (t *RedisEngine) GetKeywordDataNew(queueName string) string {
+	arr := (*t.client).LPop(queueName).Val()
+	return arr
+}
+
 func (t *RedisEngine) SaveKeywordRedis(queueName string, value string) int64 {
 	size, _ := (*t.client).LPush(queueName, value).Result()
 	return size

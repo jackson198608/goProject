@@ -74,6 +74,37 @@ func getRedisData() {
 	}
 }
 
+func getRedisDataNew(x chan int, i int) {
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
+	for {
+		keyword := r.GetKeywordDataNew(c.queueName)
+		logger.Println("keyword redis data list", keyword)
+		if keyword == "" {
+			logger.Println("keyword got nothing", c.queueName)
+			x <- 1
+			return
+		}
+		getRankList(keyword)
+		_, _, IsExist := checkKeywordExist(keyword)
+		if IsExist == false {
+			fmt.Println("keyword save ", keyword)
+			saveKeywordRankData(keyword, 101, "http://m.goumin.com", "m.goumin.com")
+		}
+	}
+}
+
+func loopThead() {
+	logger.Println("do in oneloop taskNum", c.numloops)
+	x := make(chan int, c.numloops)
+	for i := 0; i < c.numloops; i++ {
+		go getRedisDataNew(x, i)
+	}
+
+	for i := 0; i < c.numloops; i++ {
+		<-x
+	}
+}
+
 func importKeyword() {
 	importfile := os.Args[3]
 	// importfile := "/tmp/importkeyword.csv"
@@ -136,7 +167,8 @@ func main() {
 	switch jobType {
 	case "baidu":
 		logger.Println("Start get baidu keyword rank")
-		getRedisData()
+		// getRedisData()
+		loopThead()
 	case "keyword":
 		logger.Println("Start import keyword to redis")
 		importKeyword()
