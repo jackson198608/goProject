@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"strings"
 	"time"
 )
 
@@ -15,7 +16,7 @@ func checkKeywordExist(keyword string) (int, int, bool) {
 	}
 	defer db.Close()
 	date := time.Now().Format("2006-01-02")
-	rows, err := db.Query("select id,rank from rank_list where keyword='" + keyword + "' and date='" + date + "'")
+	rows, err := db.Query("select id,rank from rank_list where keyword='" + strings.Trim(keyword, " ") + "' and date='" + date + "'")
 	if err != nil {
 		logger.Println("[error] check sql prepare error: ", err)
 		//fmt.Println("[error] check sql prepare error: ", err)

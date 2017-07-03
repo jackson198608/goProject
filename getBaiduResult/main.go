@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"github.com/jackson198608/goProject/stayProcess"
 	"github.com/jackson198608/gotest/go_spider/core/pipeline"
 	"github.com/jackson198608/gotest/go_spider/core/spider"
+	"io"
 	"log"
 	"net/url"
 	"os"
@@ -21,7 +23,7 @@ var result *os.File
 var logger *log.Logger
 
 func onstart() {
-	fileName := os.Args[1]
+	fileName := os.Args[2]
 	if checkFileIsExist(fileName) {
 		fmt.Println("file exist")
 		file, err := os.OpenFile(fileName, os.O_RDWR|os.O_APPEND, 0660)
@@ -63,6 +65,7 @@ func getRedisData() {
 			getRankList(keywords[i])
 			_, _, IsExist := checkKeywordExist(keywords[i])
 			if IsExist == false {
+				fmt.Println("keyword save ", keywords[i])
 				saveKeywordRankData(keywords[i], 101, "http://m.goumin.com", "m.goumin.com")
 			}
 		}
@@ -71,13 +74,33 @@ func getRedisData() {
 	}
 }
 
+func importKeyword() {
+	importfile := os.Args[3]
+	// importfile := "/tmp/importkeyword.csv"
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
+	file, err := os.Open(importfile)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer file.Close()
+	reader := csv.NewReader(file)
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+		fmt.Println(record[0])                              // record has the type []string
+		logger.Println("save keyword to redis:", record[0]) // record has the type []string
+		r.SaveKeywordRedis(c.queueName, record[0])
+	}
+}
+
 func Init() {
-
 	loadConfig()
-	// logger.SetConsole(true)
-	// logger.SetLevel(logger.DEBUG)
-	// logger.Error(logger.DEBUG)
-
 }
 
 func getRankList(keyword string) {
@@ -109,26 +132,15 @@ func getRankList(keyword string) {
 func main() {
 	Init()
 	onstart()
-	getRedisData()
-	// keyword := os.Args[2]
-	// // realKeyWord := keyword + "  site:bbs.goumin.com"  //pc
-	// realKeyWord := keyword + "  site:m.goumin.com" //h5
+	jobType := os.Args[1]
+	switch jobType {
+	case "baidu":
+		logger.Println("Start get baidu keyword rank")
+		getRedisData()
+	case "keyword":
+		logger.Println("Start import keyword to redis")
+		importKeyword()
+	default:
 
-	// tempUrl := "http://1.com/?wd=" + realKeyWord
-	// tempUrlP, _ := url.Parse(tempUrl)
-	// realKeyWordEncode := tempUrlP.Query().Encode()
-	// result.WriteString(realKeyWordEncode + "\n")
-
-	// url1 := "https://m.baidu.com/s?ie=utf-8&f=8&rsv_bp=0&rsv_idx=1&tn=baidu&"
-	// url2 := "&rsv_pq=e04aca4d0000cf55&rsv_t=dabboKw3o5qu1XZAgI43hhbjd2olBB3puS%2Fqgn7abC1zNtc%2BA4jzjem3%2BEI&rqlang=cn&rsv_enter=1&rsv_sug3=28&rsv_sug1=17&rsv_sug7=100&rsv_sug2=0&inputT=145353&rsv_sug4=146135"
-
-	// startUrlTag := "searchList"
-	// //startUrl := "https://www.baidu.com/s?ie=utf-8&f=8&rsv_bp=0&rsv_idx=1&tn=baidu&wd=%E9%87%91%E6%AF%9B%20site%3Abbs.goumin.com&rsv_pq=e04aca4d0000cf55&rsv_t=dabboKw3o5qu1XZAgI43hhbjd2olBB3puS%2Fqgn7abC1zNtc%2BA4jzjem3%2BEI&rqlang=cn&rsv_enter=1&rsv_sug3=28&rsv_sug1=17&rsv_sug7=100&rsv_sug2=0&inputT=145353&rsv_sug4=146135"
-	// startUrl := url1 + realKeyWordEncode + url2
-	// req := newRequest(startUrlTag, startUrl)
-	// spider.NewSpider(NewMyPageProcesser(), "getBaiduResult").
-	// 	AddRequest(req).
-	// 	AddPipeline(pipeline.NewPipelineConsole()). // Print result on screen
-	// 	SetThreadnum(5).                            // Crawl request by three Coroutines
-	// 	Run()
+	}
 }

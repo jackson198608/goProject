@@ -112,8 +112,10 @@ func saveRealUrl(realurl string, keyword string, rank int) {
 	domain := u.Host
 	if domain == "m.goumin.com" && keyword != "" {
 		Id, RankSql, IsExist := checkKeywordExist(keyword)
-		if IsExist == true && RankSql > rank {
-			updateKeywordRank(Id, keyword, rank, realurl, domain)
+		if IsExist == true {
+			if RankSql > rank {
+				updateKeywordRank(Id, keyword, rank, realurl, domain)
+			}
 		} else {
 			saveKeywordRankData(keyword, rank, realurl, domain)
 		}

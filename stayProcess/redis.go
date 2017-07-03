@@ -332,3 +332,8 @@ func (t *RedisEngine) GetKeywordData(queueName string, start int64, stop int64) 
 	arr := (*t.client).LRange(queueName, start, stop).Val()
 	return arr
 }
+
+func (t *RedisEngine) SaveKeywordRedis(queueName string, value string) int64 {
+	size, _ := (*t.client).LPush(queueName, value).Result()
+	return size
+}
