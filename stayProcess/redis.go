@@ -9,8 +9,8 @@ import (
 	redis "gopkg.in/redis.v4"
 	// "os"
 	"database/sql"
-	// "reflect"
 	mgo "gopkg.in/mgo.v2"
+	// "reflect"
 	"strconv"
 	// "strings"
 	"time"
@@ -325,4 +325,10 @@ func (t *RedisEngine) croutinePopJobRemoveFansData(x chan int, i int) {
 		}
 
 	}
+}
+
+//baidu rank
+func (t *RedisEngine) GetKeywordData(queueName string, start int64, stop int64) []string {
+	arr := (*t.client).LRange(queueName, start, stop).Val()
+	return arr
 }
