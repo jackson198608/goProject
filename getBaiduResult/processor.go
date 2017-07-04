@@ -19,6 +19,8 @@ func NewMyPageProcesser() *MyPageProcesser {
 func (this *MyPageProcesser) Process(p *page.Page) {
 	//time.Sleep(1 * time.Second)
 	if !p.IsSucc() {
+		logger.Println("[Error] not 200:", p.GetRequest().Url)
+		fmt.Println("[Error] not 200:", p.GetRequest().Url)
 		return
 	}
 
