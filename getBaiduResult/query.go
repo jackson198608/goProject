@@ -41,8 +41,12 @@ func qBaiduList(p *page.Page, num int) {
 			logger.Println("json decode error : ", err)
 			return false
 		}
-		realurl := jsonArr.Mu                      //url
-		rankReal, _ := strconv.Atoi(jsonArr.Order) //排序
+		realurl := jsonArr.Mu                         //url
+		rankReal, err1 := strconv.Atoi(jsonArr.Order) //排序
+		if err1 != nil {
+			logger.Println("strconv Atoi error : ", err1)
+			return false
+		}
 		var orderRank int = 0
 		if rankReal != 11 {
 			orderRank = rankReal + (10 * num)
@@ -96,7 +100,7 @@ func qBaiduList(p *page.Page, num int) {
 
 	numstring := strconv.Itoa(num)
 	urlTag := "searchListNextPage|" + numstring
-	fmt.Println("getrul$$$$$", urlTag)
+	// fmt.Println("getrul$$$$$", urlTag)
 	if p.GetUrlTag() == urlTag {
 		query.Find(".new-nextpage").EachWithBreak(func(i int, s *goquery.Selection) bool {
 			url, isExsit := s.Attr("href")
@@ -139,7 +143,7 @@ func saveKeyWordRank(p *page.Page, rank int, keyword string) {
 		if len(strArr) > 1 {
 			urlArr := strings.Split(strArr[1], "\"")
 			fmt.Println("!!!!!!!!!", urlArr[0])
-			saveRealUrl(urlArr[0], p.GetRequest().Url, rank)
+			saveRealUrl(urlArr[0], keyword, rank)
 		}
 		return true
 	})
