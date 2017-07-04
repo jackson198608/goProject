@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"github.com/jackson198608/gotest/go_spider/core/common/request"
 	"net/http"
+	"net/url"
 )
 
 func newRequest(tag string, url string) *request.Request {
@@ -24,4 +26,30 @@ func newImageRequest(tag string, url string) *request.Request {
 
 	req := request.NewRequest(url, "text", tag, "GET", "", h, nil, nil, nil)
 	return req
+}
+
+var redirectCount int = 0
+
+func myRedirect(req *http.Request, via []*http.Request) (e error) {
+	redirectCount++
+	if redirectCount == 2 {
+		redirectCount = 0
+		return errors.New(req.URL.String())
+
+	}
+	return
+}
+
+//redirect
+func retRequest(urlstr string) string {
+	client := &http.Client{CheckRedirect: myRedirect}
+	response, err := client.Get(urlstr)
+	if err != nil {
+		if e, ok := err.(*url.Error); ok && e.Err != nil {
+			remoteUrl := e.URL
+			return remoteUrl
+		}
+	}
+	defer response.Body.Close()
+	return ""
 }
