@@ -16,7 +16,7 @@ var c Config = Config{
 	"192.168.86.72:3309",
 	"test_dz2",
 	"root:goumintech",
-	1, "192.168.86.68:6379", "keyword", 1}
+	1, "192.168.86.68:6379", "keyword", 1, "/tmp/importkeyword.csv"}
 
 var result *os.File
 
@@ -106,7 +106,8 @@ func loopThead() {
 }
 
 func importKeyword() {
-	importfile := os.Args[3]
+	importfile := c.importFile
+	// importfile := os.Args[3]
 	// importfile := "/tmp/importkeyword.csv"
 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
 	file, err := os.Open(importfile)
