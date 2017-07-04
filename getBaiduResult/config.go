@@ -5,13 +5,14 @@ import (
 )
 
 type Config struct {
-	dbDsn     string
-	dbName    string
-	dbAuth    string
-	numloops  int
-	redisConn string
-	queueName string
-	logLevel  int
+	dbDsn      string
+	dbName     string
+	dbAuth     string
+	numloops   int
+	redisConn  string
+	queueName  string
+	logLevel   int
+	importFile string
 }
 
 func loadConfig() {
@@ -23,4 +24,5 @@ func loadConfig() {
 	c.redisConn = config.GetString("redisConn")
 	c.queueName = config.GetString("queueName")
 	c.logLevel = config.GetInt("logLevel")
+	c.importFile = config.GetString("importFile")
 }

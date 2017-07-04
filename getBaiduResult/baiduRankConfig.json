@@ -1,1 +1,1 @@
-{"dbDsn":"192.168.5.86:3306","dbName":"rankdata","dbAuth":"dog123:dog123","numloops":1,"redisConn":"192.168.5.75:6379","queueName":"keyWord","logLevel":1}
+{"dbDsn":"192.168.5.86:3306","dbName":"rankdata","dbAuth":"dog123:dog123","numloops":1,"redisConn":"192.168.5.75:6379","queueName":"keyWord","logLevel":1,"importFile":"/tmp/importkeyword.csv"}
