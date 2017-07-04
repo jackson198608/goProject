@@ -52,7 +52,7 @@ func qBaiduList(p *page.Page, num int) {
 			saveRealUrl(realurl, keyword, orderRank)
 			logger.Println("search data list realurl : ", realurl) //真实地址
 		}
-
+		fmt.Println("??????????", keyword)
 		if realurl == "" && rankReal != 11 {
 			fmt.Println("真实地址为空,获取百度地址")
 			url, _ := s.Find(".c-container a").Attr("href")
