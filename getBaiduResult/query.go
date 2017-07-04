@@ -52,15 +52,22 @@ func qBaiduList(p *page.Page, num int) {
 			saveRealUrl(realurl, keyword, orderRank)
 			logger.Println("search data list realurl : ", realurl) //真实地址
 		}
+
 		if realurl == "" && rankReal != 11 {
 			fmt.Println("真实地址为空,获取百度地址")
 			url, _ := s.Find(".c-container a").Attr("href")
 			// url := "http://www.baidu.com/link?url=avo8Hf21hX49dNiUng8uxFsRHA0ZV3tPSl6Y0EKPw84NVrdbthG1j9RAjDUGcxEIICor_6HIzv0GLh8-AniEla"
 			fmt.Println("######", url)
 			logger.Println("search data list baiduUrl : ", url) //真实地址
-			realUrlTag := "domainUrl|" + strconv.Itoa(orderRank) + "|" + keyword
-			req := newRequest(realUrlTag, url)
-			p.AddTargetRequestWithParams(req)
+			redirectRealUrl := retRequest(url)                  //获取调转后的真实地址
+			if redirectRealUrl != "" {
+				fmt.Println(">>>>>>", redirectRealUrl)
+				saveRealUrl(redirectRealUrl, keyword, orderRank)
+			} else {
+				realUrlTag := "domainUrl|" + strconv.Itoa(orderRank) + "|" + keyword
+				req := newRequest(realUrlTag, url)
+				p.AddTargetRequestWithParams(req)
+			}
 		}
 		return true
 	})
