@@ -21,16 +21,18 @@ func qBaiduList(p *page.Page, num int) {
 	query := p.GetHtmlParser()
 
 	fmt.Println(p.GetUrlTag())
+	var keyword string = ""
+	d, _ := url.Parse(p.GetRequest().Url)
+	m, _ := url.ParseQuery(d.RawQuery)
+	for k, v := range m {
+		if k == "wd" || k == "word" {
+			keyword = v[0]
+		}
+	}
+
+	fmt.Println("[info] maybe  find next page realUrl:", p.GetRequest().Url, p.GetUrlTag(), keyword)
 	query.Find(".result").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		// For each item found, get the band and title
-		d, _ := url.Parse(p.GetRequest().Url)
-		m, _ := url.ParseQuery(d.RawQuery)
-		var keyword string = ""
-		for k, v := range m {
-			if k == "wd" || k == "word" {
-				keyword = v[0]
-			}
-		}
 		logger.Println("get keyword baidu rank : ", keyword)
 		datalog, _ := s.Attr("data-log")
 		str := strings.Replace(datalog, "'", "\"", -1)
@@ -96,24 +98,29 @@ func qBaiduList(p *page.Page, num int) {
 			}
 			return true
 		})
+		return
 	}
 
-	numstring := strconv.Itoa(num)
-	urlTag := "searchListNextPage|" + numstring
+	hasResult := 0
 	// fmt.Println("getrul$$$$$", urlTag)
-	if p.GetUrlTag() == urlTag {
-		query.Find(".new-nextpage").EachWithBreak(func(i int, s *goquery.Selection) bool {
-			url, isExsit := s.Attr("href")
-			if isExsit {
-				realUrl := url
-				num++
-				stringnum := strconv.Itoa(num)
-				realUrlTag := "searchListNextPage|" + stringnum
-				req := newRequest(realUrlTag, realUrl)
-				p.AddTargetRequestWithParams(req)
-			}
-			return true
-		})
+	//if p.GetUrlTag() == urlTag {
+	query.Find(".new-nextpage").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		url, isExsit := s.Attr("href")
+		if isExsit {
+			realUrl := url
+			num++
+			stringnum := strconv.Itoa(num)
+			realUrlTag := "searchListNextPage|" + stringnum
+			req := newRequest(realUrlTag, realUrl)
+			fmt.Println("[info] find next page realUrl:", realUrl, realUrlTag, keyword)
+			hasResult = 1
+			p.AddTargetRequestWithParams(req)
+		}
+		return true
+	})
+
+	if hasResult == 0 {
+		fmt.Println("[error] can not find next page", p.GetRequest().Url, p.GetBodyStr())
 	}
 
 }
