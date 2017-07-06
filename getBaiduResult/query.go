@@ -127,6 +127,10 @@ func qBaiduList(p *page.Page, num int) {
 	if hasResult == 0 {
 		fmt.Println("[error] can not find next page", p.GetRequest().Url, p.GetUrlTag(), keyword)
 		r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
+		times := r.GetTimes(keyword)
+		if times >= 5 {
+			return
+		}
 		r.CompensateKeyword(c.queueName, keyword, p.GetRequest().Url, num)
 	}
 
