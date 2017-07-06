@@ -56,7 +56,7 @@ func saveKeywordRankData(
 		return 0
 	}
 
-	res, err := stmt.Exec(keyword, rank, date, url, domain)
+	res, err := stmt.Exec(strings.Trim(keyword, " "), rank, date, url, domain)
 	if err != nil {
 		logger.Println("[error] insert excute error: ", err)
 		return 0

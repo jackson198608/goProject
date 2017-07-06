@@ -30,7 +30,7 @@ func qBaiduList(p *page.Page, num int) {
 		}
 	}
 
-	// fmt.Println("[info] maybe  find next page realUrl:", p.GetRequest().Url, p.GetUrlTag(), keyword)
+	fmt.Println("[info] maybe  find next page realUrl:", p.GetRequest().Url, p.GetUrlTag(), keyword)
 	query.Find(".result").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		// For each item found, get the band and title
 		logger.Println("get keyword baidu rank : ", keyword)
