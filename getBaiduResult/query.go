@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/jackson198608/goProject/stayProcess"
 	"github.com/jackson198608/gotest/go_spider/core/common/page"
 	"net/url"
 	"strconv"
@@ -20,7 +21,6 @@ type UrlJson struct {
 func qBaiduList(p *page.Page, num int) {
 	query := p.GetHtmlParser()
 
-	fmt.Println(p.GetUrlTag())
 	var keyword string = ""
 	d, _ := url.Parse(p.GetRequest().Url)
 	m, _ := url.ParseQuery(d.RawQuery)
@@ -30,7 +30,7 @@ func qBaiduList(p *page.Page, num int) {
 		}
 	}
 
-	fmt.Println("[info] maybe  find next page realUrl:", p.GetRequest().Url, p.GetUrlTag(), keyword)
+	// fmt.Println("[info] maybe  find next page realUrl:", p.GetRequest().Url, p.GetUrlTag(), keyword)
 	query.Find(".result").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		// For each item found, get the band and title
 		logger.Println("get keyword baidu rank : ", keyword)
@@ -58,7 +58,7 @@ func qBaiduList(p *page.Page, num int) {
 			saveRealUrl(realurl, keyword, orderRank)
 			logger.Println("search data list realurl : ", realurl) //真实地址
 		}
-		fmt.Println("??????????", keyword)
+		fmt.Println("???", keyword)
 		if realurl == "" && rankReal != 11 {
 			fmt.Println("真实地址为空,获取百度地址")
 			url, _ := s.Find(".c-container a").Attr("href")
@@ -78,32 +78,36 @@ func qBaiduList(p *page.Page, num int) {
 		return true
 	})
 
-	// times := 0
+	hasResult := 0
 	if p.GetUrlTag() == "searchList" {
 		query.Find("#page-controller .new-pagenav a").EachWithBreak(func(i int, s *goquery.Selection) bool {
 			// For each item found, get the band and title
 			url, isExsit := s.Attr("href")
 			if isExsit {
-				// if times == 4 {
-				// 	return false
-				// }
 				// realUrl := "https://www.baidu.com" + url
 				realUrl := url
 				num++
 				numstr := strconv.Itoa(num)
 				realUrlTag := "searchListNextPage|" + numstr
+				hasResult = 1
 				req := newRequest(realUrlTag, realUrl)
 				p.AddTargetRequestWithParams(req)
 				// times++
 			}
 			return true
 		})
+		if hasResult == 0 {
+			fmt.Println("[error] can not find next page", p.GetRequest().Url, p.GetUrlTag(), keyword)
+			r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
+			r.CompensateKeyword(c.queueName, keyword, p.GetRequest().Url, num)
+		}
 		return
 	}
 
-	hasResult := 0
-	// fmt.Println("getrul$$$$$", urlTag)
-	//if p.GetUrlTag() == urlTag {
+	// hasResult := 0
+	// numstring := strconv.Itoa(num)
+	// urlTag := "searchListNextPage|" + numstring
+	// if p.GetUrlTag() == urlTag {
 	query.Find(".new-nextpage").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		url, isExsit := s.Attr("href")
 		if isExsit {
@@ -118,9 +122,12 @@ func qBaiduList(p *page.Page, num int) {
 		}
 		return true
 	})
+	// }
 
 	if hasResult == 0 {
-		fmt.Println("[error] can not find next page", p.GetRequest().Url, p.GetBodyStr())
+		fmt.Println("[error] can not find next page", p.GetRequest().Url, p.GetUrlTag(), keyword)
+		r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
+		r.CompensateKeyword(c.queueName, keyword, p.GetRequest().Url, num)
 	}
 
 }

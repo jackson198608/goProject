@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"strconv"
 )
 
 var c Config = Config{
@@ -116,6 +117,9 @@ func importKeyword() {
 		return
 	}
 	defer file.Close()
+	if r.KeywordExist(c.queueName) > 0 {
+		return
+	}
 	reader := csv.NewReader(file)
 	for {
 		record, err := reader.Read()
@@ -135,22 +139,46 @@ func Init() {
 	loadConfig()
 }
 
+func judgeMode(keyword string) (bool, int, string, int) {
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
+	times := r.GetTimes(keyword)
+	if times >= 5 {
+		return false, times, "", 0
+	}
+	url, num := r.GetUrl(keyword)
+	if url == "" {
+		return false, times, "", 0
+	}
+	return true, times, url, num
+}
+
 func getRankList(keyword string) {
 	// keyword := os.Args[2]
 	// realKeyWord := keyword + "  site:bbs.goumin.com"  //pc
 	realKeyWord := keyword //+ "  site:m.goumin.com" //h5
-
 	tempUrl := "http://1.com/?wd=" + realKeyWord
 	tempUrlP, _ := url.Parse(tempUrl)
 	realKeyWordEncode := tempUrlP.Query().Encode()
 	result.WriteString(realKeyWordEncode + "\n")
+	startUrl := ""
+	startUrlTag := ""
+	IsExist, times, url, num := judgeMode(keyword)
+	fmt.Println("isExist,times,url,num:", IsExist, times, url, num)
+	if times > 5 {
+		return
+	}
+	if IsExist == true && num > 1 {
+		startUrl = url
+		startUrlTag = "searchListNextPage|" + strconv.Itoa(num)
+	} else {
 
-	url1 := "https://m.baidu.com/s?ie=utf-8&f=8&rsv_bp=0&rsv_idx=1&tn=baidu&"
-	url2 := "&rsv_pq=e04aca4d0000cf55&rsv_t=dabboKw3o5qu1XZAgI43hhbjd2olBB3puS%2Fqgn7abC1zNtc%2BA4jzjem3%2BEI&rqlang=cn&rsv_enter=1&rsv_sug3=28&rsv_sug1=17&rsv_sug7=100&rsv_sug2=0&inputT=145353&rsv_sug4=146135"
+		url1 := "https://m.baidu.com/s?ie=utf-8&f=8&rsv_bp=0&rsv_idx=1&tn=baidu&"
+		url2 := "&rsv_pq=e04aca4d0000cf55&rsv_t=dabboKw3o5qu1XZAgI43hhbjd2olBB3puS%2Fqgn7abC1zNtc%2BA4jzjem3%2BEI&rqlang=cn&rsv_enter=1&rsv_sug3=28&rsv_sug1=17&rsv_sug7=100&rsv_sug2=0&inputT=145353&rsv_sug4=146135"
 
-	startUrlTag := "searchList"
-	//startUrl := "https://www.baidu.com/s?ie=utf-8&f=8&rsv_bp=0&rsv_idx=1&tn=baidu&wd=%E9%87%91%E6%AF%9B%20site%3Abbs.goumin.com&rsv_pq=e04aca4d0000cf55&rsv_t=dabboKw3o5qu1XZAgI43hhbjd2olBB3puS%2Fqgn7abC1zNtc%2BA4jzjem3%2BEI&rqlang=cn&rsv_enter=1&rsv_sug3=28&rsv_sug1=17&rsv_sug7=100&rsv_sug2=0&inputT=145353&rsv_sug4=146135"
-	startUrl := url1 + realKeyWordEncode + url2
+		startUrlTag = "searchList"
+		//startUrl := "https://www.baidu.com/s?ie=utf-8&f=8&rsv_bp=0&rsv_idx=1&tn=baidu&wd=%E9%87%91%E6%AF%9B%20site%3Abbs.goumin.com&rsv_pq=e04aca4d0000cf55&rsv_t=dabboKw3o5qu1XZAgI43hhbjd2olBB3puS%2Fqgn7abC1zNtc%2BA4jzjem3%2BEI&rqlang=cn&rsv_enter=1&rsv_sug3=28&rsv_sug1=17&rsv_sug7=100&rsv_sug2=0&inputT=145353&rsv_sug4=146135"
+		startUrl = url1 + realKeyWordEncode + url2
+	}
 	req := newRequest(startUrlTag, startUrl)
 	logger.Println("keyword", keyword)
 	logger.Println("search url", startUrl)
