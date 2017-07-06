@@ -3,7 +3,7 @@ package stayProcess
 import (
 	// "bufio"
 	"errors"
-	// "fmt"
+	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/eventLog/task"
 	redis "gopkg.in/redis.v4"
@@ -12,7 +12,7 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	// "reflect"
 	"strconv"
-	// "strings"
+	"strings"
 	"time"
 )
 
@@ -342,4 +342,63 @@ func (t *RedisEngine) GetKeywordDataNew(queueName string) string {
 func (t *RedisEngine) SaveKeywordRedis(queueName string, value string) int64 {
 	size, _ := (*t.client).LPush(queueName, value).Result()
 	return size
+}
+
+func (t *RedisEngine) KeywordExist(queueName string) int64 {
+	len := (*t.client).LLen(queueName).Val()
+	return len
+}
+
+func (t *RedisEngine) CompensateKeyword(queueName string, keyword string, url string, num int) {
+	(*t.client).LPush(queueName, keyword).Result()
+	//关键词补偿获取次数
+	date := time.Now().Format("0102")
+	key := keyword + "_times" + date
+	timesStr := (*t.client).Get(key).Val()
+	fmt.Println("key name:", key, len(timesStr))
+	value := 1
+	if len(timesStr) > 0 {
+		times, _ := strconv.Atoi(timesStr)
+		value = times + 1
+	}
+	fmt.Println("times value is :", value, keyword)
+	_, err := (*t.client).Set(key, value, 86400*time.Second).Result()
+	if err != nil {
+		fmt.Println("set key error", err)
+	}
+	//关键词补偿获取的开始url地址
+	numstr := strconv.Itoa(num)
+	urlkey := keyword + "_url" + date
+	urlvalue := url + "|" + numstr
+	_, err1 := (*t.client).Set(urlkey, urlvalue, 86400*time.Second).Result()
+	if err1 != nil {
+		fmt.Println("set urlkey error:", err1)
+	}
+}
+
+func (t *RedisEngine) GetTimes(keyword string) int {
+	date := time.Now().Format("0102")
+	key := keyword + "_time" + date
+	timesStr := (*t.client).Get(key).Val()
+	if len(timesStr) == 0 {
+		return 0
+	}
+	times, _ := strconv.Atoi(timesStr)
+	return times
+}
+
+func (t *RedisEngine) GetUrl(keyword string) (string, int) {
+	date := time.Now().Format("0102")
+	urlkey := keyword + "_url" + date
+	urlvalue := (*t.client).Get(urlkey).Val()
+	if len(urlvalue) == 0 {
+		return "", 0
+	}
+	urlArr := strings.Split(urlvalue, "|")
+	num := 0
+	if len(urlArr) == 2 {
+		num, _ = strconv.Atoi(urlArr[1])
+	}
+	url := urlArr[0]
+	return url, num
 }
