@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var c Config = Config{
@@ -129,9 +130,9 @@ func importKeyword() {
 			fmt.Println("Error:", err)
 			return
 		}
-		fmt.Println(record[0])                              // record has the type []string
-		logger.Println("save keyword to redis:", record[0]) // record has the type []string
-		r.SaveKeywordRedis(c.queueName, record[0])
+		fmt.Println("&&&" + strings.Trim(record[0], " ") + "&&&") // record has the type []string
+		logger.Println("save keyword to redis:", record[0])       // record has the type []string
+		r.SaveKeywordRedis(c.queueName, strings.Trim(record[0], " "))
 	}
 }
 
