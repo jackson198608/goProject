@@ -143,7 +143,7 @@ func Init() {
 func judgeMode(keyword string) (bool, int, string, int) {
 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
 	times := r.GetTimes(keyword)
-	if times >= 5 {
+	if times > 5 {
 		return false, times, "", 0
 	}
 	url, num := r.GetUrl(keyword)

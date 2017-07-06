@@ -350,7 +350,6 @@ func (t *RedisEngine) KeywordExist(queueName string) int64 {
 }
 
 func (t *RedisEngine) CompensateKeyword(queueName string, keyword string, url string, num int) {
-	(*t.client).LPush(queueName, keyword).Result()
 	//关键词补偿获取次数
 	date := time.Now().Format("0102")
 	key := keyword + "_times" + date
@@ -361,18 +360,21 @@ func (t *RedisEngine) CompensateKeyword(queueName string, keyword string, url st
 		times, _ := strconv.Atoi(timesStr)
 		value = times + 1
 	}
-	fmt.Println("times value is :", value, keyword)
-	_, err := (*t.client).Set(key, value, 86400*time.Second).Result()
-	if err != nil {
-		fmt.Println("set key error", err)
-	}
-	//关键词补偿获取的开始url地址
-	numstr := strconv.Itoa(num)
-	urlkey := keyword + "_url" + date
-	urlvalue := url + "|" + numstr
-	_, err1 := (*t.client).Set(urlkey, urlvalue, 86400*time.Second).Result()
-	if err1 != nil {
-		fmt.Println("set urlkey error:", err1)
+	if value <= 5 {
+		(*t.client).LPush(queueName, keyword).Result()
+		fmt.Println("times value is :", value, keyword)
+		_, err := (*t.client).Set(key, value, 86400*time.Second).Result()
+		if err != nil {
+			fmt.Println("set key error", err)
+		}
+		//关键词补偿获取的开始url地址
+		numstr := strconv.Itoa(num)
+		urlkey := keyword + "_url" + date
+		urlvalue := url + "|" + numstr
+		_, err1 := (*t.client).Set(urlkey, urlvalue, 86400*time.Second).Result()
+		if err1 != nil {
+			fmt.Println("set urlkey error:", err1)
+		}
 	}
 }
 
