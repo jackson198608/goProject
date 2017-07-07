@@ -2,6 +2,7 @@ package appPush
 
 import (
 	"bytes"
+	"fmt"
 	apns "github.com/sideshow/apns2"
 	"github.com/sideshow/apns2/certificate"
 	"io/ioutil"
@@ -57,12 +58,12 @@ func (w Worker) iosPush(p12bytes []byte) (result bool) {
 	//_, err := client.Push(notification)
 
 	if err != nil {
-		//fmt.Println("Error:", err)
+		fmt.Println("Error:", err)
 		result = false
 		return result
 	}
 
-	//fmt.Println("APNs ID:", res.ApnsID)
+	fmt.Println("APNs ID:", res.ApnsID)
 	return true
 }
 
@@ -88,7 +89,7 @@ func (w Worker) androidPush() (result bool) {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	//ioutil.ReadAll(resp.Body)
-	//fmt.Println("[notice] android response Body:", string(body))
+	ioutil.ReadAll(resp.Body)
+	fmt.Println("[notice] android response Body:", string(body))
 	return true
 }

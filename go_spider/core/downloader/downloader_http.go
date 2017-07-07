@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/bitly/go-simplejson"
 	"strconv"
@@ -297,6 +298,7 @@ func connectByHttp(p *page.Page, req *request.Request) (*http.Response, error) {
 		}
 	}
 
+	fmt.Println(resp.StatusCode)
 	if resp.StatusCode != 200 {
 		p.SetStatus(true, "not 200")
 	}
@@ -342,8 +344,8 @@ func (this *HttpDownloader) downloadFile(p *page.Page, req *request.Request) (*p
 	} else {
 		//normal http download
 		//fmt.Print("Http Normal Enter \n",proxystr,"\n")
-		//resp, err = connectByHttp(p, req)
-		resp, err = connectByAbuyun(p, req)
+		resp, err = connectByHttp(p, req)
+		//resp, err = connectByAbuyun(p, req)
 	}
 
 	if err != nil {
@@ -373,7 +375,6 @@ func (this *HttpDownloader) downloadFile(p *page.Page, req *request.Request) (*p
 
 		bodyStr = this.changeCharsetEncodingAuto(resp.Header.Get("Content-Type"), resp.Body)
 	}
-	//fmt.Printf("utf-8 body %v \r\n", bodyStr)
 	defer resp.Body.Close()
 	return p, bodyStr
 }

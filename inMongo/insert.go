@@ -17,12 +17,12 @@ func NewWorker(t *Task) (w *Worker) {
 	return &wR
 }
 
-func (w Worker) Insert(session *mgo.Session) {
+func (w Worker) Insert(session *mgo.Session) bool {
 	//convert json string to struct
 	var m row
 	if err := json.Unmarshal([]byte(w.t.columData), &m); err != nil {
 		//fmt.Println("[error] mongo json error", err, w.t.columData)
-		return
+		return false
 	}
 
 	//get the table name
@@ -35,6 +35,7 @@ func (w Worker) Insert(session *mgo.Session) {
 	err := c.Insert(&m)
 	if err != nil {
 		//fmt.Println("[Error]insert into mongo error", err)
-		return
+		return false
 	}
+	return true
 }
