@@ -29,41 +29,41 @@ func appendToFile(fileName string, content string) error {
 func main() {
 	// err := appendToFile(fileName, "dfdf")
 	// fmt.Println(err)
-	session, err := mgo.Dial("192.168.5.200:27017")
-	// session, err := mgo.Dial("192.168.86.68:27017")
+	// session, err := mgo.Dial("192.168.5.69:27017")
+	session, err := mgo.Dial("192.168.5.22:27017")
 	if err != nil {
 		panic(err)
 	}
 	defer session.Close()
 	// Optional. Switch the session to a monotonic behavior.
 	session.SetMode(mgo.Monotonic, true)
-	tableName := "event_log" //动态表
-	fmt.Println(tableName)
-	c := session.DB("EventLog").C(tableName)
-	c.EnsureIndexKey("type")
-	c.EnsureIndexKey("uid")
-	// c.EnsureIndexKey("info")
-	c.EnsureIndexKey("created")
-	c.EnsureIndexKey("infoid")
-	c.EnsureIndexKey("status")
-	c.EnsureIndexKey("tid")
+	// tableName := "event_log" //动态表
+	// fmt.Println(tableName)
+	// c := session.DB("Wang").C(tableName)
+	// c.EnsureIndexKey("type")
+	// c.EnsureIndexKey("uid")
+	// // c.EnsureIndexKey("info")
+	// c.EnsureIndexKey("created")
+	// c.EnsureIndexKey("infoid")
+	// c.EnsureIndexKey("status")
+	// c.EnsureIndexKey("tid")
 
-	x := session.DB("EventLog").C("ids")
+	x := session.DB("FansData").C("ids")
 	x.Insert(bson.M{"_id": 0, "id": 0})
 
 	for i := 1; i <= 100; i++ {
-		tableName1 := "event_log_" + strconv.Itoa(i) //粉丝表
-		fmt.Println(tableName1)
-		c := session.DB("EventLog").C(tableName1)
-		c.EnsureIndexKey("type")
-		c.EnsureIndexKey("uid")
-		c.EnsureIndexKey("fuid")
-		// c.EnsureIndexKey("info")
-		c.EnsureIndexKey("created")
-		c.EnsureIndexKey("infoid")
-		c.EnsureIndexKey("status")
-		c.EnsureIndexKey("tid")
-		x := session.DB("EventLog").C("ids" + strconv.Itoa(i))
+		// tableName1 := "event_log_" + strconv.Itoa(i) //粉丝表
+		// fmt.Println(tableName1)
+		// c := session.DB("Wang").C(tableName1)
+		// c.EnsureIndexKey("type")
+		// c.EnsureIndexKey("uid")
+		// c.EnsureIndexKey("fuid")
+		// // c.EnsureIndexKey("info")
+		// c.EnsureIndexKey("created")
+		// c.EnsureIndexKey("infoid")
+		// c.EnsureIndexKey("status")
+		// c.EnsureIndexKey("tid")
+		x := session.DB("FansData").C("ids" + strconv.Itoa(i))
 		x.Insert(bson.M{"_id": 0, "id": 0})
 	}
 
