@@ -154,7 +154,7 @@ func (e *EventLogNew) HideOrShowEventLog(event *EventLogLast, fans []*mysql.Foll
 			tableNumX = 100
 		}
 		tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
-		c := session.DB("EventLog").C(tableNameX)
+		c := session.DB("FansData").C(tableNameX)
 		eventIsExist := checkMongoFansDataIsExist(c, event, ar.Follow_id)
 		if eventIsExist == true {
 			if status == -1 || status == 1 {
@@ -173,7 +173,7 @@ func (e *EventLogNew) HideOrShowEventLog(event *EventLogLast, fans []*mysql.Foll
 			}
 		}
 		if eventIsExist == false && status == 1 {
-			IdX := createAutoIncrementId(session, strconv.Itoa(tableNumX))
+			IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNumX))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, status, event.Tid}
 			m := EventLogX{IdX, event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, status, event.Tid}
 			err := c.Insert(&m) //插入数据
@@ -196,7 +196,7 @@ func (e *EventLogNew) RemoveFansEventLog(fuid int, uid int) error {
 	}
 	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
 	session := e.session
-	c := session.DB("EventLog").C(tableNameX)
+	c := session.DB("FansData").C(tableNameX)
 	_, err := c.RemoveAll(bson.M{"uid": uidN, "fuid": fuidN}) //取消关注删除数据
 	if err != nil {
 		logger.Info("mongodb insert fans data", err, c)
@@ -214,10 +214,10 @@ func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow
 			tableNumX = 100
 		}
 		tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
-		c := session.DB("EventLog").C(tableNameX)
+		c := session.DB("FansData").C(tableNameX)
 		eventIsExist := checkMongoFansDataIsExist(c, event, ar.Follow_id)
 		if eventIsExist == false && event.Status == 1 {
-			IdX := createAutoIncrementId(session, strconv.Itoa(tableNumX))
+			IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNumX))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, event.Status, event.Tid}
 			m := EventLogX{IdX, event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid}
 			err := c.Insert(&m) //插入数据
@@ -243,6 +243,21 @@ func checkMongoEventLogIsExist(c *mgo.Collection, event *EventLogLast) bool {
 		return false
 	}
 	return true
+}
+
+func createFansAutoIncrementId(session *mgo.Session, tableNum string) int {
+	c := session.DB("FansData").C("ids" + tableNum)
+	change := mgo.Change{
+		Update:    bson.M{"$inc": bson.M{"id": 1}},
+		Upsert:    true,
+		ReturnNew: true,
+	}
+	doc := struct{ Id int }{}
+	_, err := c.Find(bson.M{"_id": 0}).Apply(change, &doc)
+	if err != nil {
+		logger.Info("get counter failed:", err)
+	}
+	return doc.Id
 }
 
 func createAutoIncrementId(session *mgo.Session, tableNum string) int {
@@ -320,11 +335,11 @@ func (e *EventLogNew) saveFansEventLog(fans []*mysql.Follow, event *mysql.EventL
 			tableNum1 = 100
 		}
 		tableName1 := "event_log_" + strconv.Itoa(tableNum1) //粉丝表
-		x := session.DB("EventLog").C(tableName1)
+		x := session.DB("FansData").C(tableName1)
 		eventIsExist := checkFansDataIsExist(x, event, ar.Follow_id)
 		if eventIsExist == false {
 			// IdX := 0
-			IdX := createAutoIncrementId(session, strconv.Itoa(tableNum1))
+			IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNum1))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
 			m := EventLogX{IdX, event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid}
 			err := x.Insert(&m) //插入数据
@@ -358,7 +373,7 @@ func (e *EventLogNew) RemoveEventToFansTask(fans_uid int, numloop int, eventLimi
 		tableNumX = 100
 	}
 	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
-	c := session.DB("EventLog").C(tableNameX)
+	c := session.DB("FansData").C(tableNameX)
 	count, _ := c.Find(&bson.M{"fuid": fans_uid}).Count()
 	eventLimitNum, _ := strconv.Atoi(eventLimit)
 	logger.Info("mongodb fans event_log uid total nums", fans_uid, count)
