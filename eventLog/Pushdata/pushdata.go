@@ -215,8 +215,9 @@ func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow
 		}
 		tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
 		c := session.DB("FansData").C(tableNameX)
-		eventIsExist := checkMongoFansDataIsExist(c, event, ar.Follow_id)
-		if eventIsExist == false && event.Status == 1 {
+		// eventIsExist := checkMongoFansDataIsExist(c, event, ar.Follow_id)
+		// if eventIsExist == false && event.Status == 1 {
+		if event.Status == 1 {
 			IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNumX))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, event.Status, event.Tid}
 			m := EventLogX{IdX, event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid}
