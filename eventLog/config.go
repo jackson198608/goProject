@@ -19,6 +19,7 @@ type Config struct {
 	dateLimit     string
 	currentNum    string
 	mongoConn     string
+	slaveMongo    string
 	mongoDb       string
 	followFirstId int
 	followLastId  int
@@ -44,6 +45,7 @@ func loadConfig() {
 	c.dateLimit = config.GetString("dateLimit")
 	c.currentNum = config.GetString("currentNum")
 	c.mongoConn = config.GetString("mongoConn")
+	c.slaveMongo = config.GetString("slaveMongo")
 	c.mongoDb = config.GetString("mongoDb")
 	c.followFirstId = config.GetInt("followFirstId")
 	c.followLastId = config.GetInt("followLastId")

@@ -32,6 +32,7 @@ type EventLogX struct {
 type EventLogNew struct {
 	db      *sql.DB
 	session *mgo.Session
+	slave   *mgo.Session
 	oid     int
 	// event   *EventLog
 }
@@ -63,11 +64,12 @@ type EventLog struct {
 	postTable string
 }
 
-func NewEventLogNew(logLevel int, oid int, id int, db *sql.DB, session *mgo.Session) *EventLogNew {
+func NewEventLogNew(logLevel int, oid int, id int, db *sql.DB, session *mgo.Session, slave *mgo.Session) *EventLogNew {
 	logger.SetLevel(logger.LEVEL(logLevel))
 	e := new(EventLogNew)
 	e.db = db
 	e.session = session
+	e.slave = slave
 	// e.event = event
 	e.oid = oid
 	return e
@@ -88,7 +90,7 @@ func (e *EventLogNew) SaveMongoEventLog(oid int) error {
 		if err != nil {
 			logger.Info("mongo insert one data error:", err)
 		}
-		logger.Info("mysql to mongo data ", m1)
+		logger.Info("mysql to master mongo data ", m1)
 	}
 	return nil
 }
@@ -108,16 +110,17 @@ func checkEventLogIsExist(c *mgo.Collection, event *mysql.EventLog) bool {
 	return true
 }
 
-func LoadMongoById(objectId int, session *mgo.Session) *EventLogLast {
+func LoadMongoById(objectId int, slave *mgo.Session) *EventLogLast {
 	event := new(EventLogLast)
-	c := session.DB("EventLog").C("event_log")
+	c := slave.DB("EventLog").C("event_log")
 	c.FindId(objectId).One(&event)
 	return event
 }
 
 //更改推送给粉丝的动态数据的状态
 func (e *EventLogNew) UpdateMongoEventLogStatus(id int, status string) error {
-	event := LoadMongoById(id, e.session)
+	//从库读取数据 e.slave
+	event := LoadMongoById(id, e.slave)
 	fans := mysql.GetFansData(event.Uid, e.db)
 	//-1隐藏,0:删除,1显示,2动态推送给粉丝,3取消关注
 	if status == "-1" {
@@ -137,10 +140,12 @@ func (e *EventLogNew) UpdateMongoEventLogStatus(id int, status string) error {
 
 func (e *EventLogNew) HideOrShowEventLog(event *EventLogLast, fans []*mysql.Follow, status int) error {
 	tableName := "event_log" //动态表
-	session := e.session
+	slave := e.slave         //从库查询
+	s := slave.DB("EventLog").C(tableName)
+	session := e.session //主库存储
 	c := session.DB("EventLog").C(tableName)
 	//判断数据是否存在
-	eventIsExist := checkMongoEventLogIsExist(c, event)
+	eventIsExist := checkMongoEventLogIsExist(s, event)
 	if eventIsExist == true {
 		err := c.Update(bson.M{"_id": event.Id}, bson.M{"$set": bson.M{"status": status}}) //插入数据
 		if err != nil {
@@ -154,8 +159,9 @@ func (e *EventLogNew) HideOrShowEventLog(event *EventLogLast, fans []*mysql.Foll
 			tableNumX = 100
 		}
 		tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
+		s := slave.DB("FansData").C(tableNameX)
 		c := session.DB("FansData").C(tableNameX)
-		eventIsExist := checkMongoFansDataIsExist(c, event, ar.Follow_id)
+		eventIsExist := checkMongoFansDataIsExist(s, event, ar.Follow_id)
 		if eventIsExist == true {
 			if status == -1 || status == 1 {
 				err := c.Update(bson.M{"type": event.TypeId, "uid": event.Uid, "fuid": ar.Follow_id, "created": event.Created, "infoid": event.Infoid}, bson.M{"$set": bson.M{"status": status}}) //插入数据
@@ -207,7 +213,8 @@ func (e *EventLogNew) RemoveFansEventLog(fuid int, uid int) error {
 }
 
 func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow) error {
-	session := e.session
+	// slave := e.slave     //从库查询
+	session := e.session //主库存储
 	for _, ar := range fans {
 		tableNumX := ar.Follow_id % 100
 		if tableNumX == 0 {
@@ -226,7 +233,7 @@ func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow
 				logger.Info("mongodb insert fans data", err, c)
 				return err
 			}
-			logger.Info("mongodb push fans data ", m)
+			logger.Info("slave FansData mongodb push fans data ", m)
 		}
 	}
 	return nil

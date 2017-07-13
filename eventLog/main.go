@@ -19,7 +19,7 @@ var c Config = Config{
 	1,
 	"127.0.0.1:6379",
 	"moveEvent",
-	"/tmp/moveEdddvent.log", 0, "3", "2014-01-01", "1", "192.168.86.68:27017", "Event", 10, 1, "200", "1", "100", "1000"}
+	"/tmp/moveEdddvent.log", 0, "3", "2014-01-01", "1", "192.168.86.68:27017", "192.168.86.68:27017", "Event", 10, 1, "200", "1", "100", "1000"}
 
 var followQueue = "followData"
 
@@ -108,7 +108,7 @@ func getFansUserToRedis() {
 }
 
 func do() {
-	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.dateLimit, c.redisStart, c.redisEnd)
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.slaveMongo, c.dateLimit, c.redisStart, c.redisEnd)
 	r.Loop()
 }
 
