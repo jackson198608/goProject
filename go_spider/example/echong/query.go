@@ -10,18 +10,34 @@ import (
 )
 
 func qShopCateList(p *page.Page) {
-	query := p.GetHtmlParser()
+	// query := p.GetHtmlParser()
 
-	query.Find(".dogType ul li h3 a").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		url, isExsit := s.Attr("href")
-		if isExsit {
-			logger.Println("[info]find next list page: ", url)
-			realUrlTag := "shopList"
-			req := newRequest(realUrlTag, url)
-			p.AddTargetRequestWithParams(req)
-		}
-		return true
-	})
+	// query.Find(".dogType ul li h3 a").EachWithBreak(func(i int, s *goquery.Selection) bool {
+	// 	url, isExsit := s.Attr("href")
+	// 	if isExsit {
+	// 		logger.Println("[info]find next list page: ", url)
+	// 		realUrlTag := "shopList"
+	// 		req := newRequest(realUrlTag, url)
+	// 		p.AddTargetRequestWithParams(req)
+	// 	}
+	// 	return true
+	// })
+	ids := [12]string {"54","53","55","48","49","5","6","50","3895","3886","2651","2652"}
+	for i := 0; i < len(ids); i++ {
+        
+        for ii := 1; ii <= 46; ii++ {
+        	var id string
+        	if ii ==1 {	
+        		id = ids[i]
+        	}else{
+        		id =  ids[i] + "b1f" + strconv.Itoa(ii)
+        	}
+        	url := "http://list.epet.com/"+ id +".html"     
+	        realUrlTag := "shopList"
+	        req := newRequest(realUrlTag, url)
+	        p.AddTargetRequestWithParams(req)
+        }
+	}
 }
 
 func qShopList(p *page.Page) {
@@ -32,17 +48,23 @@ func qShopList(p *page.Page) {
 		// For each item found, get the band and title
 		url, isExsit := s.Attr("href")
 		if isExsit {
-			logger.Println("[info]find detail page: ", url)
-			realUrlTag := "shopDetail"
-			req := newRequest(realUrlTag, url)
-			p.AddTargetRequestWithParams(req)
+			_,isExist := checkShopExist(url)
+			if !isExist {
+				logger.Println("[info]find detail page: ", url)
+				realUrlTag := "shopDetail"
+				req := newRequest(realUrlTag, url)
+				p.AddTargetRequestWithParams(req)
+			}
 		}
 		return true
 	})
+}
+
+func qNextShopList(p *page.Page) {
+	query := p.GetHtmlParser()
 
 	query.Find(".pages a").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		// For each item found, get the band and title
-		//if i == 0 {
 		title := s.Text()
         if strings.Contains(title,"下一页"){
 			url, isExsit := s.Attr("href")
@@ -95,19 +117,19 @@ func qShopDetail(p *page.Page, shopDetailId int64) {
 	})
 
 	//商品详情图片
-	query.Find(".gd_details div div img").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		url, isExsit := s.Attr("src0")
-		if isExsit {
-			realUrl := url
-			logger.Println("[info]find goods detail image : ", realUrl)
-			shopDetailIdStr := strconv.Itoa(int(shopDetailId))
-			realUrlTag := "shopImage|" + shopDetailIdStr
-			req := newRequest(realUrlTag, realUrl)
-			p.AddTargetRequestWithParams(req)
-			return false
-		}
-		return true
-	})
+	// query.Find(".gd_details div div img").EachWithBreak(func(i int, s *goquery.Selection) bool {
+	// 	url, isExsit := s.Attr("src0")
+	// 	if isExsit {
+	// 		realUrl := url
+	// 		logger.Println("[info]find goods detail image : ", realUrl)
+	// 		shopDetailIdStr := strconv.Itoa(int(shopDetailId))
+	// 		realUrlTag := "shopImage|" + shopDetailIdStr
+	// 		req := newRequest(realUrlTag, realUrl)
+	// 		p.AddTargetRequestWithParams(req)
+	// 		return false
+	// 	}
+	// 	return true
+	// })
 
 	//从爬取源URL获取id
 	sourceUrl := p.GetRequest().Url
@@ -160,11 +182,15 @@ func qShopDetail(p *page.Page, shopDetailId int64) {
 		logger.Println("[info]find goods comment num is :", 0)
 	}
 	if commentNum>0 {
+		maxPage := 99
 		count := 15
 		page := int(math.Ceil(float64(commentNum) / float64(count)))
+		if page<99 {
+			maxPage = page
+		}
 		shopDetailIdStr := strconv.Itoa(int(shopDetailId))
 		realUrlTag := "shopCommentList|" + shopDetailIdStr
-		for i := 1; i <= page; i++ {
+		for i := 1; i <= maxPage; i++ {
 			url := "http://item.epet.com/goods.html?do=GetReplys&gid="+ id +"&app=review&page="+ strconv.Itoa(i) +"&is_img=0"
 			logger.Println("[info]find goods comment next page :", url)
 			req := newRequest(realUrlTag, url)

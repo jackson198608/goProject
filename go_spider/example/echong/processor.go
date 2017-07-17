@@ -50,6 +50,7 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 		qShopCateList(p)
 
 	}  else if tag == "shopList" {
+		// qNextShopList(p)
 		qShopList(p)
 
 	} else if tag == "shopImage" {

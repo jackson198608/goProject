@@ -26,7 +26,7 @@ func saveImage(p *page.Page) bool {
 	abPath := getPathFromUrl(url)
 	fullPath := saveDir + abPath
 	fullDirPath := path.Dir(fullPath)
-	err := os.MkdirAll(fullDirPath, 0664)
+	err := os.MkdirAll(fullDirPath, 0777)
 	if err != nil {
 		logger.Println("[error]create dir error:", err, " ", fullDirPath, " ", url)
 		return false
@@ -534,12 +534,31 @@ func getCommentTime(p *page.Page, s *goquery.Selection, commentTime *string) {
 	*commentTime = commentTimeStr
 }
 
+func getCommentSku(p *page.Page, s *goquery.Selection, commentSkuId *int64) {
+	commentSkuIdStr := ""
+	s.Find(".userrg .overflow .rephead a").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		commentSkuUrl,_ := s.Attr("href")
+		urlArr := strings.Split(commentSkuUrl, "com/")
+		urlArr1 := strings.Split(urlArr[1], ".html")
+		commentSkuIdStr = urlArr1[0]
+		return true
+	})
+	*commentSkuId,_ = strconv.ParseInt(commentSkuIdStr, 10, 64)
+}
+
 func saveShopCommentList(p *page.Page, shopDetailId int64) {
 	query := p.GetHtmlParser()
 	sourceUrl := p.GetRequest().Url
+
 	logger.Println("[info] common source url: ", sourceUrl)
 
+	sku_id,_ := findSkuId(shopDetailId)
 	query.Find(".evaluation").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		// 评论sku
+		var comment_sku_id *int64 = new(int64)
+		getCommentSku(p, s, comment_sku_id)
+		logger.Println("[info] common sku id: ", *comment_sku_id, i)
+
 		// 评论内容
 		var content *string = new(string)
 		getCommentContent(p, s, content)
@@ -550,12 +569,14 @@ func saveShopCommentList(p *page.Page, shopDetailId int64) {
 		getCommentTime(p, s, commentTime)
 		logger.Println("[info] common time: ", *commentTime,)
 
-		//insert record
-		insertShopComment(
-			shopDetailId,
-			*content,
-			4,
-			*commentTime)
+		if sku_id == *comment_sku_id {
+			//insert record
+			insertShopComment(
+				sku_id,
+				*content,
+				4,
+				*commentTime)
+		}
 		return true
 	})
 }

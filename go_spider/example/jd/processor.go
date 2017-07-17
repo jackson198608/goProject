@@ -29,6 +29,7 @@ func getDetailId(tag string) (int, bool) {
 // Parse html dom here and record the parse result that we want to Page.
 // Package goquery (http://godoc.org/github.com/PuerkitoBio/goquery) is used to parse html.
 func (this *MyPageProcesser) Process(p *page.Page) {
+	logger.Println("[info]in Process ")
 	//time.Sleep(1 * time.Second)
 	if !p.IsSucc() {
 		logger.Println("[Error]not 200: ", p.GetRequest().Url)
@@ -36,6 +37,7 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 	}
 
 	tag := p.GetUrlTag()
+
 	if tag == "shopDetail" {
 		logger.Println("[info]shop detail page:", p.GetRequest().Url)
 		//save shop into mysql
@@ -95,6 +97,12 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 			return
 		}
 		qGoodsDescImage(p, int64(shopDetailId))
+	} else if strings.Contains(tag, "skuPrice") {
+		logger.Println("[info] get sku price by tag : ", tag)
+		qSkuPrice(p)
+	} else if strings.Contains(tag, "skuCommentNum") {
+		logger.Println("[info] get sku comment num by tag : ", tag)
+		qSkuCommentNum(p)
 	}
 }
 

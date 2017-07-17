@@ -16,7 +16,7 @@ func checkShopExist(sourceUrl string) (int64, bool) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("select id from goods_source_info where source_url='" + sourceUrl + "'")
+	rows, err := db.Query("select id from sku_source_info where source_url='" + sourceUrl + "'")
 	if err != nil {
 		logger.Println("[error] check sql prepare error: ", err)
 		//fmt.Println("[error] check sql prepare error: ", err)
@@ -44,6 +44,44 @@ func checkShopExist(sourceUrl string) (int64, bool) {
 
 }
 
+type Detail struct {
+	id int
+	sku_id	int
+}
+
+
+func getIdsByCommentNum() []*Detail {
+	db,_ := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+	
+	defer db.Close()
+
+	rows,_ := db.Query("select id,sku_id from sku_source_info where comment_num=0 and score=0 and source=1")
+
+	var rowsData []*Detail
+	for rows.Next() {
+		var row = new(Detail)
+		rows.Scan(&row.id, &row.sku_id)
+		rowsData = append(rowsData, row)
+	}
+	return rowsData
+}
+
+func getIdsByPrice() []*Detail {
+	db,_ := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+	
+	defer db.Close()
+
+	rows,_ := db.Query("select id,sku_id from sku_source_info where price=0 and source=1")
+
+	var rowsData []*Detail
+	for rows.Next() {
+		var row = new(Detail)
+		rows.Scan(&row.id, &row.sku_id)
+		rowsData = append(rowsData, row)
+	}
+	return rowsData
+}
+
 func findSkuId(
 	shopDetailId int64,
 ) (int64,bool) {
@@ -55,9 +93,9 @@ func findSkuId(
 	}
 	defer db.Close()
 
-	rows, err := db.Query("select sku_id from goods_source_info where id=" + strconv.FormatInt(shopDetailId, 10))
+	rows, err := db.Query("select sku_id from sku_source_info where id=" + strconv.FormatInt(shopDetailId, 10))
 	if err != nil {
-		logger.Println("[error] check sql prepare error: ", err)
+		logger.Println("[error] check sql find sku_id error: ", err)
 		//fmt.Println("[error] check sql prepare error: ", err)
 		return 0, false
 	}
@@ -68,12 +106,12 @@ func findSkuId(
 			logger.Println("[error] check sql get rows error ", err)
 			return 0, false
 		}
-		logger.Println("[info] check sql find true", shopDetailId)
+		logger.Println("[info] check sql find sku_id true", shopDetailId)
 		return sku_id, true
 
 	}
 	if err := rows.Err(); err != nil {
-		logger.Println("[error] check sql get rows error ", err)
+		logger.Println("[error] check sql get sku_id rows error ", err)
 		//fmt.Println("[error] check sql get rows error ", err)
 		return 0, false
 
@@ -92,9 +130,9 @@ func findCommentNum(
 	}
 	defer db.Close()
 
-	rows, err := db.Query("select comment_num from goods_source_info where id=" + strconv.FormatInt(shopDetailId, 10))
+	rows, err := db.Query("select comment_num from sku_source_info where id=" + strconv.FormatInt(shopDetailId, 10))
 	if err != nil {
-		logger.Println("[error] check sql prepare error: ", err)
+		logger.Println("[error] check sql find comment num error: ", err)
 		//fmt.Println("[error] check sql prepare error: ", err)
 		return 0, false
 	}
@@ -105,12 +143,12 @@ func findCommentNum(
 			logger.Println("[error] check sql get rows error ", err)
 			return 0, false
 		}
-		logger.Println("[info] check sql find true", shopDetailId)
+		logger.Println("[info] check sql find comment num true", shopDetailId)
 		return comment_num, true
 
 	}
 	if err := rows.Err(); err != nil {
-		logger.Println("[error] check sql get rows error ", err)
+		logger.Println("[error] check sql get comment num rows error ", err)
 		//fmt.Println("[error] check sql get rows error ", err)
 		return 0, false
 
@@ -134,15 +172,15 @@ func updateShopDetail(
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("UPDATE goods_source_info SET shape=?,age=?,component=?, component_percent=?,graininess=? where id=?")
+	stmt, err := db.Prepare("UPDATE sku_source_info SET shape=?,age=?,component=?, component_percent=?,graininess=? where id=?")
 	if err != nil {
-		logger.Println("[error] update prepare error: ", err)
+		logger.Println("[error] update detail error: ", err)
 		return false
 	}
 
 	res, err := stmt.Exec(shape, age, component, componentPercent, graininess, shopDetailId)
 	if err != nil {
-		logger.Println("[error] update excute error: ", err)
+		logger.Println("[error] update detail excute error: ", err)
 		return false
 	}
 
@@ -166,21 +204,21 @@ func updateGoodsPrice(
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("UPDATE goods_source_info SET price=? where id=?")
+	stmt, err := db.Prepare("UPDATE sku_source_info SET price=? where id=?")
 	if err != nil {
-		logger.Println("[error] update prepare error: ", err)
+		logger.Println("[error] update sku price error: ", err)
 		return false
 	}
 
 	res, err := stmt.Exec(price*100, shopDetailId)
 	if err != nil {
-		logger.Println("[error] update excute error: ", err)
+		logger.Println("[error] update sku price excute error: ", err)
 		return false
 	}
 
 	num, err := res.RowsAffected()
 	if err != nil {
-		logger.Println("[error] get insert id error: ", err, " num:", num)
+		logger.Println("[error] get update sku price error: ", err, " num:", num)
 		return false
 	}
 	return true
@@ -198,21 +236,21 @@ func updateCommentNumAndScore(
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("UPDATE goods_source_info SET score=?,comment_num=? where id=?")
+	stmt, err := db.Prepare("UPDATE sku_source_info SET score=?,comment_num=? where id=?")
 	if err != nil {
-		logger.Println("[error] update prepare error: ", err)
+		logger.Println("[error] update comment num score error: ", err)
 		return false
 	}
 
 	res, err := stmt.Exec(score*100, commentNum, shopDetailId)
 	if err != nil {
-		logger.Println("[error] update excute error: ", err)
+		logger.Println("[error] update comment num score excute error: ", err)
 		return false
 	}
 
 	num, err := res.RowsAffected()
 	if err != nil {
-		logger.Println("[error] get insert id error: ", err, " num:", num)
+		logger.Println("[error] get update comment num score error: ", err, " num:", num)
 		return false
 	}
 	return true
@@ -250,9 +288,9 @@ func insertShopDetail(
 		}
 		defer db.Close()
 
-		stmt, err := db.Prepare("INSERT goods_source_info SET goods_name=?, sku_id=?,sku_name=?, brand=?,category=?,price=?,sales_volume=?,comment_num=?,score=?,shape=?,age=?,component=?,component_percent=?,taste=?,grain=?,graininess=?,source=?,created=?,source_url=?")
+		stmt, err := db.Prepare("INSERT sku_source_info SET goods_name=?, sku_id=?,sku_name=?, brand=?,category=?,price=?,sales_volume=?,comment_num=?,score=?,shape=?,age=?,component=?,component_percent=?,taste=?,grain=?,graininess=?,source=?,created=?,source_url=?")
 		if err != nil {
-			logger.Println("[error] insert prepare error: ", err)
+			logger.Println("[error] insert sku detail error: ", err)
 			return 0
 		}
 
@@ -262,13 +300,13 @@ func insertShopDetail(
 
 		res, err := stmt.Exec(goodsName, goodsNumber, goodsSku, brand, category, goodsPrice, salesVolume, commentNum, score, shape, age, component, componentPercent, taste, grain, graininess, source, createTime, sourceUrl)
 		if err != nil {
-			logger.Println("[error] insert excute error: ", err)
+			logger.Println("[error] insert sku detail error: ", err)
 			return 0
 		}
 
 		id, err := res.LastInsertId()
 		if err != nil {
-			logger.Println("[error] get insert id error: ", err)
+			logger.Println("[error] get insert sku detail error: ", err)
 			return 0
 		}
 		return id
@@ -288,21 +326,21 @@ func insertShopPhoto(
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("INSERT shop_image SET goods_source_id=?,path=?,type=?")
+	stmt, err := db.Prepare("INSERT shop_image SET sku_source_id=?,path=?,type=?")
 	if err != nil {
-		logger.Println("[error] insert prepare error: ", err)
+		logger.Println("[error] insert sku photo error: ", err)
 		return 0
 	}
 
 	res, err := stmt.Exec(shopId, shopImage, imageType)
 	if err != nil {
-		logger.Println("[error] insert excute error: ", err)
+		logger.Println("[error] insert sku photo excute error: ", err)
 		return 0
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		logger.Println("[error] get insert id error: ", err)
+		logger.Println("[error] get insert sku photo error: ", err)
 		return 0
 	}
 	return id
@@ -310,7 +348,7 @@ func insertShopPhoto(
 }
 
 func insertShopComment(
-	goodsSourceId int64,
+	skuId int64,
 	content string,
 	source int,
 	created string,
@@ -323,21 +361,21 @@ func insertShopComment(
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("INSERT goods_source_comment SET goods_source_id=?,content=?, source=?,created=?")
+	stmt, err := db.Prepare("INSERT sku_source_comment SET sku_id=?,content=?, source=?,created=?")
 	if err != nil {
-		logger.Println("[error] insert prepare error: ", err)
+		logger.Println("[error] insert comment error: ", err)
 		return 0
 	}
 
-	res, err := stmt.Exec(goodsSourceId, content, source, created)
+	res, err := stmt.Exec(skuId, content, source, created)
 	if err != nil {
-		logger.Println("[error] insert excute error: ", err)
+		logger.Println("[error] insert comment excute error: ", err)
 		return 0
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		logger.Println("[error] get insert id error: ", err)
+		logger.Println("[error] get insert comment error: ", err)
 		return 0
 	}
 	return id

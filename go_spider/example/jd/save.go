@@ -28,6 +28,7 @@ type CommentsCountslice struct {
 type Comments struct {
     Content string `json:"content"`
     CreationTime   string `json:"creationTime"`
+	ReferenceId string `json:"referenceId"`
 }
 
 type Commentsslice struct {
@@ -291,6 +292,8 @@ func saveShopDetail(p *page.Page) (int64, bool) {
 
 	// 口味
 	var taste *string = new(string)
+	getComponent(query, taste)
+	logger.Println("[info] goods taste: ", *taste)
 
 	// 谷物成分
 	var grain *string = new(string)
@@ -393,6 +396,8 @@ func getPathFromUrl(url string) string {
 func saveShopCommentList(p *page.Page, shopDetailId int64) {
 	query := p.GetHtmlParser()
 
+	sku_id,_ := findSkuId(shopDetailId)
+
 	var s Commentsslice
 	jsonStr := ""
 	query.Find("body").EachWithBreak(func(i int, s *goquery.Selection) bool {
@@ -404,11 +409,15 @@ func saveShopCommentList(p *page.Page, shopDetailId int64) {
     for i := 0; i < len(s.Comments); i++ {
     	logger.Println("[info] goods comment content: ",i, s.Comments[i].Content)
     	logger.Println("[info] goods comment CreationTime: ",i, s.Comments[i].CreationTime)
-    	insertShopComment(
-    		shopDetailId,
-    		s.Comments[i].Content,
-    		1,
-    		s.Comments[i].CreationTime)
+    	comment_sku_id,_ := strconv.ParseInt(s.Comments[i].ReferenceId, 10, 64)
+    	if sku_id == comment_sku_id {
+	    	insertShopComment(
+	    		sku_id,
+	    		s.Comments[i].Content,
+	    		1,
+	    		s.Comments[i].CreationTime,
+	    		)
+	    }
     }
 }
 
@@ -419,8 +428,9 @@ func saveGoodsPrice(p *page.Page, shopDetailId int64) {
 	var goodsPrice *float64 = new(float64)
 	getGoodsPrice(query, goodsPrice)
 	logger.Println("[info] goods price: ", *goodsPrice)
-
-	updateGoodsPrice(*goodsPrice, shopDetailId)
+	if *goodsPrice!=0 {
+		updateGoodsPrice(*goodsPrice, shopDetailId)
+	}
 }
 
 func saveGoodsCommentNumAndScore(p *page.Page, shopDetailId int64) (bool){

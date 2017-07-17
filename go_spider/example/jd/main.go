@@ -9,13 +9,13 @@ import (
 	"strconv"
 )
 
-var dbAuth string = "dog123:dog123"
+// var dbAuth string = "dog123:dog123"
 
-var dbDsn string = "192.168.5.86:3306"
+// var dbDsn string = "192.168.5.86:3306"
 
-// var dbAuth string = "root:123456"
+var dbAuth string = "root:goumin123"
 
-// var dbDsn string = "127.0.0.1:3306"
+var dbDsn string = "127.0.0.1:3306"
 
 var dbName string = "big_data_mall"
 
@@ -68,11 +68,7 @@ func main() {
 	startUrlTag := os.Args[3]
 	logPath = os.Args[4]
 	threaNum, _ = strconv.Atoi(os.Args[5])
-	// Type, _ = strconv.Atoi(os.Args[6])
-	// CityIdStr = os.Args[8]
-	// CityIdInt, _ := strconv.Atoi(CityIdStr)
-	// CityId = int64(CityIdInt)
-
+	
 	load()
 	logger.Println("[info]start ", startUrl)
 	req := newRequest(startUrlTag, startUrl)

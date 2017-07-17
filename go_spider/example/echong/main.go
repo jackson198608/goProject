@@ -9,13 +9,13 @@ import (
 	"strconv"
 )
 
-var dbAuth string = "dog123:dog123"
+// var dbAuth string = "dog123:dog123"
 
-var dbDsn string = "192.168.5.86:3306"
+// var dbDsn string = "192.168.5.86:3306"
 
-// var dbAuth string = "root:123456"
+var dbAuth string = "root:goumin123"
 
-// var dbDsn string = "127.0.0.1:3306"
+var dbDsn string = "127.0.0.1:3306"
 
 var dbName string = "big_data_mall"
 

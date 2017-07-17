@@ -26,7 +26,7 @@ func saveImage(p *page.Page) bool {
 	abPath := getPathFromUrl(url)
 	fullPath := saveDir + abPath
 	fullDirPath := path.Dir(fullPath)
-	err := os.MkdirAll(fullDirPath, 0664)
+	err := os.MkdirAll(fullDirPath, 0777)
 	if err != nil {
 		logger.Println("[error]create dir error:", err, " ", fullDirPath, " ", url)
 		return false
@@ -392,6 +392,7 @@ func saveShopCommentList(p *page.Page, shopDetailId int64) {
 	sourceUrl := p.GetRequest().Url
 	logger.Println("[info] common source url: ", sourceUrl)
 
+	sku_id,_ := findSkuId(shopDetailId)
 	query.Find(".pl_list .pl_right").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		// 评论内容
 		var content *string = new(string)
@@ -405,7 +406,7 @@ func saveShopCommentList(p *page.Page, shopDetailId int64) {
 
 		//insert record
 		insertShopComment(
-			shopDetailId,
+			sku_id,
 			*content,
 			3,
 			*commentTime)
