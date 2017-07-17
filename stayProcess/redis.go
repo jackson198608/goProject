@@ -100,7 +100,6 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 	defer session.Close()
 
 	slaveMongo := t.taskNewArgs[4]
-	fmt.Println(slaveMongo)
 	slave, err := mgo.Dial(slaveMongo)
 	if err != nil {
 		logger.Error("[error] connect mongodb err:", err)

@@ -30,8 +30,8 @@ func main() {
 	jobType := os.Args[1]
 	// err := appendToFile(fileName, "dfdf")
 	// fmt.Println(err)
-	session, err := mgo.Dial("127.0.0.1:27017")
-	// session, err := mgo.Dial("192.168.5.22:27017")
+	// session, err := mgo.Dial("127.0.0.1:27017")
+	session, err := mgo.Dial("192.168.5.22:27017")
 	if err != nil {
 		panic(err)
 	}
@@ -66,8 +66,8 @@ func main() {
 			c.EnsureIndexKey("infoid")
 			c.EnsureIndexKey("status")
 			c.EnsureIndexKey("tid")
-			x := session.DB("FansData").C("ids" + strconv.Itoa(i))
-			x.Insert(bson.M{"_id": 0, "id": 0})
+			// x := session.DB("FansData").C("ids" + strconv.Itoa(i))
+			// x.Insert(bson.M{"_id": 0, "id": 0})
 		}
 	}
 
