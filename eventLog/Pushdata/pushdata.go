@@ -3,7 +3,7 @@ package Pushdata
 import (
 	// "encoding/json"
 	// "bufio"
-	// "fmt"
+	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/eventLog/mysql"
 	mgo "gopkg.in/mgo.v2"
@@ -16,38 +16,55 @@ import (
 )
 
 type EventLogX struct {
-	// Oid    bson.ObjectId "_id"
-	Id     int "_id"
-	TypeId int "type"
-	Uid    int "uid"
-	Fuid   int "fuid" //fans id
-	// Info    string        "info"
-	Created string "created"
-	Infoid  int    "infoid"
-	Status  int    "status"
-	Tid     int    "tid"
+	// Id         int    "_id"
+	Id        bson.ObjectId "_id"
+	TypeId    int           "type"
+	Uid       int           "uid"
+	Fuid      int           "fuid" //fans id
+	Created   string        "created"
+	Infoid    int           "infoid"
+	Status    int           "status"
+	Tid       int           "tid"
+	Bid       int           "bid"
+	Content   string        "content"
+	Title     string        "title"
+	Imagenums int           "image_num"
+	Images    string        "images"
+	Forum     string        "forum"
+	Tag       string        "tag"
+	Qsttype   int           "qst_type"
+	IsRead    int           "is_read"
+	Source    int           "source"
 }
 
 // t.oid, t, id, t.fuid, t.uid, t.status, t.event
 type EventLogNew struct {
 	db      *sql.DB
 	session *mgo.Session
-	slave   *mgo.Session
 	oid     int
+	// slave   *mgo.Session
 	// event   *EventLog
 }
 
 type EventLogLast struct {
 	// Oid bson.ObjectId "_id"
-	Id int "_id"
-	// Id     int           "id"
-	TypeId int "type"
-	Uid    int "uid"
-	// Info    string        "info"
-	Created string "created"
-	Infoid  int    "infoid"
-	Status  int    "status"
-	Tid     int    "tid"
+	Id        int    "_id"
+	TypeId    int    "type"
+	Uid       int    "uid"
+	Created   string "created"
+	Infoid    int    "infoid"
+	Status    int    "status"
+	Tid       int    "tid"
+	Bid       int    "bid"
+	Content   string "content"
+	Title     string "title"
+	Imagenums int    "image_num"
+	Images    string "images"
+	Forum     string "forum"
+	Tag       string "tag"
+	Qsttype   int    "qst_type"
+	IsRead    int    "is_read"
+	Source    int    "source"
 }
 
 type EventLog struct {
@@ -64,12 +81,22 @@ type EventLog struct {
 	postTable string
 }
 
-func NewEventLogNew(logLevel int, oid int, id int, db *sql.DB, session *mgo.Session, slave *mgo.Session) *EventLogNew {
+type BreedActiveUser struct {
+	Uid     int "uid"
+	Breedid int "breed_id"
+}
+
+type ForumActiveUser struct {
+	Uid     int "uid"
+	Forumid int "forum_id"
+}
+
+func NewEventLogNew(logLevel int, oid int, id int, db *sql.DB, session *mgo.Session) *EventLogNew {
 	logger.SetLevel(logger.LEVEL(logLevel))
 	e := new(EventLogNew)
 	e.db = db
-	e.session = session
-	e.slave = slave
+	e.session = session //主库
+	// e.slave = slave     //从库
 	// e.event = event
 	e.oid = oid
 	return e
@@ -85,7 +112,7 @@ func (e *EventLogNew) SaveMongoEventLog(oid int) error {
 		Id := createAutoIncrementId(e.session, "")
 		// Id := 0
 		// m1 := EventLogNew{bson.NewObjectId(), Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
-		m1 := EventLogLast{Id, event.TypeId, event.Uid, event.Created, event.Infoid, event.Status, event.Tid}
+		m1 := EventLogLast{Id, event.TypeId, event.Uid, event.Created, event.Infoid, event.Status, event.Tid, 0, "", "", 0, "", "", "", 0, 0, 0}
 		err := x.Insert(&m1) //插入数据
 		if err != nil {
 			logger.Info("mongo insert one data error:", err)
@@ -120,7 +147,7 @@ func LoadMongoById(objectId int, slave *mgo.Session) *EventLogLast {
 //更改推送给粉丝的动态数据的状态
 func (e *EventLogNew) UpdateMongoEventLogStatus(id int, status string) error {
 	//从库读取数据 e.slave
-	event := LoadMongoById(id, e.slave)
+	event := LoadMongoById(id, e.session)
 	fans := mysql.GetFansData(event.Uid, e.db)
 	//-1隐藏,0:删除,1显示,2动态推送给粉丝,3取消关注
 	if status == "-1" {
@@ -140,12 +167,10 @@ func (e *EventLogNew) UpdateMongoEventLogStatus(id int, status string) error {
 
 func (e *EventLogNew) HideOrShowEventLog(event *EventLogLast, fans []*mysql.Follow, status int) error {
 	tableName := "event_log" //动态表
-	slave := e.slave         //从库查询
-	s := slave.DB("EventLog").C(tableName)
-	session := e.session //主库存储
+	session := e.session     //主库存储
 	c := session.DB("EventLog").C(tableName)
 	//判断数据是否存在
-	eventIsExist := checkMongoEventLogIsExist(s, event)
+	eventIsExist := checkMongoEventLogIsExist(c, event)
 	if eventIsExist == true {
 		err := c.Update(bson.M{"_id": event.Id}, bson.M{"$set": bson.M{"status": status}}) //插入数据
 		if err != nil {
@@ -153,35 +178,52 @@ func (e *EventLogNew) HideOrShowEventLog(event *EventLogLast, fans []*mysql.Foll
 			return err
 		}
 	}
-	for _, ar := range fans {
-		tableNumX := ar.Follow_id % 100
+	var allusers []int
+	if event.TypeId == 1 { //1:帖子
+		//俱乐部所有活跃用户 + 活跃粉丝用户
+		allusers = MergeFansAndForumUsers(fans, event.Infoid, e.session, e.db)
+	} else if event.TypeId == 8 { //8:问答
+		//获取相同犬种的活跃用户
+		allusers = GetBreedActiveUser(event.Bid, e.session)
+	} else if (event.TypeId == 1 || event.TypeId == 6) && event.Source == 1 { //小编推荐
+		//全部活跃用户
+		allusers = GetAllActiveUsers(e.session)
+	} else {
+		for _, v := range fans {
+			// allusers[k] = v.Follow_id
+			allusers = append(allusers, v.Follow_id)
+		}
+	}
+	for _, ar := range allusers {
+		tableNumX := ar % 100
 		if tableNumX == 0 {
 			tableNumX = 100
 		}
 		tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
-		s := slave.DB("FansData").C(tableNameX)
 		c := session.DB("FansData").C(tableNameX)
-		eventIsExist := checkMongoFansDataIsExist(s, event, ar.Follow_id)
+		eventIsExist := checkMongoFansDataIsExist(c, event, ar)
 		if eventIsExist == true {
 			if status == -1 || status == 1 {
-				err := c.Update(bson.M{"type": event.TypeId, "uid": event.Uid, "fuid": ar.Follow_id, "created": event.Created, "infoid": event.Infoid}, bson.M{"$set": bson.M{"status": status}}) //插入数据
+				err := c.Update(bson.M{"type": event.TypeId, "uid": event.Uid, "fuid": ar, "created": event.Created, "infoid": event.Infoid}, bson.M{"$set": bson.M{"status": status}}) //插入数据
 				if err != nil {
 					logger.Info("mongodb update fans data error ", err, c)
 					return err
 				}
+				logger.Info("mongodb update fans data:", event.TypeId, event.Uid, ar, event.Infoid)
 			}
 			if status == 0 {
-				err := c.Remove(bson.M{"type": event.TypeId, "uid": event.Uid, "fuid": ar.Follow_id, "created": event.Created, "infoid": event.Infoid, "tid": event.Tid}) //插入数据
+				err := c.Remove(bson.M{"type": event.TypeId, "uid": event.Uid, "fuid": ar, "created": event.Created, "infoid": event.Infoid, "tid": event.Tid}) //插入数据
 				if err != nil {
 					logger.Info("mongodb remove fans data error ", err, c)
 					return err
 				}
+				logger.Info("mongodb remove fans data:", event.TypeId, event.Uid, ar, event.Infoid)
 			}
 		}
 		if eventIsExist == false && status == 1 {
-			IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNumX))
+			// IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNumX))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, status, event.Tid}
-			m := EventLogX{IdX, event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, status, event.Tid}
+			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar, event.Created, event.Infoid, status, event.Tid, event.Bid, event.Content, event.Title, event.Imagenums, event.Images, event.Forum, event.Tag, event.Qsttype, event.IsRead, event.Source}
 			err := c.Insert(&m) //插入数据
 			if err != nil {
 				logger.Info("mongodb insert fans data error ", err, c)
@@ -212,7 +254,7 @@ func (e *EventLogNew) RemoveFansEventLog(fuid int, uid int) error {
 	return nil
 }
 
-func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow) error {
+func (e *EventLogNew) PushFansEventLogOld(event *EventLogLast, fans []*mysql.Follow) error {
 	// slave := e.slave     //从库查询
 	session := e.session //主库存储
 	for _, ar := range fans {
@@ -225,9 +267,50 @@ func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow
 		// eventIsExist := checkMongoFansDataIsExist(c, event, ar.Follow_id)
 		// if eventIsExist == false && event.Status == 1 {
 		if event.Status == 1 {
-			IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNumX))
+			// IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNumX))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, event.Status, event.Tid}
-			m := EventLogX{IdX, event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid}
+			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid, 0, "", "", 0, "", "", "", 0, 0, 0}
+			err := c.Insert(&m) //插入数据
+			if err != nil {
+				logger.Info("mongodb insert fans data", err, c)
+				return err
+			}
+			logger.Info("slave FansData mongodb push fans data ", m)
+		}
+	}
+	return nil
+}
+
+func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow) error {
+	// slave := e.slave     //从库查询
+	session := e.session //主库存储
+
+	var allusers []int
+	if event.TypeId == 1 { //1:帖子
+		//俱乐部所有活跃用户 + 活跃粉丝用户
+		allusers = MergeFansAndForumUsers(fans, event.Infoid, e.session, e.db)
+	} else if event.TypeId == 8 { //8:问答
+		//获取相同犬种的活跃用户
+		allusers = GetBreedActiveUser(event.Bid, e.session)
+	} else if (event.TypeId == 1 || event.TypeId == 6) && event.Source == 1 { //小编推荐
+		//全部活跃用户
+		allusers = GetAllActiveUsers(e.session)
+	} else {
+		for _, v := range fans {
+			// allusers[k] = v.Follow_id
+			allusers = append(allusers, v.Follow_id)
+		}
+	}
+
+	for _, ar := range allusers {
+		tableNumX := ar % 100
+		if tableNumX == 0 {
+			tableNumX = 100
+		}
+		tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
+		c := session.DB("FansData").C(tableNameX)
+		if event.Status == 1 {
+			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar, event.Created, event.Infoid, event.Status, event.Tid, event.Bid, event.Content, event.Title, event.Imagenums, event.Images, event.Forum, event.Tag, event.Qsttype, event.IsRead, event.Source}
 			err := c.Insert(&m) //插入数据
 			if err != nil {
 				logger.Info("mongodb insert fans data", err, c)
@@ -347,9 +430,9 @@ func (e *EventLogNew) saveFansEventLog(fans []*mysql.Follow, event *mysql.EventL
 		eventIsExist := checkFansDataIsExist(x, event, ar.Follow_id)
 		if eventIsExist == false {
 			// IdX := 0
-			IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNum1))
+			// IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNum1))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
-			m := EventLogX{IdX, event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid}
+			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid, 0, "", "", 0, "", "", "", 0, 0, 0}
 			err := x.Insert(&m) //插入数据
 			logger.Info(m)
 			if err != nil {
@@ -395,4 +478,78 @@ func (e *EventLogNew) RemoveEventToFansTask(fans_uid int, numloop int, eventLimi
 			c.Remove(&bson.M{"_id": v.Id, "fuid": fans_uid})
 		}
 	}
+}
+
+//获取相同犬种的活跃用户
+func GetBreedActiveUser(Bid int, session *mgo.Session) []int {
+	var user []int
+	c := session.DB("ActiveUser").C("active_breed_user")
+	err := c.Find(&bson.M{"breed_id": Bid}).Select(bson.M{"pet_id": 1}).Distinct("uid", &user)
+	if err != nil {
+		panic(err)
+	}
+	return user
+}
+
+//获取相同俱乐部的活跃用户
+func GetForumActiveUsers(tid int, session *mgo.Session, db *sql.DB) []int {
+	// Forumids := mysql.GetFollowForumIds(uid, db)
+	Forumid := mysql.GetFollowForumId(tid, db)
+	fmt.Println(Forumid)
+	var user []int
+	c := session.DB("ActiveUser").C("active_forum_user")
+	// err := c.Find(&bson.M{"forum_id": bson.M{"$in": Forumids}}).Distinct("uid", &user)
+	err := c.Find(&bson.M{"forum_id": Forumid}).Distinct("uid", &user)
+	if err != nil {
+		panic(err)
+	}
+	return user
+}
+
+//合并俱乐部和粉丝数据排重
+func MergeFansAndForumUsers(fans []*mysql.Follow, tid int, session *mgo.Session, db *sql.DB) []int {
+	forumuids := GetForumActiveUsers(tid, session, db)
+	var users []int
+	//所有加入该帖子俱乐部的活跃用户
+	for _, f := range forumuids {
+		users = append(users, f)
+	}
+	// 发帖用户的所有活跃粉丝
+	for _, v := range fans {
+		users = append(users, v.Follow_id)
+	}
+	// 数据排重
+	allusers := Rm_duplicate(users)
+	return allusers
+}
+
+// 数据排重
+func Rm_duplicate(list []int) []int {
+	var x []int = []int{}
+	for _, i := range list {
+		if len(x) == 0 {
+			x = append(x, i)
+		} else {
+			for k, v := range x {
+				if i == v {
+					break
+				}
+				if k == len(x)-1 {
+					x = append(x, i)
+				}
+			}
+		}
+	}
+	return x
+}
+
+//全部活跃用户
+func GetAllActiveUsers(session *mgo.Session) []int {
+	var user []int
+	c := session.DB("ActiveUser").C("active_user")
+	err := c.Find(nil).Distinct("uid", &user)
+	if err != nil {
+		panic(err)
+	}
+	return user
 }

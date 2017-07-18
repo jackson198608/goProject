@@ -20,7 +20,7 @@ type Task struct {
 	status      string
 	db          *sql.DB
 	session     *mgo.Session
-	slave       *mgo.Session
+	// slave       *mgo.Session
 	// event       *EventLogNew
 	count      int
 	fansnum    int
@@ -34,7 +34,7 @@ type Follow struct {
 	follow_id int
 }
 
-func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session, slave *mgo.Session) *Task {
+func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session) *Task {
 	if loggerLevel < 0 {
 		loggerLevel = 0
 	}
@@ -75,7 +75,7 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session,
 	t.uid = uid
 	t.status = status
 	t.session = session
-	t.slave = slave
+	// t.slave = slave
 	t.db = db
 	t.fans = fans
 	t.ecount = ecount
@@ -84,7 +84,7 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session,
 }
 
 func (t *Task) Do() {
-	m := Pushdata.NewEventLogNew(t.loggerLevel, t.oid, t.id, t.db, t.session, t.slave)
+	m := Pushdata.NewEventLogNew(t.loggerLevel, t.oid, t.id, t.db, t.session)
 	if m != nil {
 		if t.oid > 0 {
 			logger.Info("export event to mongo")
@@ -102,13 +102,13 @@ func (t *Task) Do() {
 }
 
 func (t *Task) Dopush(dateLimit string, loopNum int, fansLimit string, eventLimit string, pushLimit string) {
-	m := Pushdata.NewEventLogNew(t.loggerLevel, t.oid, t.id, t.db, t.session, t.slave)
+	m := Pushdata.NewEventLogNew(t.loggerLevel, t.oid, t.id, t.db, t.session)
 	m.PushEventToFansTask(t.fans, t.uid, t.ecount, loopNum, fansLimit, eventLimit, pushLimit, dateLimit)
 
 }
 
 func (t *Task) Doremove(loopNum int, eventLimit string) {
-	m := Pushdata.NewEventLogNew(t.loggerLevel, t.oid, t.id, t.db, t.session, t.slave)
+	m := Pushdata.NewEventLogNew(t.loggerLevel, t.oid, t.id, t.db, t.session)
 	m.RemoveEventToFansTask(t.oid, loopNum, eventLimit)
 
 }

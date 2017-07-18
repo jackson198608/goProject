@@ -87,3 +87,61 @@ func GetMysqlData(fans int, uid int, count int, page int, db *sql.DB, loopNum in
 	}
 	return rowsData
 }
+
+func GetFollowForumIds(uid int, db *sql.DB) []int {
+	tableName := "forumfollow"
+	rows, err := db.Query("select forum_id from `" + tableName + "` where user_id=" + strconv.Itoa(int(uid)))
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check forum follow user error: ", err)
+		return nil
+	}
+	var a []int
+	for rows.Next() {
+		var forum_id int
+		rows.Scan(&forum_id)
+		a = append(a, forum_id)
+	}
+	return a
+}
+
+func GetFollowForumId(tid int, db *sql.DB) int {
+	tableName := "pre_forum_thread"
+	rows, err := db.Query("select fid from `" + tableName + "` where tid=" + strconv.Itoa(tid))
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check forum follow user error: ", err)
+		return 0
+	}
+	for rows.Next() {
+		var fid int
+		rows.Scan(&fid)
+		return fid
+	}
+	return 0
+}
+
+func GetGoodsOrderUids(goodsId int, price string, db *sql.DB) []int {
+	// _, priceInt := strconv.Atoi(price)
+	priceFloat, _ := strconv.ParseFloat(price, 32)
+	var rows *sql.Rows
+	var err error
+	if priceFloat > 0 {
+		rows, err = db.Query("select uid from mall.`order` as o left join mall.order_info as oi on o.id=oi.order_id where oi.goods_sku_id=" + strconv.Itoa(goodsId) + " and oi.goods_price>" + price + " group by uid")
+		defer rows.Close()
+	} else {
+		rows, err = db.Query("select uid from mall.`order` as o left join mall.order_info as oi on o.id=oi.order_id where oi.goods_sku_id=" + strconv.Itoa(goodsId) + " group by uid ")
+		defer rows.Close()
+	}
+	if err != nil {
+		logger.Error("[error] check forum follow user error: ", err)
+		return nil
+	}
+	var a []int
+	for rows.Next() {
+		var uid int
+		rows.Scan(&uid)
+		a = append(a, uid)
+	}
+	return a
+}

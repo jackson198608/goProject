@@ -98,14 +98,39 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 		return
 	}
 	defer session.Close()
-
-	slaveMongo := t.taskNewArgs[4]
-	slave, err := mgo.Dial(slaveMongo)
-	if err != nil {
-		logger.Error("[error] connect mongodb err:", err)
+	/*mongoConnArr := strings.Split(t.taskNewArgs[3], ",")
+	if len(mongoConnArr) < 3 {
 		return
 	}
-	defer slave.Close()
+	Host := []string{
+		mongoConnArr[0],
+		mongoConnArr[1],
+		mongoConnArr[2],
+	}
+	const (
+		Database       = "FansData"
+		ReplicaSetName = "goumin"
+	)
+
+	session, err := mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:          Host,
+		Database:       Database,
+		ReplicaSetName: ReplicaSetName,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()*/
+
+	// slaveMongo := t.taskNewArgs[4]
+	// slave, err := mgo.Dial(slaveMongo)
+	// if err != nil {
+	// 	logger.Error("[error] connect mongodb err:", err)
+	// 	return
+	// }
+	// defer slave.Close()
+
 	for {
 		logger.Info("pop ", t.queueName)
 		redisStr := (*t.client).LPop(t.queueName).Val()
@@ -115,7 +140,7 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 			return
 		}
 		logger.Info("got redisStr ", redisStr)
-		task := task.NewTask(t.logLevel, redisStr, db, session, slave)
+		task := task.NewTask(t.logLevel, redisStr, db, session)
 		if task != nil {
 			task.Do()
 		}
@@ -293,7 +318,7 @@ func (t *RedisEngine) croutinePopJobFollowData(x chan int, i int) {
 			return
 		}
 
-		task := task.NewTask(t.logLevel, redisStr, db, session, session)
+		task := task.NewTask(t.logLevel, redisStr, db, session)
 		if task != nil {
 			task.Dopush(t.taskNewArgs[4], t.numForOneLoop, t.taskNewArgs[7], t.taskNewArgs[8], t.taskNewArgs[9])
 		}
@@ -327,7 +352,7 @@ func (t *RedisEngine) croutinePopJobRemoveFansData(x chan int, i int) {
 			return
 		}
 
-		task := task.NewTask(t.logLevel, redisStr, db, session, session)
+		task := task.NewTask(t.logLevel, redisStr, db, session)
 		if task != nil {
 			task.Doremove(t.numForOneLoop, t.taskNewArgs[8])
 		}
