@@ -87,3 +87,20 @@ func GetMysqlData(fans int, uid int, count int, page int, db *sql.DB, loopNum in
 	}
 	return rowsData
 }
+
+func GetFollowForumId(uid int, db *sql.DB) []int {
+	tableName := "forumfollow"
+	rows, err := db.Query("select forum_id from `" + tableName + "` where user_id=" + strconv.Itoa(int(uid)))
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check forum follow user error: ", err)
+		return nil
+	}
+	var a []int
+	for rows.Next() {
+		var forum_id int
+		rows.Scan(&forum_id)
+		a = append(a, forum_id)
+	}
+	return a
+}

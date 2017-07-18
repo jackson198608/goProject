@@ -29,6 +29,7 @@ type Task struct {
 	eventLimit int
 	pushLimit  int
 	dateLimit  string
+	rid        string
 }
 type Follow struct {
 	follow_id int
@@ -44,6 +45,7 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session,
 	var fuid int
 	var uid int
 	var id int
+	var rid string
 	var oid int
 	var status string
 	var fans string
@@ -53,6 +55,9 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session,
 			uids := strings.Split(redisArr[0], "&")
 			fuid, _ = strconv.Atoi(uids[0])
 			uid, _ = strconv.Atoi(uids[1])
+		} else if redisArr[1] == "4" {
+			rid = redisArr[0]
+			status = redisArr[1]
 		} else {
 			id, _ = strconv.Atoi(redisArr[0])
 			status = redisArr[1] //要执行的操作:0:删除,-1隐藏,1显示,2动态推送给粉丝
@@ -71,6 +76,7 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session,
 	t := new(Task)
 	t.oid = oid
 	t.id = id
+	t.rid = rid
 	t.fuid = fuid
 	t.uid = uid
 	t.status = status
@@ -93,6 +99,11 @@ func (t *Task) Do() {
 		if t.id > 0 {
 			logger.Info("update mongo event status")
 			m.UpdateMongoEventLogStatus(t.id, t.status)
+		}
+
+		if t.rid != "" && t.status == "4" {
+			logger.Info("push mongo recomment data")
+			m.PushRecommendDataToUser(t.rid, t.status)
 		}
 		if t.fuid > 0 && t.uid > 0 {
 			logger.Info("remove fans event")
