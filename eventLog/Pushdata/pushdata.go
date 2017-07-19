@@ -469,14 +469,16 @@ func (e *EventLogNew) RemoveEventToFansTask(fans_uid int, numloop int, eventLimi
 	}
 	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
 	c := session.DB("FansData").C(tableNameX)
-	count, _ := c.Find(&bson.M{"fuid": fans_uid}).Count()
+	//1：帖子，2：回复，3：关注，4：评论，5：日志萌图，6：视频，7：商城圈，8：问答
+	typeIds := [7]int{1, 2, 3, 4, 5, 6, 7} //我关注人的推送信息
+	count, _ := c.Find(&bson.M{"fuid": fans_uid, "type": bson.M{"$in": typeIds}}).Count()
 	eventLimitNum, _ := strconv.Atoi(eventLimit)
 	logger.Info("mongodb fans event_log uid total nums", tableNameX, fans_uid, count)
 	if count > eventLimitNum {
 		removeNum := count - eventLimitNum
 		logger.Info("mongodb need remove fans event_log data nums", tableNameX, fans_uid, removeNum)
 		ms := []EventLogX{}
-		c.Find(&bson.M{"fuid": fans_uid}).Sort("created").Limit(removeNum).All(&ms)
+		c.Find(&bson.M{"fuid": fans_uid, "type": bson.M{"$in": typeIds}}).Sort("created").Limit(removeNum).All(&ms)
 		for _, v := range ms {
 			c.Remove(&bson.M{"type": v.TypeId, "uid": v.Uid, "fuid": fans_uid, "infoid": v.Infoid, "created": v.Created})
 			logger.Info("mongodb already remove fans event_log data", v)
