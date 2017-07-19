@@ -91,15 +91,16 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 		logger.Error("[error] connect db err")
 	}
 	defer db.Close()
-	mongoConn := t.taskNewArgs[3]
+	/*mongoConn := t.taskNewArgs[3]
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		logger.Error("[error] connect mongodb err")
 		return
 	}
-	defer session.Close()
-	/*mongoConnArr := strings.Split(t.taskNewArgs[3], ",")
+	defer session.Close()*/
+	mongoConnArr := strings.Split(t.taskNewArgs[3], ",")
 	if len(mongoConnArr) < 3 {
+		logger.Error("[error] mongo config error")
 		return
 	}
 	Host := []string{
@@ -121,15 +122,7 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 	if err != nil {
 		panic(err)
 	}
-	defer session.Close()*/
-
-	// slaveMongo := t.taskNewArgs[4]
-	// slave, err := mgo.Dial(slaveMongo)
-	// if err != nil {
-	// 	logger.Error("[error] connect mongodb err:", err)
-	// 	return
-	// }
-	// defer slave.Close()
+	defer session.Close()
 
 	for {
 		logger.Info("pop ", t.queueName)
@@ -335,11 +328,36 @@ func (t *RedisEngine) croutinePopJobRemoveFansData(x chan int, i int) {
 		logger.Error("[error] connect db err")
 	}
 	defer db.Close()
-	mongoConn := t.taskNewArgs[3]
+	/*mongoConn := t.taskNewArgs[3]
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		logger.Error("[error] connect mongodb err")
 		return
+	}
+	defer session.Close()*/
+	mongoConnArr := strings.Split(t.taskNewArgs[3], ",")
+	if len(mongoConnArr) < 3 {
+		logger.Error("[error] mongo config error")
+		return
+	}
+	Host := []string{
+		mongoConnArr[0],
+		mongoConnArr[1],
+		mongoConnArr[2],
+	}
+	const (
+		Database       = "FansData"
+		ReplicaSetName = "goumin"
+	)
+
+	session, err := mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:          Host,
+		Database:       Database,
+		ReplicaSetName: ReplicaSetName,
+	})
+
+	if err != nil {
+		panic(err)
 	}
 	defer session.Close()
 	for {
