@@ -185,9 +185,9 @@ func (e *EventLogNew) HideOrShowEventLog(event *EventLogLast, fans []*mysql.Foll
 	} else if event.TypeId == 8 { //8:问答
 		//获取相同犬种的活跃用户
 		allusers = GetBreedActiveUser(event.Bid, e.session)
-	} else if (event.TypeId == 1 || event.TypeId == 6) && event.Source == 1 { //小编推荐
-		//全部活跃用户
-		allusers = GetAllActiveUsers(e.session)
+		// } else if (event.TypeId == 1 || event.TypeId == 6) && event.Source == 1 { //小编推荐
+		// 	//全部活跃用户
+		// 	allusers = GetAllActiveUsers(e.session)
 	} else {
 		for _, v := range fans {
 			// allusers[k] = v.Follow_id
@@ -300,6 +300,10 @@ func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow
 			// allusers[k] = v.Follow_id
 			allusers = append(allusers, v.Follow_id)
 		}
+	}
+	if len(allusers) == 0 {
+		logger.Info("allusers arr is empty")
+		return nil
 	}
 
 	for _, ar := range allusers {
@@ -467,15 +471,15 @@ func (e *EventLogNew) RemoveEventToFansTask(fans_uid int, numloop int, eventLimi
 	c := session.DB("FansData").C(tableNameX)
 	count, _ := c.Find(&bson.M{"fuid": fans_uid}).Count()
 	eventLimitNum, _ := strconv.Atoi(eventLimit)
-	logger.Info("mongodb fans event_log uid total nums", fans_uid, count)
+	logger.Info("mongodb fans event_log uid total nums", tableNameX, fans_uid, count)
 	if count > eventLimitNum {
 		removeNum := count - eventLimitNum
-		logger.Info("mongodb remove fans event_log data nums", fans_uid, removeNum)
+		logger.Info("mongodb need remove fans event_log data nums", tableNameX, fans_uid, removeNum)
 		ms := []EventLogX{}
 		c.Find(&bson.M{"fuid": fans_uid}).Sort("created").Limit(removeNum).All(&ms)
 		for _, v := range ms {
-			logger.Info("mongodb remove fans event_log data", v)
-			c.Remove(&bson.M{"_id": v.Id, "fuid": fans_uid})
+			c.Remove(&bson.M{"type": v.TypeId, "uid": v.Uid, "fuid": fans_uid, "infoid": v.Infoid, "created": v.Created})
+			logger.Info("mongodb already remove fans event_log data", v)
 		}
 	}
 }

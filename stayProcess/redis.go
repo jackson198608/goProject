@@ -354,6 +354,7 @@ func (t *RedisEngine) croutinePopJobRemoveFansData(x chan int, i int) {
 
 		task := task.NewTask(t.logLevel, redisStr, db, session)
 		if task != nil {
+			//t.taskNewArgs[8]: eventLimit动态限制数量
 			task.Doremove(t.numForOneLoop, t.taskNewArgs[8])
 		}
 
