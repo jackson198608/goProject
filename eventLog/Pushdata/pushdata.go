@@ -185,7 +185,7 @@ func (e *EventLogNew) HideOrShowEventLog(event *EventLogLast, fans []*mysql.Foll
 	} else if event.TypeId == 8 { //8:问答
 		//获取相同犬种的活跃用户
 		allusers = GetBreedActiveUser(event.Bid, e.session)
-	} else if (event.TypeId == 1 || event.TypeId == 6) && event.Source == 1 { //人工推荐
+	} else if (event.TypeId == 9 || event.TypeId == 15) && event.Source == 1 { //人工推荐
 		//全部活跃用户
 		allusers = GetAllActiveUsers(e.session)
 	} else {
