@@ -31,7 +31,7 @@ type EventLogX struct {
 	Imagenums int           "image_num"
 	Images    string        "images"
 	Forum     string        "forum"
-	Tag       string        "tag"
+	Tag       int           "tag"
 	Qsttype   int           "qst_type"
 	IsRead    int           "is_read"
 	Source    int           "source"
@@ -61,7 +61,7 @@ type EventLogLast struct {
 	Imagenums int    "image_num"
 	Images    string "images"
 	Forum     string "forum"
-	Tag       string "tag"
+	Tag       int    "tag"
 	Qsttype   int    "qst_type"
 	IsRead    int    "is_read"
 	Source    int    "source"
@@ -112,7 +112,7 @@ func (e *EventLogNew) SaveMongoEventLog(oid int) error {
 		Id := createAutoIncrementId(e.session, "")
 		// Id := 0
 		// m1 := EventLogNew{bson.NewObjectId(), Id, event.typeId, event.uid, event.created, event.infoid, event.status, event.tid}
-		m1 := EventLogLast{Id, event.TypeId, event.Uid, event.Created, event.Infoid, event.Status, event.Tid, 0, "", "", 0, "", "", "", 0, 0, 0}
+		m1 := EventLogLast{Id, event.TypeId, event.Uid, event.Created, event.Infoid, event.Status, event.Tid, 0, "", "", 0, "", "", 0, 0, 0, 0}
 		err := x.Insert(&m1) //插入数据
 		if err != nil {
 			logger.Info("mongo insert one data error:", err)
@@ -185,9 +185,9 @@ func (e *EventLogNew) HideOrShowEventLog(event *EventLogLast, fans []*mysql.Foll
 	} else if event.TypeId == 8 { //8:问答
 		//获取相同犬种的活跃用户
 		allusers = GetBreedActiveUser(event.Bid, e.session)
-		// } else if (event.TypeId == 1 || event.TypeId == 6) && event.Source == 1 { //小编推荐
-		// 	//全部活跃用户
-		// 	allusers = GetAllActiveUsers(e.session)
+	} else if (event.TypeId == 1 || event.TypeId == 6) && event.Source == 1 { //人工推荐
+		//全部活跃用户
+		allusers = GetAllActiveUsers(e.session)
 	} else {
 		for _, v := range fans {
 			// allusers[k] = v.Follow_id
@@ -269,7 +269,7 @@ func (e *EventLogNew) PushFansEventLogOld(event *EventLogLast, fans []*mysql.Fol
 		if event.Status == 1 {
 			// IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNumX))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, event.Status, event.Tid}
-			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid, 0, "", "", 0, "", "", "", 0, 0, 0}
+			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid, 0, "", "", 0, "", "", 0, 0, 0, 0}
 			err := c.Insert(&m) //插入数据
 			if err != nil {
 				logger.Info("mongodb insert fans data", err, c)
@@ -436,7 +436,7 @@ func (e *EventLogNew) saveFansEventLog(fans []*mysql.Follow, event *mysql.EventL
 			// IdX := 0
 			// IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNum1))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
-			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid, 0, "", "", 0, "", "", "", 0, 0, 0}
+			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid, 0, "", "", 0, "", "", 0, 0, 0, 0}
 			err := x.Insert(&m) //插入数据
 			logger.Info(m)
 			if err != nil {
