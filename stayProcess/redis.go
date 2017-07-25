@@ -124,6 +124,8 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 	}
 	defer session.Close()
 
+	session.SetMode(mgo.SecondaryPreferred, false)
+
 	for {
 		logger.Info("pop ", t.queueName)
 		redisStr := (*t.client).LPop(t.queueName).Val()
