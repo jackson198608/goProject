@@ -14,11 +14,12 @@ type Task struct {
 	uid         int
 	db          *sql.DB
 	session     *mgo.Session
+	session1    *mgo.Session
 	// slave       *mgo.Session
 	// event       *EventLogNew
 }
 
-func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session) *Task {
+func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session, session1 *mgo.Session) *Task {
 	if loggerLevel < 0 {
 		loggerLevel = 0
 	}
@@ -26,13 +27,19 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session)
 
 	t := new(Task)
 	t.session = session
+	t.session1 = session1
 	// t.slave = slave
 	t.uid,_ = strconv.Atoi(redisStr)
 	t.db = db
 	return t
 }
 
-func (t *Task) Dopush() {
-	m := Pushdata.RecommendUser(t.loggerLevel, t.db, t.session)
-	m.PushActiveUserRecommendTask(t.uid)
+func (t *Task) Dopush(pustLimit string) {
+	m := Pushdata.RecommendUser(t.loggerLevel, t.db, t.session, t.session1)
+	m.PushActiveUserRecommendTask(t.uid, pustLimit)
+}
+
+func (t *Task) Dopushdog(pustLimit string) {
+	m := Pushdata.RecommendUser(t.loggerLevel, t.db, t.session, t.session1)
+	m.PushActiveUserDogRecommendTask(t.uid, pustLimit)
 }

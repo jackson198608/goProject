@@ -18,23 +18,14 @@ var c Config = Config{
 	100,
 	"192.168.86.56:6379",
 	"recommendActiveUser",
+	"recommendActiveUserByDog",
 	"/tmp/recommend.log",
 	1,
-	"192.168.86.192:27017,192.168.86.192:27017,192.168.86.192:27017",
+	"192.168.86.192:27017", //BidData
 	"BidData",
-	"1000"}
-
-func pushAllActiveUserToRedis() {
-	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn)
-	ids := Pushdata.GetAllActiveUsers()
-	if len(ids) == 0 {
-		return
-	}
-	if ids == nil {
-		return
-	}
-	r.PushActiveUserTaskData(ids)
-}
+	"192.168.86.104:27017", //mongo ActiveUser RecommendData
+	"RecommendData",
+	"50"}
 
 func createClient() *redis.Client {
     client := redis.NewClient(&redis.Options{
@@ -51,56 +42,84 @@ func createClient() *redis.Client {
     return client
 }
 
-func push() {
-	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn)
-	c := createClient()
-	queueName := "user_recomment_data_status"
+func pushAllActiveUserToRedis(queueName string) bool {
+	rc := createClient()
+	realTasks := Pushdata.GetAllActiveUsers(c.mongoConn1)
+	if len(realTasks) == 0 {
+		logger.Error("active user data is empty")
+		return false
+	}
+	if realTasks == nil {
+		logger.Error("not get active user data")
+		return false
+	}
 
+	logger.Info("this is int task", realTasks)
+	for i := 0; i < len(realTasks); i++ {
+		err := rc.RPush(queueName, realTasks[i]).Err()
+		if err != nil {
+			logger.Error("insert redis error", err)
+			return false
+		}
+	}
+	return true
+}
+
+func pushUser() {
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.pushLimit, c.mongoConn1)
+	rc := createClient()
+	queueName := "user_recomment_data_status"
+	num := 0
 	for {
-		v, _ := c.Get(queueName).Result()
+		v, _ := rc.Get(queueName).Result()
 
 		if v == "" {
 			logger.Info("got nothing user recommend queue")
-			time.Sleep(3 * time.Second)
+			time.Sleep(3600 * time.Second)
+			num++
+			if num>23 {
+				break
+			}
 			continue
 		}
 
 		//生产任务
-		ids := Pushdata.GetAllActiveUsers()
-		if len(ids) == 0 {
-			return
-		}
-		if ids == nil {
-			return
-		}
-		pushAllActiveUserToRedis()
+		pushAllActiveUserToRedis(c.queueName)
 
 		//处理任务
 		r.LoopPushRecommend()
 
-		c.Del(queueName)
+		rc.Del(queueName)
 
 		break;
 	}
+}
+
+func pushDog() {
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName1, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn1, c.pushLimit, c.mongoConn1)
+	
+	//生产任务
+	pushAllActiveUserToRedis(c.queueName1)
+
+	//处理任务
+	r.LoopPushRecommend()
 }
 
 func Init() {
 	loadConfig()
 	logger.SetConsole(true)
 	logger.SetLevel(logger.DEBUG)
-	// logger.Error(logger.DEBUG)
-
 }
 func main() {
 	Init()
 	jobType := os.Args[1]
 	switch jobType {
-	// case "activeuser":
-	// 	logger.Info("in the create active user", 10)
-	// 	pushAllActiveUserToRedis()
-	case "push":
+	case "pushdog":
+		logger.Info("in the do dog")
+		pushDog()
+	case "pushuser":
 		logger.Info("in the do")
-		push()
+		pushUser()
 	default:
 	}
 }

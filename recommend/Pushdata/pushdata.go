@@ -4,7 +4,7 @@ import (
 	// "encoding/json"
 	// "bufio"
 	"database/sql"
-	"fmt"
+	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/recommend/mysql"
 	mgo "gopkg.in/mgo.v2"
@@ -19,6 +19,7 @@ import (
 type RecommendNew struct {
 	db      *sql.DB
 	session *mgo.Session
+	session1 *mgo.Session
 }
 
 type DogRecommend struct {
@@ -54,7 +55,7 @@ type UserRecommend struct {
 
 type RecommendRecord struct {
 	Id             bson.ObjectId "_id"
-	UseRecommendId bson.ObjectId        "user_recommend_id"
+	UseRecommendId bson.ObjectId "user_recommend_id"
 	TypeId         int           "type"
 	Uid            int           "uid"
 	Bid            int           "bid"
@@ -81,11 +82,12 @@ type EventLogX struct {
 	Source    int           "source"
 }
 
-func RecommendUser(logLevel int, db *sql.DB, session *mgo.Session) *RecommendNew {
+func RecommendUser(logLevel int, db *sql.DB, session *mgo.Session, session1 *mgo.Session) *RecommendNew {
 	logger.SetLevel(logger.LEVEL(logLevel))
 	e := new(RecommendNew)
 	e.db = db
 	e.session = session //主库
+	e.session1 = session1 //主库
 	// e.slave = slave     //从库
 	return e
 }
@@ -176,7 +178,7 @@ func savePostToFansData(i int, Fuid int, contentId int, db *sql.DB, session *mgo
 			}
 			logger.Info("slave FansData mongodb push fans data ", m)
 		} else {
-			logger.Info("user recommend post data is empty, tid is ", contentId)
+			logger.Error("user recommend post data is empty, tid is ", contentId)
 		}
 	}
 	return nil
@@ -201,9 +203,8 @@ func saveVideoToFansData(i int, Fuid int, contentId int, db *sql.DB, session *mg
 	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
 	c := session.DB("FansData").C(tableNameX)
 
-	// contentId = 48428
 	videoData := mysql.GetVideoData(contentId, db)
-	fmt.Println("get video data vid is ", contentId)
+	logger.Info("get video data vid is ", contentId)
 	if len(videoData) > 0 {
 		Images = videoData[0].Thumb
 		if Images != "" {
@@ -249,15 +250,16 @@ func savePetBreedRecommendData(i int, Fuid int, dogRecommend *DogRecommend, db *
 	logger.Info("slave FansData mongodb push fans data ", m)
 	return nil
 }
-func GetPetBreedRecommendData(uid int, db *sql.DB, session *mgo.Session) error {
-	mongoConn := "192.168.86.104:27017"
-	session,_ = mgo.Dial(mongoConn)
-	
+
+func (e *RecommendNew) PushActiveUserDogRecommendTask(uid int, pustLimit string) error {
+	session := e.session //主库存储
+	db := e.db
+
 	Breed := mysql.GetPetBreed(uid, db);
 	if len(Breed)>0 {
 		for i := 0; i < len(Breed); i++ {
 			bid := Breed[i].Bid
-			dogRecommend := GetDogRecommendData(uid, bid, session);
+			dogRecommend := GetDogRecommendData(uid, bid, pustLimit, session);
 			logger.Info("dogRecommend len ", len(dogRecommend))
 			if len(dogRecommend)>0 {
 				var newlastId bson.ObjectId
@@ -275,10 +277,8 @@ func GetPetBreedRecommendData(uid int, db *sql.DB, session *mgo.Session) error {
 	return nil
 }
 
-func (e *RecommendNew) PushActiveUserRecommendTask(uid int) error {
-	session := e.session //主库存储
-
-	userRecommends := GetUserRecommendData(uid, e.session)
+func (e *RecommendNew) PushActiveUserRecommendTask(uid int, pustLimit string) error {
+	userRecommends := GetUserRecommendData(uid, pustLimit, e.session)
 	if len(userRecommends) == 0 {
 		logger.Info("userRecommends arr is empty")
 		return nil
@@ -289,26 +289,26 @@ func (e *RecommendNew) PushActiveUserRecommendTask(uid int) error {
 		contentId := userRecommends[i].ContentId
 
 		if contentType == 1 {
-			savePostToFansData(i, Fuid, contentId, e.db, session)
+			savePostToFansData(i, Fuid, contentId, e.db, e.session1)
 		} else if contentType == 6 {
-			saveVideoToFansData(i, Fuid, contentId, e.db, session)
+			saveVideoToFansData(i, Fuid, contentId, e.db, e.session1)
 		} else {
 			logger.Info("user recommend data type is ", contentType)
 		}
 	}
-
-	GetPetBreedRecommendData(uid, e.db, e.session);
 	return nil
 }
 
 //获取用户推荐数据
-func GetUserRecommendData(uid int, session *mgo.Session) []*UserRecommend {
+func GetUserRecommendData(uid int, pustLimit string, session *mgo.Session) []*UserRecommend {
 	var user []*UserRecommend
 	c := session.DB("BigData").C("user_recommend")
 
+	limit,_ := strconv.Atoi(pustLimit)
+
 	today := time.Unix(time.Now().Unix(), 0).Format("20060102")
-	today = ""
-	err := c.Find(&bson.M{"uid": uid,"time":today}).Sort("score desc").All(&user)
+	todayInt,_ := strconv.Atoi(today)
+	err := c.Find(&bson.M{"uid": uid, "time":todayInt}).Sort("score desc").Limit(limit).All(&user)
 	if err != nil {
 		panic(err)
 	}
@@ -316,20 +316,25 @@ func GetUserRecommendData(uid int, session *mgo.Session) []*UserRecommend {
 }
 
 //获取根据犬种推荐数据
-func GetDogRecommendData(uid int, bid int, session *mgo.Session) []*DogRecommend {
+func GetDogRecommendData(uid int, bid int, pustLimit string, session *mgo.Session) []*DogRecommend {
 	var data []*DogRecommend
 	c := session.DB("RecommendData").C("recommend_by_dog_or_age")
 	bids := []int{0, bid}
+	limit,_ := strconv.Atoi(pustLimit)
 	RecommendRecord := GetRecommendRecordLastId(uid, bid, session)
-
 	if len(RecommendRecord)>0 {
 		lastId := RecommendRecord[0].UseRecommendId
-		err := c.Find(bson.M{"bid":bson.M{"$in": bids},"_id":bson.M{"$gt": lastId}}).Limit(50).All(&data)
+
+		logger.Info("RecommendRecord lastId is ", lastId," by uid ",uid," bid ",bid)
+
+		err := c.Find(bson.M{"bid":bson.M{"$in": bids},"_id":bson.M{"$gt": lastId}}).Limit(limit).All(&data)
 		if err != nil {
 			logger.Error(" get recommend record mongodb find data", err, c)
 		}
 	}else{
-		err := c.Find(bson.M{"bid":bson.M{"$in": bids}}).Limit(50).All(&data)
+		logger.Info("not find RecommendRecord lastId by uid ",uid," bid ",bid)
+
+		err := c.Find(bson.M{"bid":bson.M{"$in": bids}}).Limit(limit).All(&data)
 		if err != nil {
 			logger.Error(" get recommend record mongodb find data", err, c)
 		}
@@ -342,8 +347,6 @@ func GetDogRecommendData(uid int, bid int, session *mgo.Session) []*DogRecommend
 func GetRecommendRecordLastId(uid int, bid int, session *mgo.Session) []*RecommendRecord {
 	var rr []*RecommendRecord
 	c := session.DB("RecommendData").C("user_recommend_record")
-	fmt.Println(uid)
-	fmt.Println(bid)
 	err := c.Find(bson.M{"uid": uid, "type": 2, "bid": bid}).All(&rr)
 	if err != nil {
 		logger.Error(" get recommend record lastId mongodb find data", err, c)
@@ -365,9 +368,10 @@ func updateRecommendRecordLastId(newLastId bson.ObjectId, uid int, bid int, sess
 	logger.Info(" RecommendRecord len ", len(rr))
 	if len(rr)>0 {
 
-		selector := bson.M{"uid": uid, "bid": bid, "type": "2"}
-		data := bson.M{"$set": bson.M{"UseRecommendId": newLastId}}
+		selector := bson.M{"uid": uid, "bid": bid, "type": 2}
+		data := bson.M{"$set": bson.M{"user_recommend_id": newLastId}}
 		err := c.Update(selector, data)
+
 		if err != nil {
 			logger.Error("update recommend record to mongodb error ", err, c)
 			return nil
@@ -387,14 +391,15 @@ func updateRecommendRecordLastId(newLastId bson.ObjectId, uid int, bid int, sess
 }
 
 //全部活跃用户
-func GetAllActiveUsers() []int {
+func GetAllActiveUsers(mongoConn string) []int {
 	var user []int
-	mongoConn := "192.168.86.68:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		logger.Error("[error] connect mongodb err")
 		return user
 	}
+
+	defer session.Close()
 
 	c := session.DB("ActiveUser").C("active_user")
 	err = c.Find(nil).Distinct("uid", &user)

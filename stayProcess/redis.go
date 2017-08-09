@@ -227,35 +227,6 @@ func (t *RedisEngine) PushFollowTaskData(tasks interface{}) bool {
 	return true
 }
 
-func (t *RedisEngine) PushActiveUserTaskData(tasks interface{}) bool {
-	switch realTasks := tasks.(type) {
-	case []string:
-		logger.Info("this is string task", realTasks)
-		for i := 0; i < len(realTasks); i++ {
-			queueName := "recommendActiveUser"
-			err := (*t.client).RPush(queueName, realTasks[i]).Err()
-			if err != nil {
-				logger.Error("insert redis error", err)
-			}
-		}
-	case []int:
-		logger.Info("this is int task", realTasks)
-		for i := 0; i < len(realTasks); i++ {
-			queueName := "recommendActiveUser"
-			err := (*t.client).RPush(queueName, realTasks[i]).Err()
-			if err != nil {
-				logger.Error("insert redis error", err)
-			}
-		}
-		default:
-		logger.Error("this is not normal format", realTasks)
-		return false
-	}
-
-	return true
-
-}
-
 func (t *RedisEngine) LoopPush() {
 	for {
 		t.getPushTaskNum()
@@ -316,7 +287,6 @@ func (t *RedisEngine) doOneLoopPushRecommend() {
 	logger.Info("do in oneloop taskNum", t.taskNum)
 	c := make(chan int, t.taskNum)
 	for i := 0; i < t.taskNum; i++ {
-		fmt.Println("doOneLoopPushRecommend i: "+ strconv.Itoa(i))
 		go t.croutinePopJobRecommendActiveUserData(c, i)
 	}
 
@@ -326,7 +296,7 @@ func (t *RedisEngine) doOneLoopPushRecommend() {
 }
 
 func (t *RedisEngine) getPushRecommendTaskNum() {
-	len := (*t.client).LLen("recommendActiveUser").Val()
+	len := (*t.client).LLen(t.queueName).Val()
 	if int(len) > t.numForOneLoop {
 		t.taskNum = t.numForOneLoop
 	} else {
@@ -348,11 +318,14 @@ func (t *RedisEngine) croutinePopJobRecommendActiveUserData(x chan int, i int) {
 	dbAuth := t.taskNewArgs[0]
 	dbDsn := t.taskNewArgs[1]
 	dbName := t.taskNewArgs[2]
+	pustLimit := t.taskNewArgs[4]
+
 	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
 	if err != nil {
 		logger.Error("[error] connect db err")
 	}
 	defer db.Close()
+
 	mongoConn := t.taskNewArgs[3]
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
@@ -360,21 +333,35 @@ func (t *RedisEngine) croutinePopJobRecommendActiveUserData(x chan int, i int) {
 		return
 	}
 	defer session.Close()
+
+	mongoConn1 := t.taskNewArgs[5]
+	session1, err := mgo.Dial(mongoConn1)
+	if err != nil {
+		logger.Error("[error] connect mongodb err")
+		return
+	}
+	defer session1.Close()
+
 	for {
 		//doing until got nothing]
-		activeUserQueue := "recommendActiveUser"
+		activeUserQueue := t.queueName
 		redisStr := (*t.client).LPop(activeUserQueue).Val()
-		// fmt.Println()
-		fmt.Println("redisStr: "+redisStr)
+		// fmt.Println("***************redisStr: *************"+redisStr)
 		if redisStr == "" {
 			logger.Info("got nothing ", activeUserQueue)
 			x <- 1
 			return
 		}
 
-		recommendTask := recommendTask.NewTask(t.logLevel, redisStr, db, session)
+		recommendTask := recommendTask.NewTask(t.logLevel, redisStr, db, session, session1)
 		if recommendTask != nil {
-			recommendTask.Dopush()
+			if strings.Contains(activeUserQueue, "Dog") {
+				logger.Info("in do push dog by ", redisStr)
+				recommendTask.Dopushdog(pustLimit)
+			}else{
+				logger.Info("in do push user by ", redisStr)
+				recommendTask.Dopush(pustLimit)
+			}
 		}
 
 	}
