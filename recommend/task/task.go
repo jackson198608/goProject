@@ -23,9 +23,6 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session)
 		loggerLevel = 0
 	}
 	logger.SetLevel(logger.LEVEL(loggerLevel))
-	
-	// redisArr := strings.Split(redisStr)
-	// uid, _ := strconv.Atoi(redisArr[1])
 
 	t := new(Task)
 	t.session = session

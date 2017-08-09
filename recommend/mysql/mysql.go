@@ -27,6 +27,7 @@ type Post struct {
 
 type Video struct {
 	Id 			int		"id"
+	Uid 		int		"uid"
 	Thumb 		string	"thumb"
 	Content 	string	"content"
 	Created 	string	"created"
@@ -39,7 +40,7 @@ type Breed struct {
 //获取视频信息
 func GetVideoData(vid int, db *sql.DB) []*Video {
 	//SELECT * FROM `video` WHERE (`id`=48428) AND (`status`=2)
-	rows, err := db.Query("SELECT * FROM `video` WHERE (`id`="+ strconv.Itoa(vid) +") AND (`status`=2)")
+	rows, err := db.Query("SELECT id,uid,thumb,content,created FROM `video` WHERE (`id`="+ strconv.Itoa(vid) +") AND (`status`=2)")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check video sql prepare error: ", err)
@@ -48,16 +49,17 @@ func GetVideoData(vid int, db *sql.DB) []*Video {
 	var rowsData []*Video
 	for rows.Next() {
 		var row = new(Video)
-		rows.Scan(&row.Id, &row.Thumb, &row.Content, &row.Created)
+		rows.Scan(&row.Id, &row.Uid, &row.Thumb, &row.Content, &row.Created)
 		rowsData = append(rowsData, row)
 	}
 	return rowsData
 }
 
 //检查帖子状态
-func checkThreadIsExist(tid int, db *sql.DB) int {
+func CheckThreadIsExist(tid int, db *sql.DB) int {
 	//SELECT `pre_forum_thread`.* FROM `pre_forum_thread` LEFT JOIN `pre_forum_forum` ON `pre_forum_thread`.`fid` = `pre_forum_forum`.`fid` WHERE (((`tid`=4437081) AND (pre_forum_thread.displayorder >= 0 AND closed = 0)) AND (`pre_forum_forum`.`fup` IN (76, 78, 2))) AND (pre_forum_forum.status=1)
-	rows, err := db.Query("SELECT `pre_forum_thread`.* FROM `pre_forum_thread` LEFT JOIN `pre_forum_forum` ON `pre_forum_thread`.`fid` = `pre_forum_forum`.`fid` WHERE `tid`="+ strconv.Itoa(tid) +" AND pre_forum_thread.displayorder >= 0 AND closed = 0 AND `pre_forum_forum`.`fup` IN (76, 78, 2) AND pre_forum_forum.status=1")
+	rows, err := db.Query("SELECT `pre_forum_thread`.tid FROM `pre_forum_thread` LEFT JOIN `pre_forum_forum` ON `pre_forum_thread`.`fid` = `pre_forum_forum`.`fid` WHERE `tid`="+ strconv.Itoa(tid) +" AND pre_forum_thread.displayorder >= 0 AND closed = 0 AND `pre_forum_forum`.`fup` IN (76, 78, 2) AND pre_forum_forum.status=1")
+	// fmt.Println("SELECT `pre_forum_thread`.* FROM `pre_forum_thread` LEFT JOIN `pre_forum_forum` ON `pre_forum_thread`.`fid` = `pre_forum_forum`.`fid` WHERE `tid`="+ strconv.Itoa(tid) +" AND pre_forum_thread.displayorder >= 0 AND closed = 0 AND `pre_forum_forum`.`fup` IN (76, 78, 2) AND pre_forum_forum.status=1")
 	defer rows.Close()
 
 	if err != nil {
@@ -190,10 +192,10 @@ func GetTagData(tid int, db *sql.DB) int {
 
 //获取宠物 dog_species
 func GetPetBreed(uid int, db *sql.DB) []*Breed {
-	rows, err := db.Query("select distinct(dog_species) as bid from member_pets where dog_userid="+ strconv.Itoa(uid))
+	rows, err := db.Query("select distinct(dog_species) as bid from dog_doginfo where dog_userid="+ strconv.Itoa(uid))
 	defer rows.Close()
 	if err != nil {
-		logger.Error("[error] check member_pets sql prepare error: ", err)
+		logger.Error("[error] check dog_doginfo sql prepare error: ", err)
 		return nil
 	}
 	var rowsData []*Breed

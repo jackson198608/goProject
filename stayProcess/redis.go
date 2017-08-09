@@ -269,21 +269,8 @@ func (t *RedisEngine) LoopPush() {
 }
 
 func (t *RedisEngine) LoopPushRecommend() {
-	// for {
-		queueName := "user_recomment_data_status"
-		v, _ := (*t.client).Get(queueName).Result()
-		fmt.Println(v)
-		if v == "" {
-			logger.Info("got nothing user recommend queue")
-			time.Sleep(3 * time.Second)
-			// continue
-		}
-		t.getPushRecommendTaskNum()
-		t.doOneLoopPushRecommend()
-		// (*t.client).Del(queueName)
-
-		// break;
-	// }
+	t.getPushRecommendTaskNum()
+	t.doOneLoopPushRecommend()
 }
 
 func (t *RedisEngine) RemoveFansData() {
