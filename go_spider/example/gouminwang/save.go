@@ -37,8 +37,8 @@ func getArticleAuthor(query *goquery.Document, content *string) {
 func getArticleContent(query *goquery.Document, content *string) {
 	query.Find("#page-content .rich_media_content ").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		if i == 0 {
-			// *content = s.Text()
-			*content, _ = s.Html()
+			*content = s.Text()
+			// *content, _ = s.Html()
 		}
 		return true
 	})
