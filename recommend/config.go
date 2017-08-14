@@ -19,6 +19,7 @@ type Config struct {
 	mongoConn1    string
 	mongoDb1      string
 	pushLimit     string
+	pushDogLimit  string
 }
 
 func loadConfig() {
@@ -37,4 +38,5 @@ func loadConfig() {
 	c.mongoConn1 = config.GetString("mongoConn1")
 	c.mongoDb1 = config.GetString("mongoDb1")
 	c.pushLimit = config.GetString("pushLimit")
+	c.pushDogLimit = config.GetString("pushDogLimit")
 }

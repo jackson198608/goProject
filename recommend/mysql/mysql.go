@@ -157,5 +157,10 @@ func GetPetBreed(uid int, db *sql.DB) []*Breed {
 		rows.Scan(&row.Bid)
 		rowsData = append(rowsData, row)
 	}
+	for i:=0; i<1; i++ {
+		var row = new(Breed)
+		rows.Scan(0)
+		rowsData = append(rowsData, row)
+	}
 	return rowsData
 }

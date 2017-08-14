@@ -106,37 +106,60 @@ func RandInt64(min, max int64) int64 {
 	return rand.Int63n(max-min) + min
 }
 
+func show_substr(s string, l int) string {
+    if len(s) <= l {
+        return s
+    }
+    ss, sl, rl, rs := "", 0, 0, []rune(s)
+    for _, r := range rs {
+        rint := int(r)
+        if rint < 128 {
+            rl = 1
+        } else {
+            rl = 2
+        }
+       
+        if sl + rl > l {
+            break
+        }
+        sl += rl
+        ss += string(r)
+    }
+    return ss
+}
+
+func randTime(startTime int64, endTime int64) string {
+	currenttime := RandInt64(startTime, endTime)
+	showTime := time.Unix(currenttime, 0).Format("2006-01-02 15:04:05")
+	return showTime
+}
+
 func changeCreated(i int) string {
 	if i < 8 {
 		startTime := time.Now().Unix()
 		endTime := GetNextTimestamp(3600*5 + 60*59)
-		currenttime := RandInt64(startTime, endTime)
-		showTime := time.Unix(currenttime, 0).Format("2006-01-02 15:04:05")
+		showTime := randTime(startTime,endTime)
 		return showTime
 	} else if i >= 8 && i < 20 {
 		startTime := GetNextTimestamp(3600 * 6)
 		endTime := GetNextTimestamp(3600*11 + 60*59)
-		currenttime := RandInt64(startTime, endTime)
-		showTime := time.Unix(currenttime, 0).Format("2006-01-02 15:04:05")
+		showTime := randTime(startTime,endTime)
 		return showTime
 
 	} else if i >= 20 && i < 30 {
 		startTime := GetNextTimestamp(3600 * 12)
 		endTime := GetNextTimestamp(3600*13 + 60*59)
-		currenttime := RandInt64(startTime, endTime)
-		showTime := time.Unix(currenttime, 0).Format("2006-01-02 15:04:05")
+		showTime := randTime(startTime,endTime)
 		return showTime
 	} else if i >= 30 && i < 38 {
 		startTime := GetNextTimestamp(3600 * 14)
 		endTime := GetNextTimestamp(3600*17 + 60*59)
-		currenttime := RandInt64(startTime, endTime)
-		showTime := time.Unix(currenttime, 0).Format("2006-01-02 15:04:05")
+		showTime := randTime(startTime,endTime)
 		return showTime
 	} else {
 		startTime := GetNextTimestamp(3600 * 18)
 		endTime := GetNextTimestamp(3600*23 + 60*59)
-		currenttime := RandInt64(startTime, endTime)
-		showTime := time.Unix(currenttime, 0).Format("2006-01-02 15:04:05")
+		showTime := randTime(startTime,endTime)
 		return showTime
 	}
 }
@@ -155,7 +178,7 @@ func savePostToFansData(i int, Fuid int, contentId int, db *sql.DB, session *mgo
 	c := session.DB("FansData").C(tableNameX)
 
 	isExists := mysql.CheckThreadIsExist(contentId, db)
-	logger.Info("CheckThreadIsExist is ", isExists)
+	logger.Info(contentId, " CheckThreadIsExist is ", isExists)
 	if isExists != 0 {
 		Images := ""
 		Imagenums := 0
@@ -167,6 +190,8 @@ func savePostToFansData(i int, Fuid int, contentId int, db *sql.DB, session *mgo
 		if len(postData) > 0 {
 			Title := postData[0].Subject
 			Content := postData[0].Message
+			Content = show_substr(Content, 100)
+
 			Forum := postData[0].Name
 			Uid := postData[0].Authorid
 
@@ -212,6 +237,7 @@ func saveVideoToFansData(i int, Fuid int, contentId int, db *sql.DB, session *mg
 			Imagenums = 1
 		}
 		Title := videoData[0].Content
+		Title = show_substr(Title, 100)
 		Uid := videoData[0].Uid
 		Created := changeCreated(i)
 		m := EventLogX{bson.NewObjectId(), TypeId, Uid, Fuid, Created, contentId, 1, 0, Bid, Content, Title, Imagenums, Images, Forum, Tag, Qsttype, IsRead, Source}
@@ -235,13 +261,17 @@ func savePetBreedRecommendData(i int, Fuid int, dogRecommend *DogRecommend, db *
 	c := session.DB("FansData").C(tableNameX)
 	Created := changeCreated(i)
 	TypeId := dogRecommend.TypeId
+	Content := dogRecommend.Content	
+	Content = show_substr(Content, 100)
+	
 	Source := 1
 	if dogRecommend.TypeId==1 {
 		TypeId = 9
 	}else if dogRecommend.TypeId==6 {
 		TypeId = 15
 	}
-	m := EventLogX{bson.NewObjectId(), TypeId, dogRecommend.Uid, Fuid, Created, dogRecommend.Infoid, 1, 0, dogRecommend.Bid, dogRecommend.Content, dogRecommend.Title, dogRecommend.Imagenums, dogRecommend.Images, dogRecommend.Forum, dogRecommend.Tag, dogRecommend.Qsttype, dogRecommend.IsRead, Source}
+
+	m := EventLogX{bson.NewObjectId(), TypeId, dogRecommend.Uid, Fuid, Created, dogRecommend.Infoid, 1, 0, dogRecommend.Bid, Content, dogRecommend.Title, dogRecommend.Imagenums, dogRecommend.Images, dogRecommend.Forum, dogRecommend.Tag, dogRecommend.Qsttype, dogRecommend.IsRead, Source}
 	err := c.Insert(&m) //插入数据
 	if err != nil {
 		logger.Error("mongodb insert fans data", err, c)
@@ -255,11 +285,25 @@ func (e *RecommendNew) PushActiveUserDogRecommendTask(uid int, pustLimit string)
 	session := e.session //主库存储
 	db := e.db
 
+	limit,_ := strconv.Atoi(pustLimit)
 	Breed := mysql.GetPetBreed(uid, db);
 	if len(Breed)>0 {
 		for i := 0; i < len(Breed); i++ {
 			bid := Breed[i].Bid
-			dogRecommend := GetDogRecommendData(uid, bid, pustLimit, session);
+			if bid == 0 {
+				typeInt := []int{9,8,15}
+				num := getCountByfuid(uid, typeInt, 1, session)
+				logger.Info(uid, " ******************* dog get num ", num )
+				if num>=50 {
+					logger.Error("get user recommend data num is ", num)
+					continue
+				}else if limit > num{
+					limit = limit - num
+				}else{
+					continue
+				}
+			}
+			dogRecommend := GetDogRecommendData(uid, bid, limit, session);
 			logger.Info("dogRecommend len ", len(dogRecommend))
 			if len(dogRecommend)>0 {
 				var newlastId bson.ObjectId
@@ -268,9 +312,9 @@ func (e *RecommendNew) PushActiveUserDogRecommendTask(uid int, pustLimit string)
 					newlastId = dogRecommend[d].Id;
 				}
 				updateRecommendRecordLastId(newlastId, uid, bid, session)
+			}else{
+				logger.Error("get dog recommend data is empty, uid is ", uid, " bid is ",bid)
 			}
-			logger.Error("get dog recommend data is empty, uid is ", uid, " bid is ",bid)
-			return nil
 		}
 	}
 	logger.Error("user breed is empty, uid is ", uid)
@@ -278,11 +322,13 @@ func (e *RecommendNew) PushActiveUserDogRecommendTask(uid int, pustLimit string)
 }
 
 func (e *RecommendNew) PushActiveUserRecommendTask(uid int, pustLimit string) error {
+	if uid==68296 {
 	userRecommends := GetUserRecommendData(uid, pustLimit, e.session)
 	if len(userRecommends) == 0 {
 		logger.Info("userRecommends arr is empty")
 		return nil
 	}
+	logger.Info(uid, " user Recommends arr is ", userRecommends)
 	for i := 0; i < len(userRecommends); i++ {
 		Fuid := userRecommends[i].Uid
 		contentType := userRecommends[i].ContentType
@@ -296,6 +342,7 @@ func (e *RecommendNew) PushActiveUserRecommendTask(uid int, pustLimit string) er
 			logger.Info("user recommend data type is ", contentType)
 		}
 	}
+	}
 	return nil
 }
 
@@ -305,10 +352,11 @@ func GetUserRecommendData(uid int, pustLimit string, session *mgo.Session) []*Us
 	c := session.DB("BigData").C("user_recommend")
 
 	limit,_ := strconv.Atoi(pustLimit)
-
+	logger.Info("*********  user pustLimit is ", pustLimit)
 	today := time.Unix(time.Now().Unix(), 0).Format("20060102")
 	todayInt,_ := strconv.Atoi(today)
-	err := c.Find(&bson.M{"uid": uid, "time":todayInt}).Sort("score desc").Limit(limit).All(&user)
+	// err := c.Find(&bson.M{"uid": uid, "time":todayInt}).Sort("score desc").Limit(limit).All(&user)
+	err := c.Find(&bson.M{"uid": uid, "time":todayInt}).Limit(limit).All(&user)
 	if err != nil {
 		panic(err)
 	}
@@ -316,25 +364,25 @@ func GetUserRecommendData(uid int, pustLimit string, session *mgo.Session) []*Us
 }
 
 //获取根据犬种推荐数据
-func GetDogRecommendData(uid int, bid int, pustLimit string, session *mgo.Session) []*DogRecommend {
+func GetDogRecommendData(uid int, bid int, limit int, session *mgo.Session) []*DogRecommend {
 	var data []*DogRecommend
 	c := session.DB("RecommendData").C("recommend_by_dog_or_age")
-	bids := []int{0, bid}
-	limit,_ := strconv.Atoi(pustLimit)
+	// bids := []int{0, bid}
+	
 	RecommendRecord := GetRecommendRecordLastId(uid, bid, session)
 	if len(RecommendRecord)>0 {
 		lastId := RecommendRecord[0].UseRecommendId
 
 		logger.Info("RecommendRecord lastId is ", lastId," by uid ",uid," bid ",bid)
 
-		err := c.Find(bson.M{"bid":bson.M{"$in": bids},"_id":bson.M{"$gt": lastId}}).Limit(limit).All(&data)
+		err := c.Find(bson.M{"bid":bid,"_id":bson.M{"$gt": lastId}}).Limit(limit).All(&data)
 		if err != nil {
 			logger.Error(" get recommend record mongodb find data", err, c)
 		}
 	}else{
 		logger.Info("not find RecommendRecord lastId by uid ",uid," bid ",bid)
 
-		err := c.Find(bson.M{"bid":bson.M{"$in": bids}}).Limit(limit).All(&data)
+		err := c.Find(bson.M{"bid":bid}).Limit(limit).All(&data)
 		if err != nil {
 			logger.Error(" get recommend record mongodb find data", err, c)
 		}
@@ -388,6 +436,23 @@ func updateRecommendRecordLastId(newLastId bson.ObjectId, uid int, bid int, sess
 		logger.Info("mongodb inster user_recommend_record data:", newLastId, uid, bid)
 	}
 	return nil
+}
+
+func getCountByfuid(fuid int, typeInt []int, source int, session *mgo.Session) int {
+	var data []*EventLogX
+	tableNumX := fuid % 100
+	if tableNumX == 0 {
+		tableNumX = 100
+	}
+	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
+	c := session.DB("FansData").C(tableNameX)
+	today := time.Unix(time.Now().Unix(), 0).Format("2006-01-02") + "00:00:00"
+	err := c.Find(bson.M{"type": bson.M{"$in":typeInt}, "source":source, "created":bson.M{"$gt": today}}).All(&data)
+	if err != nil {
+		panic(err)
+	}
+	num := len(data)
+	return num
 }
 
 //全部活跃用户

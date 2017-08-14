@@ -25,7 +25,8 @@ var c Config = Config{
 	"BidData",
 	"192.168.86.104:27017", //mongo ActiveUser RecommendData
 	"RecommendData",
-	"50"}
+	"50",
+	"3"}
 
 func createClient() *redis.Client {
     client := redis.NewClient(&redis.Options{
@@ -66,7 +67,7 @@ func pushAllActiveUserToRedis(queueName string) bool {
 }
 
 func pushUser() {
-	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.pushLimit, c.mongoConn1)
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.pushLimit, c.mongoConn1, c.pushDogLimit)
 	rc := createClient()
 	queueName := "user_recomment_data_status"
 	num := 0
@@ -91,12 +92,14 @@ func pushUser() {
 
 		rc.Del(queueName)
 
+		logger.Info("*********  start dog push *******")
+		pushDog()
 		break;
 	}
 }
 
 func pushDog() {
-	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName1, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn1, c.pushLimit, c.mongoConn1)
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName1, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn1, c.pushLimit, c.mongoConn1, c.pushDogLimit)
 	
 	//生产任务
 	pushAllActiveUserToRedis(c.queueName1)
@@ -104,6 +107,7 @@ func pushDog() {
 	//处理任务
 	r.LoopPushRecommend()
 }
+
 
 func Init() {
 	loadConfig()
@@ -114,9 +118,9 @@ func main() {
 	Init()
 	jobType := os.Args[1]
 	switch jobType {
-	case "pushdog":
-		logger.Info("in the do dog")
-		pushDog()
+	// case "pushdog":
+	// 	logger.Info("in the do dog")
+	// 	pushDog()
 	case "pushuser":
 		logger.Info("in the do")
 		pushUser()

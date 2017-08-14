@@ -319,6 +319,7 @@ func (t *RedisEngine) croutinePopJobRecommendActiveUserData(x chan int, i int) {
 	dbDsn := t.taskNewArgs[1]
 	dbName := t.taskNewArgs[2]
 	pustLimit := t.taskNewArgs[4]
+	pustDogLimit := t.taskNewArgs[6]
 
 	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
 	if err != nil {
@@ -357,7 +358,7 @@ func (t *RedisEngine) croutinePopJobRecommendActiveUserData(x chan int, i int) {
 		if recommendTask != nil {
 			if strings.Contains(activeUserQueue, "Dog") {
 				logger.Info("in do push dog by ", redisStr)
-				recommendTask.Dopushdog(pustLimit)
+				recommendTask.Dopushdog(pustDogLimit)
 			}else{
 				logger.Info("in do push user by ", redisStr)
 				recommendTask.Dopush(pustLimit)
