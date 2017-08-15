@@ -316,8 +316,9 @@ func (e *RecommendNew) PushActiveUserDogRecommendTask(uid int, pustLimit string)
 				logger.Error("get dog recommend data is empty, uid is ", uid, " bid is ",bid)
 			}
 		}
+	}else{
+		logger.Error("user breed is empty, uid is ", uid)
 	}
-	logger.Error("user breed is empty, uid is ", uid)
 	return nil
 }
 
@@ -350,13 +351,13 @@ func GetUserRecommendData(uid int, pustLimit string, session *mgo.Session) []*Us
 	c := session.DB("BigData").C("user_recommend")
 
 	limit,_ := strconv.Atoi(pustLimit)
-	logger.Info("*********  user pustLimit is ", pustLimit)
 	today := time.Unix(time.Now().Unix(), 0).Format("20060102")
 	todayInt,_ := strconv.Atoi(today)
 	// err := c.Find(&bson.M{"uid": uid, "time":todayInt}).Sort("score desc").Limit(limit).All(&user)
 	err := c.Find(&bson.M{"uid": uid, "time":todayInt}).Limit(limit).All(&user)
 	if err != nil {
-		panic(err)
+		// panic(err)
+		logger.Error("get user recommend data error ", err, c)
 	}
 	return user
 }
@@ -365,7 +366,6 @@ func GetUserRecommendData(uid int, pustLimit string, session *mgo.Session) []*Us
 func GetDogRecommendData(uid int, bid int, limit int, session *mgo.Session) []*DogRecommend {
 	var data []*DogRecommend
 	c := session.DB("RecommendData").C("recommend_by_dog_or_age")
-	// bids := []int{0, bid}
 	
 	RecommendRecord := GetRecommendRecordLastId(uid, bid, session)
 	if len(RecommendRecord)>0 {
@@ -410,8 +410,9 @@ func updateRecommendRecordLastId(newLastId bson.ObjectId, uid int, bid int, sess
 
 	if err != nil {
 		logger.Error("mongodb find data", err, c)
+		return nil
 	}
-	logger.Info(" RecommendRecord len ", len(rr))
+	// logger.Info(" RecommendRecord len ", len(rr))
 	if len(rr)>0 {
 
 		selector := bson.M{"uid": uid, "bid": bid, "type": 2}
