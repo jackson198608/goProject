@@ -322,7 +322,6 @@ func (e *RecommendNew) PushActiveUserDogRecommendTask(uid int, pustLimit string)
 }
 
 func (e *RecommendNew) PushActiveUserRecommendTask(uid int, pustLimit string) error {
-	if uid==68296 {
 	userRecommends := GetUserRecommendData(uid, pustLimit, e.session)
 	if len(userRecommends) == 0 {
 		logger.Info("userRecommends arr is empty")
@@ -341,7 +340,6 @@ func (e *RecommendNew) PushActiveUserRecommendTask(uid int, pustLimit string) er
 		} else {
 			logger.Info("user recommend data type is ", contentType)
 		}
-	}
 	}
 	return nil
 }
