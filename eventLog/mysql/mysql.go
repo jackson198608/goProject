@@ -28,6 +28,26 @@ type Follow struct {
 	// user_id   int
 }
 
+func CheckIsFans(uid int, follow_id int, db *sql.DB) int {
+	tableName := "follow"
+	rows, err := db.Query("select follow_id from `" + tableName + "` where user_id=" + strconv.Itoa(int(uid)) + " and follow_id=" + strconv.Itoa(int(follow_id)) + " and fans_active=1")
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check event_log sql prepare error: ", err)
+		return 0
+	}
+	for rows.Next() {
+		var follow_id int
+		if err := rows.Scan(&follow_id); err != nil {
+			logger.Error("[error] check sql get rows error ", err)
+			return 0
+		}
+		logger.Info("[info] check sql find true")
+		return follow_id
+	}
+	return 0
+}
+
 func GetFansData(uid int, db *sql.DB) []*Follow {
 	tableName := "follow"
 	rows, err := db.Query("select distinct(follow_id) from `" + tableName + "` where user_id=" + strconv.Itoa(int(uid)) + " and fans_active=1")

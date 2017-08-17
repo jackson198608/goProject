@@ -223,7 +223,14 @@ func (e *EventLogNew) HideOrShowEventLog(event *EventLogLast, fans []*mysql.Foll
 		if eventIsExist == false && status == 1 {
 			// IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNumX))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.TypeId, event.Uid, ar.follow_id, event.Created, event.Infoid, status, event.Tid}
-			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar, event.Created, event.Infoid, status, event.Tid, event.Bid, event.Content, event.Title, event.Imagenums, event.Images, event.Forum, event.Tag, event.Qsttype, event.IsRead, event.Source}
+			source := event.Source
+			if event.TypeId == 1 {
+				isFans := mysql.CheckIsFans(event.Uid, ar, e.db)
+				if isFans!=0 {
+					source = 3
+				}
+			}
+			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar, event.Created, event.Infoid, status, event.Tid, event.Bid, event.Content, event.Title, event.Imagenums, event.Images, event.Forum, event.Tag, event.Qsttype, event.IsRead, source}
 			err := c.Insert(&m) //插入数据
 			if err != nil {
 				logger.Info("mongodb insert fans data error ", err, c)
@@ -286,6 +293,7 @@ func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow
 	session := e.session //主库存储
 
 	var allusers []int
+	source := event.Source
 	if event.TypeId == 1 { //1:帖子
 		//俱乐部所有活跃用户 + 活跃粉丝用户
 		allusers = MergeFansAndForumUsers(fans, event.Infoid, e.session, e.db)
@@ -314,7 +322,13 @@ func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow
 		tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
 		c := session.DB("FansData").C(tableNameX)
 		if event.Status == 1 {
-			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar, event.Created, event.Infoid, event.Status, event.Tid, event.Bid, event.Content, event.Title, event.Imagenums, event.Images, event.Forum, event.Tag, event.Qsttype, event.IsRead, event.Source}
+			if event.TypeId == 1 {
+				isFans := mysql.CheckIsFans(event.Uid, ar, e.db)
+				if isFans!=0 {
+					source = 3
+				}
+			}
+			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar, event.Created, event.Infoid, event.Status, event.Tid, event.Bid, event.Content, event.Title, event.Imagenums, event.Images, event.Forum, event.Tag, event.Qsttype, event.IsRead, source}
 			err := c.Insert(&m) //插入数据
 			if err != nil {
 				logger.Info("mongodb insert fans data", err, c)
