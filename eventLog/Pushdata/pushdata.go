@@ -293,7 +293,6 @@ func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow
 	session := e.session //主库存储
 
 	var allusers []int
-	source := event.Source
 	if event.TypeId == 1 { //1:帖子
 		//俱乐部所有活跃用户 + 活跃粉丝用户
 		allusers = MergeFansAndForumUsers(fans, event.Infoid, e.session, e.db)
@@ -322,6 +321,7 @@ func (e *EventLogNew) PushFansEventLog(event *EventLogLast, fans []*mysql.Follow
 		tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
 		c := session.DB("FansData").C(tableNameX)
 		if event.Status == 1 {
+			source := event.Source
 			if event.TypeId == 1 {
 				isFans := mysql.CheckIsFans(event.Uid, ar, e.db)
 				if isFans!=0 {

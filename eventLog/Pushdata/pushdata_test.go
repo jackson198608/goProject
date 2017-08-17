@@ -22,8 +22,8 @@ func TestSaveMongoEventLog(t *testing.T) {
 	oid := 0
 	id := 0
 	status := "0"
-	fuid := 1138687
-	uid := 1
+	fuid := 1785144
+	uid := 881050
 
 	m := NewEventLogNew(1, oid, id, db, session)
 	if m != nil {
