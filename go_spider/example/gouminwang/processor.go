@@ -35,6 +35,10 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 		logger.Println("[info]find article list by tag : ", tag, p.GetRequest().Url)
 		qArticleList(p)
 
+	} else if tag == "articleImage" {
+		logger.Println("[info]find article list by tag : ", tag, p.GetRequest().Url)
+		saveImage(p)
+
 	}
 }
 
