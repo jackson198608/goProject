@@ -23,7 +23,9 @@ var redisConn string = "192.168.86.68:6379"
 
 var redisQueueName string = "threadInfo"
 
-var saveDir string = "/tmp/gouminwang"
+var saveDir string = "/data/gouminwang/"
+
+var imgUrl string = "http://dev.img.goumintest.com"
 
 var threaNum int = 1000
 

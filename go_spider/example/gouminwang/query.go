@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/jackson198608/gotest/go_spider/core/common/page"
 	"strings"
@@ -14,9 +13,6 @@ func qArticleList(p *page.Page) {
 	query.Find(".news-list .img-box a").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		// For each item found, get the band and title
 		url, isExsit := s.Attr("href")
-		fmt.Println("#####")
-		fmt.Println(url)
-		fmt.Println("$$$$")
 		if isExsit {
 			// url = "http://mp.weixin.qq.com" + url
 			logger.Println("[info]find detail page: ", url)
@@ -30,7 +26,6 @@ func qArticleList(p *page.Page) {
 	query.Find(".news-box .p-fy a").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		// For each item found, get the band and title
 		title := s.Text()
-		fmt.Println(title)
 		if strings.Contains(title, "下一页") {
 			url, isExsit := s.Attr("href")
 			if isExsit {
