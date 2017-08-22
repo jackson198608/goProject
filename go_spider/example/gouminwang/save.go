@@ -54,32 +54,56 @@ func getArticleContent(query *goquery.Document, content *string) {
 			*content = re.ReplaceAllString(*content, "")
 			// var str = "slfjslkdfjsldkfj<img src='dfd' />"
 			// str := string(*content)
-			str := []byte(*content)
-			lenstr := len(str)
-			first := 0
+			lenstr := len(*content)
+			contentBytes := []byte(*content)
+
+			start := 0
+			end := 0
+
 			for {
-				a := strings.Index(str, "<img")
+				a := strings.Index(string(contentBytes), "<img")
 				if a < 0 {
+					contentBytes[start] = '<'
+					contentBytes[end] = '>'
 					break
 				}
-				first++
-				fmt.Println(str[a])
-				if first == 1 {
-					continue
-				}
-				i := 0
-				for i = a; i < lenstr; i++ {
-					if str[i] == '>' {
+
+				contentBytes[a] = '['
+				for i := a; i < lenstr; i++ {
+					if contentBytes[i] == '>' {
+						contentBytes[i] = ']'
+						start = a
+						end = i
 						break
 					}
 				}
-				fmt.Println(str[a])
-
 			}
+
+			*content = string(contentBytes)
+
 			re, _ = regexp.Compile("\\<[\\S\\s]+?\\>")
 			*content = re.ReplaceAllString(*content, "\n")
 			re, _ = regexp.Compile("\\s{2,}")
 			*content = re.ReplaceAllString(*content, "\n")
+
+			lenstr = len(*content)
+			contentBytes = []byte(*content)
+			for {
+				a := strings.Index(string(contentBytes), "[img")
+				if a < 0 {
+					break
+				}
+				contentBytes[a] = '<'
+				for i := a; i < lenstr; i++ {
+					if contentBytes[i] == ']' {
+						contentBytes[i] = '>'
+						break
+					}
+				}
+			}
+
+			*content = string(contentBytes)
+			fmt.Println("[info]", *content)
 		}
 		return true
 	})
