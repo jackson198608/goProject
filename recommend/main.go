@@ -92,8 +92,10 @@ func pushUser() {
 
 		rc.Del(queueName)
 
-		// logger.Info("*********  start dog push *******")
-		// pushDog()
+		if c.pushDogLimit != "0" {
+			logger.Info("*********  start dog push *******")
+			pushDog()
+		}
 		break;
 	}
 }
