@@ -92,8 +92,8 @@ func pushUser() {
 
 		rc.Del(queueName)
 
-		logger.Info("*********  start dog push *******")
-		pushDog()
+		// logger.Info("*********  start dog push *******")
+		// pushDog()
 		break;
 	}
 }
