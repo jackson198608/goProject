@@ -3,10 +3,11 @@ package main
 import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/jackson198608/gotest/go_spider/core/common/page"
+	"strconv"
 	"strings"
 )
 
-func qArticleList(p *page.Page) {
+func qArticleList(p *page.Page, num int) {
 	logger.Println("[info]find article list page: ", p.GetRequest().Url)
 	query := p.GetHtmlParser()
 	//find article list
@@ -31,7 +32,9 @@ func qArticleList(p *page.Page) {
 			if isExsit {
 				realUrl := "http://weixin.sogou.com/weixin" + url
 				logger.Println("[info]find next article list page: ", realUrl)
-				realUrlTag := "articleList"
+				num++
+				numstr := strconv.Itoa(num)
+				realUrlTag := "articleList|" + numstr
 				req := newRequest(realUrlTag, realUrl)
 				p.AddTargetRequestWithParams(req)
 			}

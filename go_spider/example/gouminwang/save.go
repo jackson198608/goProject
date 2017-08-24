@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/jackson198608/gotest/go_spider/core/common/page"
+	// "io/ioutil"
+	// "net/http"
 	"os"
 	"path"
 	"regexp"
@@ -42,32 +44,39 @@ func getArticleContent(query *goquery.Document, content *string) {
 		if i == 0 {
 			// *content = s.Text()
 			*content, _ = s.Html()
-			// *content = strings.Replace(*content, "<img.*?src=""([^""]*)"".*?>", ".", -1)
-			// *content = strings.Replace(*content, "?wx_fmt=", ".", -1)
+			*content = strings.Replace(*content, "?wx_fmt=", ".", -1)
+			*content = strings.Replace(*content, "&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1", "", -1)
+			*content = strings.Replace(*content, "&wxfrom=5&wx_lazy=1&tp=webp", "", -1)
+			*content = strings.Replace(*content, "?tp=webp&wxfrom=5&wx_lazy=1", "", -1)
+			*content = strings.Replace(*content, "?tp=webp&wxfrom=5", "", -1)
+			*content = strings.Replace(*content, "&tp=webp&wxfrom=5&wx_lazy=1", "", -1)
+			*content = strings.Replace(*content, "&tp=webp&wxfrom=5", "", -1)
+			*content = strings.Replace(*content, "&wxfrom=5&tp=webp", "", -1)
+			*content = strings.Replace(*content, "&amp;wxfrom=5&amp;tp=webp", "", -1)
+			*content = strings.Replace(*content, "&amp;wxfrom=5", "", -1)
+			*content = strings.Replace(*content, "&wxfrom=5", "", -1)
 			// *content = strings.Replace(*content, "data-src", "src", -1)
-			// *content = strings.Replace(*content, "http://mmbiz.qpic.cn", imgUrl, -1)
-			// *content = strings.Replace(*content, "https://mmbiz.qlogo.cn", imgUrl, -1)
-			// re, _ := regexp.Compile("\\<[\\S\\s]+?\\>")
+			*content = strings.Replace(*content, "http://mmbiz.qpic.cn", imgUrl+"/mmbiz.qpic.cn", -1)
+			*content = strings.Replace(*content, "https://mmbiz.qlogo.cn", imgUrl+"/mmbiz.qlogo.cn", -1)
 			re, _ := regexp.Compile("\\<script[\\S\\s]+?\\</script\\>")
 			*content = re.ReplaceAllString(*content, "")
 			re, _ = regexp.Compile("\\<style[\\S\\s]+?\\</style\\>")
 			*content = re.ReplaceAllString(*content, "")
-			// var str = "slfjslkdfjsldkfj<img src='dfd' />"
-			// str := string(*content)
-			lenstr := len(*content)
+
+			/*lenstr := len(*content)
 			contentBytes := []byte(*content)
 
 			start := 0
 			end := 0
-
+			a := 0
 			for {
-				a := strings.Index(string(contentBytes), "<img")
+				// aa := strings.IndexRune(string(contentBytes), "<img")
+				a = strings.Index(string(contentBytes), "<img")
 				if a < 0 {
 					contentBytes[start] = '<'
 					contentBytes[end] = '>'
 					break
 				}
-
 				contentBytes[a] = '['
 				for i := a; i < lenstr; i++ {
 					if contentBytes[i] == '>' {
@@ -78,8 +87,19 @@ func getArticleContent(query *goquery.Document, content *string) {
 					}
 				}
 			}
-
+			b := strings.Index(string(contentBytes), "[img")
+			if b > 0 {
+				contentBytes[b] = '<'
+				for j := b; j < lenstr; j++ {
+					if contentBytes[j] == ']' {
+						contentBytes[j] = '>'
+						break
+					}
+				}
+			}
 			*content = string(contentBytes)
+			// fmt.Println("[info]", *content)
+
 
 			re, _ = regexp.Compile("\\<[\\S\\s]+?\\>")
 			*content = re.ReplaceAllString(*content, "\n")
@@ -101,12 +121,76 @@ func getArticleContent(query *goquery.Document, content *string) {
 					}
 				}
 			}
-
-			*content = string(contentBytes)
+			*content = string(contentBytes)*/
+			*content = replaceHtmlImg(content)
 			fmt.Println("[info]", *content)
 		}
 		return true
 	})
+}
+
+func replaceHtmlImg(content *string) string {
+	lenstr := len(*content)
+	contentBytes := []byte(*content)
+
+	start := 0
+	end := 0
+	a := 0
+	for {
+		// aa := strings.IndexRune(string(contentBytes), "<img")
+		a = strings.Index(string(contentBytes), "<img")
+		if a < 0 {
+			contentBytes[start] = '<'
+			contentBytes[end] = '>'
+			break
+		}
+		contentBytes[a] = '['
+		for i := a; i < lenstr; i++ {
+			if contentBytes[i] == '>' {
+				contentBytes[i] = ']'
+				start = a
+				end = i
+				break
+			}
+		}
+	}
+	b := strings.Index(string(contentBytes), "[img")
+	if b > 0 {
+		contentBytes[b] = '<'
+		for j := b; j < lenstr; j++ {
+			if contentBytes[j] == ']' {
+				contentBytes[j] = '>'
+				break
+			}
+		}
+	}
+	*content = string(contentBytes)
+	// fmt.Println("[info]", *content)
+
+	// *content = replaceHtmlImg(*content)
+	re, _ := regexp.Compile("\\<[\\S\\s]+?\\>")
+	*content = re.ReplaceAllString(*content, "\n")
+	re, _ = regexp.Compile("\\s{2,}")
+	*content = re.ReplaceAllString(*content, "\n")
+
+	lenstr = len(*content)
+	contentBytes = []byte(*content)
+	for {
+		a := strings.Index(string(contentBytes), "[img")
+		if a < 0 {
+			break
+		}
+		contentBytes[a] = '<'
+		for i := a; i < lenstr; i++ {
+			if contentBytes[i] == ']' {
+				contentBytes[i] = '>'
+				break
+			}
+		}
+	}
+
+	scontent := string(contentBytes)
+	return scontent
 }
 
 func getArticleImages(p *page.Page) {
@@ -115,9 +199,20 @@ func getArticleImages(p *page.Page) {
 		var image *string = new(string)
 		*image, _ = s.Attr("data-src")
 		*image = strings.Replace(*image, "?wx_fmt=", ".", -1)
-		fmt.Println(*image)
+		*image = strings.Replace(*image, "&amp;tp=webp&amp;wxfrom=5&amp;wx_lazy=1", "", -1)
+		*image = strings.Replace(*image, "&wxfrom=5&wx_lazy=1&tp=webp", "", -1)
+		*image = strings.Replace(*image, "?tp=webp&wxfrom=5&wx_lazy=1", "", -1)
+		*image = strings.Replace(*image, "?tp=webp&wxfrom=5", "", -1)
+		*image = strings.Replace(*image, "&tp=webp&wxfrom=5&wx_lazy=1", "", -1)
+		*image = strings.Replace(*image, "&tp=webp&wxfrom=5", "", -1)
+		*image = strings.Replace(*image, "&wxfrom=5&tp=webp", "", -1)
+		*image = strings.Replace(*image, "&amp;wxfrom=5&amp;tp=webp", "", -1)
+		*image = strings.Replace(*image, "&amp;wxfrom=5", "", -1)
+		*image = strings.Replace(*image, "&wxfrom=5", "", -1)
+		// fmt.Println(*image)
 		//生成对图片的抓取任务
-		req := newImageRequest("articleImage", *image)
+		// req := newImageRequest("shopImage", "http://www.testing.com:89/imgBridge.php?url="+*image)
+		req := newImageRequest("shopImage", *image)
 		p.AddTargetRequestWithParams(req)
 		return true
 	})
@@ -126,17 +221,40 @@ func getArticleImages(p *page.Page) {
 func saveImage(p *page.Page) bool {
 
 	url := p.GetRequest().Url
+	fmt.Println("^^^^^" + url)
 	//get fullpath
+	// realurl := strings.Split(url, "imageUrl=")
+	// fmt.Println(realurl[0])
 	abPath := getPathFromUrl(url)
-	fmt.Println("^^^^^")
 	fullPath := saveDir + abPath
-	fmt.Println(fullPath)
 	fullDirPath := path.Dir(fullPath)
+	fmt.Println(fullPath)
 	err := os.MkdirAll(fullDirPath, 0777)
 	if err != nil {
 		logger.Println("[error]create dir error:", err, " ", fullDirPath, " ", url)
 		return false
 	}
+
+	/*response, err := http.Get(url)
+	if err != nil {
+		logger.Println("get img_url failed:", err)
+		return false
+	}
+	defer response.Body.Close()
+
+	data, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		logger.Println("[error]read data failed:", url, err)
+		return false
+	}
+
+	image, err := os.Create(fullPath)
+	if err != nil {
+		logger.Println("[error]create file failed:", fullPath, err)
+		return false
+	}
+	defer image.Close()
+	image.Write(data)*/
 
 	//save file
 	result, err := os.Create(fullPath)
@@ -192,7 +310,7 @@ func saveArticleDetail(p *page.Page) bool {
 	var content *string = new(string)
 	getArticleContent(query, content)
 
-	// getArticleImages(p)
+	getArticleImages(p)
 	var status bool = false
 	if *title != "" {
 		status = insertArticleDetail(*title, *dateline, *author, *content)
