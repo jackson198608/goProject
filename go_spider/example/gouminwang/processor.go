@@ -43,7 +43,7 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 		}
 
 	} else if strArr[0] == "shopImage" {
-		logger.Println("[info]find article list by tag : ", tag, p.GetRequest().Url)
+		logger.Println("[info]find articleimage list by tag : ", tag, p.GetRequest().Url)
 		saveImage(p)
 
 	}
