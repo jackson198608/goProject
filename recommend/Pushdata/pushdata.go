@@ -17,8 +17,8 @@ import (
 )
 
 type RecommendNew struct {
-	db      *sql.DB
-	session *mgo.Session
+	db       *sql.DB
+	session  *mgo.Session
 	session1 *mgo.Session
 }
 
@@ -86,7 +86,7 @@ func RecommendUser(logLevel int, db *sql.DB, session *mgo.Session, session1 *mgo
 	logger.SetLevel(logger.LEVEL(logLevel))
 	e := new(RecommendNew)
 	e.db = db
-	e.session = session //主库
+	e.session = session   //主库
 	e.session1 = session1 //主库
 	// e.slave = slave     //从库
 	return e
@@ -107,25 +107,25 @@ func RandInt64(min, max int64) int64 {
 }
 
 func show_substr(s string, l int) string {
-    if len(s) <= l {
-        return s
-    }
-    ss, sl, rl, rs := "", 0, 0, []rune(s)
-    for _, r := range rs {
-        rint := int(r)
-        if rint < 128 {
-            rl = 1
-        } else {
-            rl = 2
-        }
-       
-        if sl + rl > l {
-            break
-        }
-        sl += rl
-        ss += string(r)
-    }
-    return ss
+	if len(s) <= l {
+		return s
+	}
+	ss, sl, rl, rs := "", 0, 0, []rune(s)
+	for _, r := range rs {
+		rint := int(r)
+		if rint < 128 {
+			rl = 1
+		} else {
+			rl = 2
+		}
+
+		if sl+rl > l {
+			break
+		}
+		sl += rl
+		ss += string(r)
+	}
+	return ss
 }
 
 func randTime(startTime int64, endTime int64) string {
@@ -138,28 +138,28 @@ func changeCreated(i int) string {
 	if i < 8 {
 		startTime := time.Now().Unix()
 		endTime := GetNextTimestamp(3600*5 + 60*59)
-		showTime := randTime(startTime,endTime)
+		showTime := randTime(startTime, endTime)
 		return showTime
 	} else if i >= 8 && i < 20 {
 		startTime := GetNextTimestamp(3600 * 6)
 		endTime := GetNextTimestamp(3600*11 + 60*59)
-		showTime := randTime(startTime,endTime)
+		showTime := randTime(startTime, endTime)
 		return showTime
 
 	} else if i >= 20 && i < 30 {
 		startTime := GetNextTimestamp(3600 * 12)
 		endTime := GetNextTimestamp(3600*13 + 60*59)
-		showTime := randTime(startTime,endTime)
+		showTime := randTime(startTime, endTime)
 		return showTime
 	} else if i >= 30 && i < 38 {
 		startTime := GetNextTimestamp(3600 * 14)
 		endTime := GetNextTimestamp(3600*17 + 60*59)
-		showTime := randTime(startTime,endTime)
+		showTime := randTime(startTime, endTime)
 		return showTime
 	} else {
 		startTime := GetNextTimestamp(3600 * 18)
 		endTime := GetNextTimestamp(3600*23 + 60*59)
-		showTime := randTime(startTime,endTime)
+		showTime := randTime(startTime, endTime)
 		return showTime
 	}
 }
@@ -252,7 +252,7 @@ func saveVideoToFansData(i int, Fuid int, contentId int, db *sql.DB, session *mg
 	return nil
 }
 
-func savePetBreedRecommendData(i int, Fuid int, dogRecommend *DogRecommend, db *sql.DB, session *mgo.Session) error{
+func savePetBreedRecommendData(i int, Fuid int, dogRecommend *DogRecommend, db *sql.DB, session *mgo.Session) error {
 	tableNumX := Fuid % 100
 	if tableNumX == 0 {
 		tableNumX = 100
@@ -261,13 +261,13 @@ func savePetBreedRecommendData(i int, Fuid int, dogRecommend *DogRecommend, db *
 	c := session.DB("FansData").C(tableNameX)
 	Created := changeCreated(i)
 	TypeId := dogRecommend.TypeId
-	Content := dogRecommend.Content	
+	Content := dogRecommend.Content
 	Content = show_substr(Content, 100)
-	
+
 	Source := 1
-	if dogRecommend.TypeId==1 {
+	if dogRecommend.TypeId == 1 {
 		TypeId = 9
-	}else if dogRecommend.TypeId==6 {
+	} else if dogRecommend.TypeId == 6 {
 		TypeId = 15
 	}
 
@@ -285,35 +285,35 @@ func (e *RecommendNew) PushActiveUserDogRecommendTask(uid int, pustLimit string)
 	session := e.session //主库存储
 	db := e.db
 
-	limit,_ := strconv.Atoi(pustLimit)
-	Breed := mysql.GetPetBreed(uid, db);
-	if len(Breed)>0 {
+	limit, _ := strconv.Atoi(pustLimit)
+	Breed := mysql.GetPetBreed(uid, db)
+	if len(Breed) > 0 {
 		for i := 0; i < len(Breed); i++ {
 			bid := Breed[i].Bid
 			if bid == 0 {
-				typeInt := []int{9,8,15}
+				typeInt := []int{9, 8, 15}
 				num := getCountByfuid(uid, typeInt, 1, session)
-				logger.Info(uid, " ******************* dog get num ", num )
-				if num>=50 {
+				logger.Info(uid, " ******************* dog get num ", num)
+				if num >= 50 {
 					logger.Error("get user recommend data num is ", num)
 					continue
-				}else if limit > num{
+				} else if limit > num {
 					limit = limit - num
-				}else{
+				} else {
 					continue
 				}
 			}
-			dogRecommend := GetDogRecommendData(uid, bid, limit, session);
+			dogRecommend := GetDogRecommendData(uid, bid, limit, session)
 			logger.Info("dogRecommend len ", len(dogRecommend))
-			if len(dogRecommend)>0 {
+			if len(dogRecommend) > 0 {
 				var newlastId bson.ObjectId
 				for d := 0; d < len(dogRecommend); d++ {
-					savePetBreedRecommendData(d, uid, dogRecommend[d], db, session);
-					newlastId = dogRecommend[d].Id;
+					savePetBreedRecommendData(d, uid, dogRecommend[d], db, session)
+					newlastId = dogRecommend[d].Id
 				}
 				updateRecommendRecordLastId(newlastId, uid, bid, session)
-			}else{
-				logger.Error("get dog recommend data is empty, uid is ", uid, " bid is ",bid)
+			} else {
+				logger.Error("get dog recommend data is empty, uid is ", uid, " bid is ", bid)
 			}
 		}
 	}
@@ -349,12 +349,12 @@ func GetUserRecommendData(uid int, pustLimit string, session *mgo.Session) []*Us
 	var user []*UserRecommend
 	c := session.DB("BigData").C("user_recommend")
 
-	limit,_ := strconv.Atoi(pustLimit)
+	limit, _ := strconv.Atoi(pustLimit)
 	logger.Info("*********  user pustLimit is ", pustLimit)
 	today := time.Unix(time.Now().Unix(), 0).Format("20060102")
-	todayInt,_ := strconv.Atoi(today)
+	todayInt, _ := strconv.Atoi(today)
 	// err := c.Find(&bson.M{"uid": uid, "time":todayInt}).Sort("score desc").Limit(limit).All(&user)
-	err := c.Find(&bson.M{"uid": uid, "time":todayInt}).Limit(limit).All(&user)
+	err := c.Find(&bson.M{"uid": uid, "time": todayInt}).Limit(limit).All(&user)
 	if err != nil {
 		panic(err)
 	}
@@ -366,26 +366,26 @@ func GetDogRecommendData(uid int, bid int, limit int, session *mgo.Session) []*D
 	var data []*DogRecommend
 	c := session.DB("RecommendData").C("recommend_by_dog_or_age")
 	// bids := []int{0, bid}
-	
+
 	RecommendRecord := GetRecommendRecordLastId(uid, bid, session)
-	if len(RecommendRecord)>0 {
+	if len(RecommendRecord) > 0 {
 		lastId := RecommendRecord[0].UseRecommendId
 
-		logger.Info("RecommendRecord lastId is ", lastId," by uid ",uid," bid ",bid)
+		logger.Info("RecommendRecord lastId is ", lastId, " by uid ", uid, " bid ", bid)
 
-		err := c.Find(bson.M{"bid":bid,"_id":bson.M{"$gt": lastId}}).Limit(limit).All(&data)
+		err := c.Find(bson.M{"bid": bid, "_id": bson.M{"$gt": lastId}}).Limit(limit).All(&data)
 		if err != nil {
 			logger.Error(" get recommend record mongodb find data", err, c)
 		}
-	}else{
-		logger.Info("not find RecommendRecord lastId by uid ",uid," bid ",bid)
+	} else {
+		logger.Info("not find RecommendRecord lastId by uid ", uid, " bid ", bid)
 
-		err := c.Find(bson.M{"bid":bid}).Limit(limit).All(&data)
+		err := c.Find(bson.M{"bid": bid}).Limit(limit).All(&data)
 		if err != nil {
 			logger.Error(" get recommend record mongodb find data", err, c)
 		}
 	}
-	
+
 	return data
 }
 
@@ -412,7 +412,7 @@ func updateRecommendRecordLastId(newLastId bson.ObjectId, uid int, bid int, sess
 		logger.Error("mongodb find data", err, c)
 	}
 	logger.Info(" RecommendRecord len ", len(rr))
-	if len(rr)>0 {
+	if len(rr) > 0 {
 
 		selector := bson.M{"uid": uid, "bid": bid, "type": 2}
 		data := bson.M{"$set": bson.M{"user_recommend_id": newLastId}}
@@ -445,7 +445,7 @@ func getCountByfuid(fuid int, typeInt []int, source int, session *mgo.Session) i
 	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
 	c := session.DB("FansData").C(tableNameX)
 	today := time.Unix(time.Now().Unix(), 0).Format("2006-01-02") + "00:00:00"
-	err := c.Find(bson.M{"type": bson.M{"$in":typeInt}, "source":source, "created":bson.M{"$gt": today}}).All(&data)
+	err := c.Find(bson.M{"type": bson.M{"$in": typeInt}, "source": source, "created": bson.M{"$gt": today}}).All(&data)
 	if err != nil {
 		panic(err)
 	}
