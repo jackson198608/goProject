@@ -4,6 +4,8 @@ import (
 	"github.com/jackson198608/gotest/go_spider/core/common/page"
 	//"time"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 type MyPageProcesser struct {
@@ -24,18 +26,23 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 
 	tag := p.GetUrlTag()
 	fmt.Println(tag)
-	if tag == "articleDetail" {
+	strArr := strings.Split(tag, "|")
+	if strArr[0] == "articleDetail" {
 		logger.Println("[info]article detail page:", p.GetRequest().Url)
 		//save shop into mysql
 		success := saveArticleDetail(p)
 		if success {
 			logger.Println("[info]save article detail success")
 		}
-	} else if tag == "articleList" {
+	} else if strArr[0] == "articleList" {
 		logger.Println("[info]find article list by tag : ", tag, p.GetRequest().Url)
-		qArticleList(p)
+		num, _ := strconv.Atoi(strArr[1])
+		fmt.Println(num)
+		if num < 2 {
+			qArticleList(p, num)
+		}
 
-	} else if tag == "articleImage" {
+	} else if strArr[0] == "shopImage" {
 		logger.Println("[info]find article list by tag : ", tag, p.GetRequest().Url)
 		saveImage(p)
 
