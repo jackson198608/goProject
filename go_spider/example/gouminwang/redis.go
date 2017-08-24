@@ -6,15 +6,16 @@ import (
 	redis "gopkg.in/redis.v4"
 )
 
-func insertArticleDetail(title string, dateline string, author string, content string) bool {
+func insertArticleDetail(title string, dateline string, author string, content string, sourceUrl string) bool {
 
 	client := connect(redisConn)
 	// jsonStr := {"title":title,"content":content}
 	v := map[string]string{
-		"title":    title,
-		"dateline": dateline,
-		"author":   author,
-		"content":  content,
+		"title":     title,
+		"dateline":  dateline,
+		"author":    author,
+		"content":   content,
+		"sourceUrl": sourceUrl,
 	}
 	jsonStr, err := json.Marshal(v)
 	if err != nil {

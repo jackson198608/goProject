@@ -23,7 +23,7 @@ func newImageRequest(tag string, url string) *request.Request {
 	// h.Add("User-Agent", "Sogou Pic Spider/3.0(+http://www.sogou.com/docs/help/webmasters.htm#07)")
 	h.Add("Connection", "close")
 	h.Add("Accept-Encoding", "gzip")
-	// h.Add("Referer", "http://weixin.sogou.com/")
+	h.Add("Referer", "http://weixin.sogou.com/")
 	// h.Add("Referer", "http://weixin.sogou.com/weixin?query=狗与爱的世界&_sug_type_=&s_from=input&_sug_=n&type=2&page=1&ie=utf8")
 
 	req := request.NewRequest(url, "text", tag, "GET", "", h, nil, nil, nil)

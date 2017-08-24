@@ -22,7 +22,7 @@ func getArticleTitle(query *goquery.Document, title *string) {
 }
 
 func getArticleDateline(query *goquery.Document, dateline *string) {
-	query.Find("#page-content #meta_content .rich_media_meta_text").EachWithBreak(func(i int, s *goquery.Selection) bool {
+	query.Find("#page-content #meta_content #post-date").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		if i == 0 {
 			*dateline = s.Text()
 		}
@@ -55,6 +55,8 @@ func getArticleContent(query *goquery.Document, content *string) {
 			*content = strings.Replace(*content, "&amp;wxfrom=5&amp;tp=webp", "", -1)
 			*content = strings.Replace(*content, "&amp;wxfrom=5", "", -1)
 			*content = strings.Replace(*content, "&wxfrom=5", "", -1)
+			*content = strings.Replace(*content, "&amp;tp=webp", "", -1)
+			*content = strings.Replace(*content, "&tp=webp", "", -1)
 			// *content = strings.Replace(*content, "data-src", "src", -1)
 			*content = strings.Replace(*content, "http://mmbiz.qpic.cn", imgUrl+"/mmbiz.qpic.cn", -1)
 			*content = strings.Replace(*content, "https://mmbiz.qlogo.cn", imgUrl+"/mmbiz.qlogo.cn", -1)
@@ -209,6 +211,8 @@ func getArticleImages(p *page.Page) {
 		*image = strings.Replace(*image, "&amp;wxfrom=5&amp;tp=webp", "", -1)
 		*image = strings.Replace(*image, "&amp;wxfrom=5", "", -1)
 		*image = strings.Replace(*image, "&wxfrom=5", "", -1)
+		*image = strings.Replace(*image, "&amp;tp=webp", "", -1)
+		*image = strings.Replace(*image, "&tp=webp", "", -1)
 		// fmt.Println(*image)
 		//生成对图片的抓取任务
 		// req := newImageRequest("shopImage", "http://www.testing.com:89/imgBridge.php?url="+*image)
@@ -234,28 +238,6 @@ func saveImage(p *page.Page) bool {
 		logger.Println("[error]create dir error:", err, " ", fullDirPath, " ", url)
 		return false
 	}
-
-	/*response, err := http.Get(url)
-	if err != nil {
-		logger.Println("get img_url failed:", err)
-		return false
-	}
-	defer response.Body.Close()
-
-	data, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		logger.Println("[error]read data failed:", url, err)
-		return false
-	}
-
-	image, err := os.Create(fullPath)
-	if err != nil {
-		logger.Println("[error]create file failed:", fullPath, err)
-		return false
-	}
-	defer image.Close()
-	image.Write(data)*/
-
 	//save file
 	result, err := os.Create(fullPath)
 	if err != nil {
@@ -313,7 +295,7 @@ func saveArticleDetail(p *page.Page) bool {
 	getArticleImages(p)
 	var status bool = false
 	if *title != "" {
-		status = insertArticleDetail(*title, *dateline, *author, *content)
+		status = insertArticleDetail(*title, *dateline, *author, *content, sourceUrl)
 	} else {
 		logger.Println("[info]again find article detail: ", sourceUrl)
 		realUrlTag := "articleDetail"
