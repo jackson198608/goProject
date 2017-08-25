@@ -9,6 +9,7 @@ import (
 	// "github.com/menduo/gobaidumap"
 	"github.com/bitly/go-simplejson"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -31,6 +32,12 @@ type Userinfo struct {
 }
 
 type Position struct {
+	latitude  string "latitude"
+	longitude string "longitude"
+}
+
+type Near struct {
+	uid       int    "uid"
 	latitude  string "latitude"
 	longitude string "longitude"
 }
@@ -61,40 +68,158 @@ type Ad struct {
 	showtime string "showtime"
 }
 
-//获取宠物 dog_species
-func GetPetBreed(uid int, db *sql.DB) []*Breed {
-	rows, err := db.Query("select distinct(dog_species) as bid from dog_doginfo where dog_userid=" + strconv.Itoa(uid))
-	defer rows.Close()
-	if err != nil {
-		logger.Error("[error] check dog_doginfo sql prepare error: ", err)
-		return nil
-	}
-	var rowsData []*Breed
-	for rows.Next() {
-		var row = new(Breed)
-		rows.Scan(&row.Bid)
-		rowsData = append(rowsData, row)
-	}
-	for i := 0; i < 1; i++ {
-		var row = new(Breed)
-		rows.Scan(0)
-		rowsData = append(rowsData, row)
-	}
-	return rowsData
-}
-
 //-------------------------------
+//根据uid获取用户的信息
 
-//获取用户信息
-func getUsers(uid int, db *sql.DB) []*Userinfo {
+//根据犬种和年龄推荐的用户的uid
+func getUids(uid int, db *sql.DB) []int {
+	var uids []int
 	//已经关注的人
 	follows := getFollowedUids(uid, db)
-	// fmt.Println(follows)
+	//不能推荐自己
+	follows = append(follows, uid)
+	//附近的人
+	near := getNearUser(uid, db)
+	nearuid, _ := strconv.Atoi(near[0])
+	follows = append(follows, nearuid)
+
+	//相同犬种的人
+	Pet := getPetInfoByUid(uid, db)
+	var pet []int
+	for _, v := range Pet {
+		pet = append(pet, v.dog_species)
+		pet = append(pet, v.dog_birth_y)
+		pet = append(pet, v.dog_birth_m)
+	}
+
+	speciesUids := getSameSpeciesPetUsers(uid, follows, pet, db)
+	for _, value := range speciesUids {
+		uids = append(uids, value.uid)
+		follows = append(follows, value.uid)
+	}
+
+	//相同宠物年龄的人
+	ageUids := getSameAgePetUsers(uid, follows, pet, db)
+	for _, value1 := range ageUids {
+		uids = append(uids, value1.uid)
+	}
+	return uids
+}
+
+//获取附近的人用户信息
+func getNearUser(uid int, db *sql.DB) []string {
+	//推荐的用户uids
+	//已经关注的人
+	follows := getFollowedUids(uid, db)
+	//不能推荐自己
+	follows = append(follows, uid)
 	//获取用户位置信息
 	posi := getPositionByUid(uid, db)
-
-	// near := NearbyUser(uid, follows, Position, db)
+	var Position []string
+	for _, v := range posi {
+		Position = append(Position, v.latitude)
+		Position = append(Position, v.longitude)
+	}
+	// fmt.Println(Position)
+	//附近的人信息数据格式化
+	near := NearbyUser(uid, follows, Position, db)
+	if near != nil {
+		var nLatitude string
+		var nLongitude string
+		var uid int
+		for _, v := range near {
+			uid = v.uid
+			nLatitude = v.latitude
+			nLongitude = v.longitude
+		}
+		lat1, err1 := strconv.ParseFloat(Position[0], 64)
+		if err1 != nil {
+			logger.Error("[error] can not get latitude error: ", err1)
+		}
+		lng1, err2 := strconv.ParseFloat(Position[1], 64)
+		if err1 != nil {
+			logger.Error("[error] can not get longitude error: ", err2)
+		}
+		lat2, err3 := strconv.ParseFloat(nLatitude, 64)
+		if err1 != nil {
+			logger.Error("[error] can not get latitude error: ", err3)
+		}
+		lng2, err4 := strconv.ParseFloat(nLongitude, 64)
+		if err1 != nil {
+			logger.Error("[error] can not get longitude error: ", err4)
+		}
+		//格式化数据
+		dis := getDistanceByLatitude(lat1, lng1, lat2, lng2)
+		nickname := GetNickname(uid, db)
+		avatar := GetAvatar(uid, db)
+		source_desc := "相距" + strconv.Itoa(dis) + "米"
+		nearInfo := []string{strconv.Itoa(uid), nickname, avatar, source_desc}
+		return nearInfo
+	}
 	return nil
+}
+
+//根据经度和纬度得到距离
+func getDistanceByLatitude(lat1, lng1, lat2, lng2 float64) int {
+	radius := 6378.137
+	rad := math.Pi / 180.0
+	lat1 = lat1 * rad
+	lng1 = lng1 * rad
+	lat2 = lat2 * rad
+	lng2 = lng2 * rad
+	theta := lng2 - lng1
+	dist := math.Acos(math.Sin(lat1)*math.Sin(lat2) + math.Cos(lat1)*math.Cos(lat2)*math.Cos(theta))
+	dis := dist * radius
+	if int(dis) <= 0 {
+		return 5
+	}
+	return int(dis)
+}
+
+//获得用户昵称
+func GetNickname(uid int, db *sql.DB) string {
+	rows, err := db.Query("SELECT mem_nickname FROM `dog_member` WHERE (`uid`=" + strconv.Itoa(uid) + ") LIMIT 1")
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check dog_member sql prepare error: ", err)
+		return ""
+	}
+	for rows.Next() {
+		var a string
+		if err := rows.Scan(&a); err != nil {
+			logger.Error("[error] check sql get rows error ", err)
+			return ""
+		}
+		return a
+	}
+	return ""
+}
+
+//获得用户头像
+func GetAvatar(uid int, db *sql.DB) string {
+	rows, err := db.Query("SELECT image FROM `album` WHERE (`uid`=" + strconv.Itoa(uid) + ") AND `type`=5 LIMIT 1")
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check album sql prepare error: ", err)
+		return ""
+	}
+	if rows == nil {
+		rows, err := db.Query("SELECT image FROM `album` WHERE (`uid`=" + strconv.Itoa(uid) + ") AND `type`=25 LIMIT 1")
+		defer rows.Close()
+		if err != nil {
+			logger.Error("[error] check album sql prepare error: ", err)
+			return ""
+		}
+	}
+	for rows.Next() {
+		var a string
+		if err := rows.Scan(&a); err != nil {
+			logger.Error("[error] check sql get rows error ", err)
+			return ""
+		}
+		return "http://c1.cdn.goumin.com/diary/" + a
+	}
+	return "http://c1.cdn.goumin.com/diary/head/cover-s.jpg"
 }
 
 //获取用户的认证身份类型
@@ -154,20 +279,22 @@ func getPositionByUid(uid int, db *sql.DB) []*Position {
 }
 
 //一个附近的人
-func NearbyUser(uid int, followuids []int, Position []string, db *sql.DB) int {
+func NearbyUser(uid int, followuids []int, Position []string, db *sql.DB) []*Near {
 	str := getStrByArr(followuids)
-	rows, err := db.Query("SELECT uid FROM `user_location` WHERE latitude > (" + Position[0] + "-1) and latitude < (" + Position[0] + "+1) AND longitude > (" + Position[1] + "-1) and longitude < (" + Position[1] + "+1) AND uid NOT IN (" + str + ") ORDER BY ACOS(SIN(( " + Position[0] + " * 3.1415) / 180 ) *SIN((latitude * 3.1415) / 180 ) +COS((" + Position[0] + " * 3.1415) / 180 ) * COS((latitude * 3.1415) / 180 ) * COS((" + Position[1] + " * 3.1415) / 180 - (longitude * 3.1415) / 180 ) ) * 6380 LIMIT 1")
+	rows, err := db.Query("SELECT uid,latitude,longitude FROM `user_location` WHERE latitude > (" + Position[0] + "-1) and latitude < (" + Position[0] + "+1) AND longitude > (" + Position[1] + "-1) and longitude < (" + Position[1] + "+1) AND uid NOT IN (" + str + ") ORDER BY ACOS(SIN(( " + Position[0] + " * 3.1415) / 180 ) *SIN((latitude * 3.1415) / 180 ) +COS((" + Position[0] + " * 3.1415) / 180 ) * COS((latitude * 3.1415) / 180 ) * COS((" + Position[1] + " * 3.1415) / 180 - (longitude * 3.1415) / 180 ) ) * 6380 LIMIT 1")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check follow sql prepare error: ", err)
-		return 0
+		return nil
 	}
+
+	var rowsData []*Near
 	for rows.Next() {
-		var uid int
-		rows.Scan(&uid)
-		return uid
+		var row = new(Near)
+		rows.Scan(&row.uid, &row.latitude, &row.longitude)
+		rowsData = append(rowsData, row)
 	}
-	return 0
+	return rowsData
 
 }
 

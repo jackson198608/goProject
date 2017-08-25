@@ -6,7 +6,7 @@ import (
 	"database/sql"
 	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
-	"github.com/jackson198608/goProject/recommend/mysql"
+	"github.com/jackson198608/goProject/recomPosition/mysql"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"strconv"

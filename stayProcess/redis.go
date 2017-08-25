@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/eventLog/task"
+	// recomPosition "github.com/jackson198608/goProject/recomPosition/task"
 	recommendTask "github.com/jackson198608/goProject/recommend/task"
 	redis "gopkg.in/redis.v4"
 	// "os"
