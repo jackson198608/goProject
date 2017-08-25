@@ -3,7 +3,7 @@ package task
 import (
 	"database/sql"
 	"github.com/donnie4w/go-logger/logger"
-	"github.com/jackson198608/goProject/recommend/Pushdata"
+	"github.com/jackson198608/goProject/recomPosition/Pushdata"
 	mgo "gopkg.in/mgo.v2"
 	"strconv"
 	// "strings"

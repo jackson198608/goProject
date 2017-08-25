@@ -4,7 +4,7 @@ import (
 	"github.com/donnie4w/go-logger/logger"
 	// "github.com/jackson198608/goProject/eventLog/task"
 	// "fmt"
-	"github.com/jackson198608/goProject/recommend/Pushdata"
+	"github.com/jackson198608/goProject/recomPosition/Pushdata"
 	"github.com/jackson198608/goProject/stayProcess"
 	redis "gopkg.in/redis.v4"
 	"os"

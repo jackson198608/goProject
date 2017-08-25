@@ -26,7 +26,7 @@ func TestGetFansData(t *testing.T) {
 	// followfids := []int{36, 10, 159}
 
 	// fans := getRauthinfoByUid(uid, db)
-	fans := getUsers(uid, db)
+	fans := getUids(uid, db)
 	// fans := getHotClubs(3, followfids, db)
 	// fans := UnicodeIndex("山东省")
 	// fans := getCity("34.60411", "119.2164")
