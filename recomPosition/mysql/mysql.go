@@ -70,6 +70,23 @@ type Ad struct {
 
 //-------------------------------
 //根据uid获取用户的信息
+func getUserInfoByUids(uids []int, db *sql.DB) [][]string {
+	var userInfo [][]string
+	//附近的人
+	near := getNearUser(uid, db)
+	userInfo = append(userInfo, near)
+	for key, uid := range uids {
+		nickname := GetNickname(uid, db)
+		avatar := GetAvatar(uid, db)
+		if key == 2 {
+			source_desc := "同一俱乐部"
+		} else {
+			source_desc := "可能认识"
+		}
+		info := []string{uid, nickname, avatar, source_desc}
+		userInfo = append(userInfo, info)
+	}
+}
 
 //根据犬种和年龄推荐的用户的uid
 func getUids(uid int, db *sql.DB) []int {
@@ -106,7 +123,7 @@ func getUids(uid int, db *sql.DB) []int {
 	return uids
 }
 
-//获取附近的人用户信息
+//格式化附近的人
 func getNearUser(uid int, db *sql.DB) []string {
 	//推荐的用户uids
 	//已经关注的人
@@ -220,22 +237,6 @@ func GetAvatar(uid int, db *sql.DB) string {
 		return "http://c1.cdn.goumin.com/diary/" + a
 	}
 	return "http://c1.cdn.goumin.com/diary/head/cover-s.jpg"
-}
-
-//获取用户的认证身份类型
-func getRauthinfoByUid(uid int, db *sql.DB) int {
-	rows, err := db.Query("SELECT type as typeId FROM rauthentication WHERE (status=1) AND uid=" + strconv.Itoa(uid))
-	defer rows.Close()
-	if err != nil {
-		logger.Error("[error] check follow sql prepare error: ", err)
-		return 0
-	}
-	for rows.Next() {
-		var t int
-		rows.Scan(&t)
-		return t
-	}
-	return 0
 }
 
 //已经关注的人
@@ -382,6 +383,107 @@ func getStrByArr(arr []int) string {
 }
 
 //-------------------俱乐部
+//俱乐部数据格式化
+func getClubsInfo(fids []int, db *sql.DB) [][]string {
+	str := getStrByArr(fids)
+	rows, err := db.Query("SELECT name FROM pre_forum_forum WHERE (fid IN (" + str + ")) AND (status=1)")
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check pre_forum_forum sql prepare error: ", err)
+		return ""
+	}
+	var clubsInfo [][]string
+	for rows.Next() {
+		var name string
+		rows.Scan(&name)
+		icon := getClubIcon(fid, db)
+		membernum := getClubMembers(fid, db)
+		club := []string{fid, name, membernum, icon}
+		clubsInfo = append(clubsInfo, club)
+	}
+	return clubsInfo
+}
+
+//俱乐部图标
+func getClubIcon(fid int, db *sql.DB) string {
+	rows, err := db.Query("SELECT mobile_icon_thumb as icon FROM pre_forum_forumfield WHERE fid=" + fid)
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check pre_forum_forumfield sql prepare error: ", err)
+		return ""
+	}
+	for rows.Next() {
+		var icon int
+		if err := rows.Scan(&icon); err != nil {
+			logger.Error("[error] check sql get rows error ", err)
+			return ""
+		}
+		return "/www/wwwroot/goumin.com/bbs/data/attachment/" + icon
+	}
+	return "http://c1.cdn.goumin.com/cms/picture/day_150814/20150814_4a95a1f.jpg"
+}
+
+//俱乐部总人数
+func getClubMembers(fid int, db *sql.DB) int {
+	rows, err := db.Query("SELECT COUNT(*) as numbers FROM forumfollow WHERE forum_id=" + fid)
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check forumfollow sql prepare error: ", err)
+		return 0
+	}
+	for rows.Next() {
+		var numbers int
+		if err := rows.Scan(&numbers); err != nil {
+			logger.Error("[error] check sql get rows error ", err)
+			return 0
+		}
+		return numbers
+	}
+	return 0
+}
+
+//获得推荐的俱乐部的fids
+func getFids(uid int, db *sql.DB) []int {
+	var num int = 0
+	var fids []int
+	//已经加入的俱乐部
+	followfids := getFollowedClubs(uid, db)
+	//用户的宠物
+	Pet := getPetInfoByUid(uid, db)
+	for _, v := range Pet {
+		species := v.dog_species
+	}
+	species_name := getSpeciesnameBySpeciesid(species, db)
+	//犬种俱乐部id
+	fid1 := getPetClubByUid(species_name, followfids, db)
+	if fid1 > 0 {
+		followfids = append(followfids, fid1)
+		num = num + 1
+		fids = append(fids, fid1)
+	}
+
+	//获取用户位置信息
+	posi := getPositionByUid(uid, db)
+	for _, v := range posi {
+		latitude := v.latitude
+		longitude := v.longitude
+	}
+	province := getCity(latitude, longitude)
+	//地域俱乐部id
+	fid2 := getAreaClubByUid(province, followfids, db)
+	if fid2 > 0 {
+		followfids = append(followfids, fid2)
+		num = num + 1
+		fids = append(fids, fid2)
+	}
+	count := 4 - num
+	//热门俱乐部
+	hotfids := getHotClubs(count, followfids, db)
+	//数组合并
+	fids = append(fids, hotfids...)
+	return fids
+}
+
 //已经加入的俱乐部
 func getFollowedClubs(uid int, db *sql.DB) []int {
 	tableName := "forumfollow"
@@ -540,15 +642,15 @@ func getGoods(tag string) [][]string {
 		}
 		docs := js.Get("response").Get("docs")
 		for i := 0; i < docsLen; i++ {
-			name, _ := docs.GetIndex(i).Get("name").String()
+			goods_name, _ := docs.GetIndex(i).Get("name").String()
 			goods_id, _ := docs.GetIndex(i).Get("id").String()
 			price, _ := docs.GetIndex(i).Get("lowest_price").String()
-			img, _ := docs.GetIndex(i).Get("img").String()
+			goods_img, _ := docs.GetIndex(i).Get("img").String()
 			sales_count, _ := docs.GetIndex(i).Get("sum_sales_count").Int()
 			stock, _ := docs.GetIndex(i).Get("stock").Int()
 			salesCountStr := strconv.Itoa(sales_count)
 			stockStr := strconv.Itoa(stock)
-			goods_info := []string{goods_id, name, img, price, stockStr, salesCountStr}
+			goods_info := []string{goods_id, goods_name, goods_img, price, stockStr, salesCountStr}
 			goods_infos = append(goods_infos, goods_info)
 		}
 	}
