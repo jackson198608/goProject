@@ -584,15 +584,18 @@ func getPetClubByUid(species string, followfids []int, db *sql.DB) int {
 
 func getUrl(url string) string {
 	client := &http.Client{}
+	logger.Info("get url address", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
+		logger.Error("getUrl error ", err)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		logger.Error("getUrl error ", err)
 	}
 	return string(body)
 }
@@ -673,7 +676,8 @@ func GetGoods(tag string) []Goods {
 	// age = url.QueryEscape(age)
 	common := url.QueryEscape("通用")
 
-	solr_url := "http://210.14.154.199:8983/solr/mall_goods/select?q=tags%3A(" + tag + "+OR+" + common + ")&fq=cat_id%3A*&fq=-stock%3A0&sort=sum_sales_count+desc&wt=json&indent=true"
+	// solr_url := "http://210.14.154.199:8983/solr/mall_goods/select?q=tags%3A(" + tag + "+OR+" + common + ")&fq=cat_id%3A*&fq=-stock%3A0&sort=sum_sales_count+desc&wt=json&indent=true"
+	solr_url := "http://192.168.5.75:8983/solr/mall_goods/select?q=tags%3A(" + tag + "+OR+" + common + ")&fq=cat_id%3A*&fq=-stock%3A0&sort=sum_sales_count+desc&wt=json&indent=true"
 	jsonStr := getUrl(solr_url)
 	js, _ := simplejson.NewJson([]byte(jsonStr))
 	status, _ := js.Get("responseHeader").Get("status").Int()
