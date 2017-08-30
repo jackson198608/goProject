@@ -7,22 +7,21 @@ import (
 	"github.com/jackson198608/goProject/recomPosition/Pushdata"
 	"github.com/jackson198608/goProject/stayProcess"
 	redis "gopkg.in/redis.v4"
-	"os"
-	"time"
+	// "os"
+	// "time"
 )
 
 var c Config = Config{
-	"210.14.154.198:33068",
+	"192.168.86.193:3307",
 	"new_dog123",
 	"dog123:dog123",
 	100,
 	"192.168.86.56:6379",
 	"recommendActiveUser",
-	"recommendActiveUserByDog",
 	"/tmp/recommend.log",
 	1,
-	"192.168.86.192:27017", //BidData
-	"BidData"}
+	"192.168.86.122:27017",
+	"RecommendData"}
 
 func createClient() *redis.Client {
 	client := redis.NewClient(&redis.Options{
@@ -41,7 +40,7 @@ func createClient() *redis.Client {
 
 func pushAllActiveUserToRedis(queueName string) bool {
 	rc := createClient()
-	realTasks := Pushdata.GetAllActiveUsers(c.mongoConn1)
+	realTasks := Pushdata.GetAllActiveUsers(c.mongoConn)
 	if len(realTasks) == 0 {
 		logger.Error("active user data is empty")
 		return false
@@ -63,13 +62,13 @@ func pushAllActiveUserToRedis(queueName string) bool {
 }
 
 func push() {
-	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName1, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn)
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn)
 
 	//生产任务
-	pushAllActiveUserToRedis(c.queueName1)
+	pushAllActiveUserToRedis(c.queueName)
 
 	//处理任务
-	r.LoopPushRecommend()
+	r.LoopPushRecommendPosition()
 }
 
 func Init() {

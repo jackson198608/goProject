@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/eventLog/task"
-	// recomPosition "github.com/jackson198608/goProject/recomPosition/task"
 	recommendTask "github.com/jackson198608/goProject/recommend/task"
+	recommendPositionTask "github.com/jackson198608/goProject/recomPosition/task"
 	redis "gopkg.in/redis.v4"
 	// "os"
 	"database/sql"
@@ -245,6 +245,11 @@ func (t *RedisEngine) LoopPushRecommend() {
 	t.doOneLoopPushRecommend()
 }
 
+func (t *RedisEngine) LoopPushRecommendPosition() {
+	t.getPushRecommendTaskNum()
+	t.doOneLoopPushRecommendPosition()
+}
+
 func (t *RedisEngine) RemoveFansData() {
 	// for {
 	t.getPushTaskNum()
@@ -289,6 +294,18 @@ func (t *RedisEngine) doOneLoopPushRecommend() {
 	c := make(chan int, t.taskNum)
 	for i := 0; i < t.taskNum; i++ {
 		go t.croutinePopJobRecommendActiveUserData(c, i)
+	}
+
+	for i := 0; i < t.taskNum; i++ {
+		<-c
+	}
+}
+
+func (t *RedisEngine) doOneLoopPushRecommendPosition() {
+	logger.Info("do in oneloop taskNum", t.taskNum)
+	c := make(chan int, t.taskNum)
+	for i := 0; i < t.taskNum; i++ {
+		go t.croutinePopJobRecommendPositionData(c, i)
 	}
 
 	for i := 0; i < t.taskNum; i++ {
@@ -350,6 +367,41 @@ func (t *RedisEngine) croutinePopJobRecommendActiveUserData(x chan int, i int) {
 			recommendTask.Dopush()
 		}
 
+	}
+}
+func (t *RedisEngine) croutinePopJobRecommendPositionData(x chan int, i int) {
+	// fmt.Println(t.taskNewArgs)
+	dbAuth := t.taskNewArgs[0]
+	dbDsn := t.taskNewArgs[1]
+	dbName := t.taskNewArgs[2]
+
+	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+	if err != nil {
+		logger.Error("[error] connect db err")
+	}
+	defer db.Close()
+
+	mongoConn := t.taskNewArgs[3]
+	session, err := mgo.Dial(mongoConn)
+	if err != nil {
+		logger.Error("[error] connect mongodb err")
+		return
+	}
+	defer session.Close()
+
+	for {
+		//doing until got nothing]
+		activeUserQueue := t.queueName
+		redisStr := (*t.client).LPop(activeUserQueue).Val()
+		if redisStr == "" {
+			logger.Info("got nothing ", activeUserQueue)
+			x <- 1
+			return
+		}
+		recommendPositionTask := recommendPositionTask.NewTask(t.logLevel, redisStr, db, session)
+		if recommendPositionTask != nil {
+			recommendPositionTask.Dopush()
+		}
 	}
 }
 

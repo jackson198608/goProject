@@ -34,5 +34,5 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session)
 
 func (t *Task) Dopush() {
 	m := Pushdata.RecommendUser(t.loggerLevel, t.db, t.session)
-	m.PushActiveUserRecommendTask(t.uid)
+	m.PushRecommendTask(t.uid)
 }

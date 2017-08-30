@@ -8,12 +8,14 @@ import (
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/recomPosition/mysql"
 	mgo "gopkg.in/mgo.v2"
+	// "github.com/bitly/go-simplejson"
 	"gopkg.in/mgo.v2/bson"
-	"strconv"
-	"time"
+	// "strconv"
+	// "time"
 	// "github.com/frustra/bbcode"
-	// "reflect"
-	"math/rand"
+	// "reflect"	
+	// "math/rand"
+	"encoding/json"
 )
 
 type RecommendNew struct {
@@ -21,64 +23,11 @@ type RecommendNew struct {
 	session *mgo.Session
 }
 
-type DogRecommend struct {
-	Id        bson.ObjectId "_id"
-	TypeId    int           "type"
-	Uid       int           "uid"
-	Fuid      int           "fuid" //fans id
-	Created   string        "created"
-	Infoid    int           "infoid"
-	Status    int           "status"
-	Tid       int           "tid"
-	Bid       int           "bid"
-	Content   string        "content"
-	Title     string        "title"
-	Imagenums int           "image_num"
-	Images    string        "images"
-	Forum     string        "forum"
-	Tag       int           "tag"
-	Qsttype   int           "qst_type"
-	IsRead    int           "is_read"
-	Source    int           "source"
-}
-
-type UserRecommend struct {
-	Id          bson.ObjectId "_id"
-	Uuid        int           "uuid"
-	Uid         int           "uid"
-	ContentType int           "content_type"
-	ContentId   int           "content_id"
-	Score       int           "score"
-	Time        string        "time"
-}
-
-type RecommendRecord struct {
+type RecommendPosition struct {
 	Id             bson.ObjectId "_id"
-	UseRecommendId bson.ObjectId "user_recommend_id"
+	Uid 		   int 			 "uid"
 	TypeId         int           "type"
-	Uid            int           "uid"
-	Bid            int           "bid"
-}
-
-type EventLogX struct {
-	Id        bson.ObjectId "_id"
-	TypeId    int           "type"
-	Uid       int           "uid"
-	Fuid      int           "fuid" //fans id
-	Created   string        "created"
-	Infoid    int           "infoid"
-	Status    int           "status"
-	Tid       int           "tid"
-	Bid       int           "bid"
-	Content   string        "content"
-	Title     string        "title"
-	Imagenums int           "image_num"
-	Images    string        "images"
-	Forum     string        "forum"
-	Tag       int           "tag"
-	Qsttype   int           "qst_type"
-	IsRead    int           "is_read"
-	Source    int           "source"
+	Info           string        "info"
 }
 
 func RecommendUser(logLevel int, db *sql.DB, session *mgo.Session) *RecommendNew {
@@ -90,73 +39,54 @@ func RecommendUser(logLevel int, db *sql.DB, session *mgo.Session) *RecommendNew
 	return e
 }
 
-func savePostToFansData(i int, Fuid int, contentId int, db *sql.DB, session *mgo.Session) error {
-	Qsttype := 0
-	Bid := 0
-	Tag := 0
-	Source := 1
-	IsRead := 0
-	tableNumX := Fuid % 100
-	if tableNumX == 0 {
-		tableNumX = 100
-	}
-	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
-	c := session.DB("FansData").C(tableNameX)
-
-	isExists := mysql.CheckThreadIsExist(contentId, db)
-	logger.Info(contentId, " CheckThreadIsExist is ", isExists)
-	if isExists != 0 {
-		Images := ""
-		Imagenums := 0
-		TypeId := 9
-		Created := changeCreated(i)
-
-		postData := mysql.GetPostData(contentId, db)
-		Tag = mysql.GetTagData(contentId, db)
-		if len(postData) > 0 {
-			Title := postData[0].Subject
-			Content := postData[0].Message
-			Content = show_substr(Content, 100)
-
-			Forum := postData[0].Name
-			Uid := postData[0].Authorid
-
-			m := EventLogX{bson.NewObjectId(), TypeId, Uid, Fuid, Created, contentId, 1, 0, Bid, Content, Title, Imagenums, Images, Forum, Tag, Qsttype, IsRead, Source}
-			err := c.Insert(&m) //插入数据
-			if err != nil {
-				logger.Error("mongodb insert fans data", err, c)
-				return err
-			}
-			logger.Info("slave FansData mongodb push fans data ", m)
-		} else {
-			logger.Error("user recommend post data is empty, tid is ", contentId)
-		}
+func saveData(Uid int, TypeId int, Info string, db *sql.DB, session *mgo.Session) error {
+	tableName := "recommend_position"
+	c := session.DB("RecommendData").C(tableName)
+	m := RecommendPosition{bson.NewObjectId(),  Uid, TypeId, Info}
+	err := c.Insert(&m) //插入数据
+	if err != nil {
+		logger.Error("mongodb insert fans data", err, c)
+		return err
 	}
 	return nil
 }
 
-func (e *RecommendNew) PushActiveUserRecommendTask(uid int) error {
-	// userRecommends := GetUserRecommendData(uid, e.session)
-	// if len(userRecommends) == 0 {
-	// 	logger.Info("userRecommends arr is empty")
-	// 	return nil
-	// }
-	// logger.Info(uid, " user Recommends arr is ", userRecommends)
-	// for i := 0; i < len(userRecommends); i++ {
-	// 	Fuid := userRecommends[i].Uid
-	// 	contentType := userRecommends[i].ContentType
-	// 	contentId := userRecommends[i].ContentId
+func (e *RecommendNew) PushRecommendTask(uid int) error {
+	db := e.db
+	session := e.session
+	// recommend forum
+	FidsData :=  mysql.GetFids(uid, db)
+	RecommendForum :=  mysql.GetClubsInfo(FidsData, db)
+	ForumJson ,_ := json.Marshal(RecommendForum)
+	forumStr := string(ForumJson)
+	err := saveData(uid, 1, forumStr, db, session)
 
-	// 	if contentType == 1 {
-	// 		savePostToFansData(i, Fuid, contentId, e.db, e.session)
-	// 	} else if contentType == 6 {
-	// 		saveVideoToFansData(i, Fuid, contentId, e.db, e.session)
-	// 	} else {
-	// 		logger.Info("user recommend data type is ", contentType)
-	// 	}
-	// }
-	// return nil
+	// recommend user
+	Uids := mysql.GetUids(uid, db)
+	RecommendUser := mysql.GetUserInfoByUids(uid, Uids, db)
+	UserJson,_ := json.Marshal(RecommendUser)
+	userStr := string(UserJson)
+	err = saveData(uid, 2, userStr, db, session)
 
+	// recommend goods
+	Pet := mysql.GetPetInfoByUid(uid, db)
+	var species int
+	for _, v := range Pet {
+		species = v.DogSpecies
+	}
+	speciesName := mysql.GetSpeciesnameBySpeciesid(species, db)
+	RecommendGoods := mysql.GetGoods(speciesName)
+	GoodsJson ,_ := json.Marshal(RecommendGoods)
+	goodsStr := string(GoodsJson)
+	err = saveData(uid, 3, goodsStr, db, session)
+
+	// recommend ad
+	RecomendAD := mysql.GetAdInfo(db)
+	AdJson ,_ := json.Marshal(RecomendAD)
+	adStr := string(AdJson)
+	err = saveData(uid, 4, adStr, db, session)
+
+	return err
 }
 
 //全部活跃用户
@@ -172,30 +102,6 @@ func GetAllActiveUsers(mongoConn string) []int {
 
 	c := session.DB("ActiveUser").C("active_user")
 	err = c.Find(nil).Distinct("uid", &user)
-	if err != nil {
-		panic(err)
-	}
-	return user
-}
-
-//---------------------------------------------
-//推荐关注的人
-func RecommendUsers() []*RecommendUser {
-
-}
-
-//最近10分钟登录的用户
-func GetLastLoginUids(mongoConn string) []int {
-	var user []int
-	session, err := mgo.Dial(mongoConn)
-	if err != nil {
-		logger.Error("[error] connect mongodb err")
-		return user
-	}
-	defer session.Close()
-	c := session.DB("UserAction").C("user_login")
-	logintime := time.Now().Add(-time.minute * 10)
-	err = c.Find(bson.M{"created": bson.M{"$gt": today}}).All(&user)
 	if err != nil {
 		panic(err)
 	}

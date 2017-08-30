@@ -2,7 +2,7 @@ package mysql
 
 import (
 	"database/sql"
-	"fmt"
+	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
 	_ "github.com/go-sql-driver/mysql"
 	// "reflect"
@@ -15,20 +15,32 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	// "sort"
 )
 
 type Fuids struct {
 	follow_id int "follow_id"
 }
+type Forum struct {
+	Name  		string "name"
+	Fid         int    "fid"
+}
+
+type ForumInfo struct {
+	Fid         int    `json:"fid"`
+	Name  		string `json:"name"`
+	Membernum   int `json:"membernum"`
+	Icon      	string `json:"icon"`
+}
 
 type Userinfo struct {
-	uid         int    "uid"
-	avatar      string "avatar"
-	nickname    string "nickname"
-	species     string "dog_species"
-	pet_age     string "pet_age"
-	typeId      int    "type"
-	source_desc string
+	Uid         int    `json:"uid"`
+	Nickname    string `json:"nickname"`
+	Avatar      string `json:"avatar"`
+	TypeId      int    `json:"type"`
+	SourceDesc  string `json:"source_desc"`
+	Species     string `json:"dog_species"`
+	PetAge      string `json:"pet_age"`
 }
 
 type Position struct {
@@ -43,9 +55,9 @@ type Near struct {
 }
 
 type Pet struct {
-	dog_species int "dog_species"
-	dog_birth_y int "dog_birth_y"
-	dog_birth_m int "dog_birth_m"
+	DogSpecies int "dog_species"
+	DogBirth_y int "dog_birth_y"
+	DogBirth_m int "dog_birth_m"
 }
 
 type Petuids struct {
@@ -53,43 +65,60 @@ type Petuids struct {
 }
 
 type Goods struct {
-	goods_id   int    "goods_id"
-	goods_name int    "goods_name"
-	goods_img  string "goods_img"
-	price      string "price"
+	GoodsId   		string      `json:"goods_id"`
+	GoodsName 		string    	`json:"goods_name"`
+	GoodsImg  		string 		`json:"goods_img"`
+	Price     		string 		`json:"price"`
+	Stock     	    int 		`json:"stock"`
+	SalesCount      int 		`json:"sales_count"`
+}
+
+
+type AdInfo struct {
+	Aid      int    `json:"aid"`
+	TypeId   int    `json:"type"`
+	Title    string `json:"title"`
+	Content  string `json:"content"`
+	Image    string `json:"image"`
 }
 
 type Ad struct {
-	aid      int    "aid"
-	content  string "content"
-	image    string "image"
-	title    string "title"
-	typeId   int    "type"
-	showtime string "showtime"
+	Aid      int    "id"
+	Content  string "content"
+	Image    string "image"
+	Title    string "title"
+	TypeId   int    "type"
+	Showtime string "showtime"
 }
 
 //-------------------------------
 //根据uid获取用户的信息
-func getUserInfoByUids(uids []int, db *sql.DB) [][]string {
-	var userInfo [][]string
+func GetUserInfoByUids(Fuid int, uids []int, db *sql.DB) []Userinfo {
+	var userInfos []Userinfo
 	//附近的人
-	near := getNearUser(uid, db)
-	userInfo = append(userInfo, near)
+	near := getNearUser(Fuid, db)
+	uid,_ := strconv.Atoi(near[0])
+	m := Userinfo{uid, near[1],near[2],0,near[3],"",""}
+	for i := 0; i < 1; i++ {
+		userInfos = append(userInfos, m)
+	}
 	for key, uid := range uids {
 		nickname := GetNickname(uid, db)
 		avatar := GetAvatar(uid, db)
+		var source_desc string
 		if key == 2 {
-			source_desc := "同一俱乐部"
+			source_desc = "同一俱乐部"
 		} else {
-			source_desc := "可能认识"
+			source_desc = "可能认识"
 		}
-		info := []string{uid, nickname, avatar, source_desc}
-		userInfo = append(userInfo, info)
+		m := Userinfo{uid, nickname,avatar,0,source_desc,"",""}
+		userInfos = append(userInfos, m)
 	}
+	return userInfos
 }
 
 //根据犬种和年龄推荐的用户的uid
-func getUids(uid int, db *sql.DB) []int {
+func GetUids(uid int, db *sql.DB) []int {
 	var uids []int
 	//已经关注的人
 	follows := getFollowedUids(uid, db)
@@ -101,12 +130,12 @@ func getUids(uid int, db *sql.DB) []int {
 	follows = append(follows, nearuid)
 
 	//相同犬种的人
-	Pet := getPetInfoByUid(uid, db)
+	Pet := GetPetInfoByUid(uid, db)
 	var pet []int
 	for _, v := range Pet {
-		pet = append(pet, v.dog_species)
-		pet = append(pet, v.dog_birth_y)
-		pet = append(pet, v.dog_birth_m)
+		pet = append(pet, v.DogSpecies)
+		pet = append(pet, v.DogBirth_y)
+		pet = append(pet, v.DogBirth_m)
 	}
 
 	speciesUids := getSameSpeciesPetUsers(uid, follows, pet, db)
@@ -276,7 +305,6 @@ func getPositionByUid(uid int, db *sql.DB) []*Position {
 		return []*Position{{"39.9", "118.9"}}
 	}
 	return rowsData
-
 }
 
 //一个附近的人
@@ -296,11 +324,10 @@ func NearbyUser(uid int, followuids []int, Position []string, db *sql.DB) []*Nea
 		rowsData = append(rowsData, row)
 	}
 	return rowsData
-
 }
 
 //获取用户的宠物信息
-func getPetInfoByUid(uid int, db *sql.DB) []*Pet {
+func GetPetInfoByUid(uid int, db *sql.DB) []*Pet {
 	tableName := "dog_doginfo"
 	rows, err := db.Query("select dog_species,dog_birth_y,dog_birth_m from " + tableName + " where dog_userid= " + strconv.Itoa(uid) + " and 'default' = 1 limit 1")
 	defer rows.Close()
@@ -312,7 +339,7 @@ func getPetInfoByUid(uid int, db *sql.DB) []*Pet {
 	var rowsData []*Pet
 	for rows.Next() {
 		var row = new(Pet)
-		rows.Scan(&row.dog_species, &row.dog_birth_y, &row.dog_birth_m)
+		rows.Scan(&row.DogSpecies, &row.DogBirth_y, &row.DogBirth_m)
 		rowsData = append(rowsData, row)
 	}
 	if len(rowsData) == 0 {
@@ -324,13 +351,12 @@ func getPetInfoByUid(uid int, db *sql.DB) []*Pet {
 		}
 		for rows.Next() {
 			var row = new(Pet)
-			rows.Scan(&row.dog_species, &row.dog_birth_y, &row.dog_birth_m)
+			rows.Scan(&row.DogSpecies, &row.DogBirth_y, &row.DogBirth_m)
 			rowsData = append(rowsData, row)
 		}
 		return rowsData
 	}
 	return rowsData
-
 }
 
 //相同犬种年龄的人
@@ -384,21 +410,25 @@ func getStrByArr(arr []int) string {
 
 //-------------------俱乐部
 //俱乐部数据格式化
-func getClubsInfo(fids []int, db *sql.DB) [][]string {
+func GetClubsInfo(fids []int, db *sql.DB) []ForumInfo {
+	var clubsInfo []ForumInfo
 	str := getStrByArr(fids)
-	rows, err := db.Query("SELECT name FROM pre_forum_forum WHERE (fid IN (" + str + ")) AND (status=1)")
+	rows, err := db.Query("SELECT name,fid FROM pre_forum_forum WHERE (fid IN (" + str + ")) AND (status=1)")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check pre_forum_forum sql prepare error: ", err)
-		return ""
+		return clubsInfo
 	}
-	var clubsInfo [][]string
 	for rows.Next() {
+		var row = new(Forum)
 		var name string
-		rows.Scan(&name)
+		var fid int
+		rows.Scan(&row.Name,&row.Fid)
+		name = row.Name
+		fid = row.Fid
 		icon := getClubIcon(fid, db)
 		membernum := getClubMembers(fid, db)
-		club := []string{fid, name, membernum, icon}
+		club := ForumInfo{fid, name, membernum, icon}
 		clubsInfo = append(clubsInfo, club)
 	}
 	return clubsInfo
@@ -406,14 +436,15 @@ func getClubsInfo(fids []int, db *sql.DB) [][]string {
 
 //俱乐部图标
 func getClubIcon(fid int, db *sql.DB) string {
-	rows, err := db.Query("SELECT mobile_icon_thumb as icon FROM pre_forum_forumfield WHERE fid=" + fid)
+	fidStr := strconv.Itoa(fid)
+	rows, err := db.Query("SELECT mobile_icon_thumb as icon FROM pre_forum_forumfield WHERE fid=" + fidStr)
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check pre_forum_forumfield sql prepare error: ", err)
 		return ""
 	}
 	for rows.Next() {
-		var icon int
+		var icon string
 		if err := rows.Scan(&icon); err != nil {
 			logger.Error("[error] check sql get rows error ", err)
 			return ""
@@ -425,7 +456,7 @@ func getClubIcon(fid int, db *sql.DB) string {
 
 //俱乐部总人数
 func getClubMembers(fid int, db *sql.DB) int {
-	rows, err := db.Query("SELECT COUNT(*) as numbers FROM forumfollow WHERE forum_id=" + fid)
+	rows, err := db.Query("SELECT COUNT(*) as numbers FROM forumfollow WHERE forum_id=" + strconv.Itoa(fid))
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check forumfollow sql prepare error: ", err)
@@ -443,17 +474,18 @@ func getClubMembers(fid int, db *sql.DB) int {
 }
 
 //获得推荐的俱乐部的fids
-func getFids(uid int, db *sql.DB) []int {
+func GetFids(uid int, db *sql.DB) []int {
 	var num int = 0
 	var fids []int
 	//已经加入的俱乐部
 	followfids := getFollowedClubs(uid, db)
 	//用户的宠物
-	Pet := getPetInfoByUid(uid, db)
+	Pet := GetPetInfoByUid(uid, db)
+	var species int
 	for _, v := range Pet {
-		species := v.dog_species
+		species = v.DogSpecies
 	}
-	species_name := getSpeciesnameBySpeciesid(species, db)
+	species_name := GetSpeciesnameBySpeciesid(species, db)
 	//犬种俱乐部id
 	fid1 := getPetClubByUid(species_name, followfids, db)
 	if fid1 > 0 {
@@ -464,9 +496,11 @@ func getFids(uid int, db *sql.DB) []int {
 
 	//获取用户位置信息
 	posi := getPositionByUid(uid, db)
+	var latitude string
+	var longitude string
 	for _, v := range posi {
-		latitude := v.latitude
-		longitude := v.longitude
+		latitude = v.latitude
+		longitude = v.longitude
 	}
 	province := getCity(latitude, longitude)
 	//地域俱乐部id
@@ -503,7 +537,7 @@ func getFollowedClubs(uid int, db *sql.DB) []int {
 }
 
 //根据犬种id获得犬种名称
-func getSpeciesnameBySpeciesid(species int, db *sql.DB) string {
+func GetSpeciesnameBySpeciesid(species int, db *sql.DB) string {
 	rows, err := db.Query("SELECT spe_name_s FROM dog_species WHERE spe_id=" + strconv.Itoa(species) + " LIMIT 1")
 	defer rows.Close()
 	if err != nil {
@@ -525,8 +559,12 @@ func getSpeciesnameBySpeciesid(species int, db *sql.DB) string {
 
 //犬种俱乐部
 func getPetClubByUid(species string, followfids []int, db *sql.DB) int {
-	str := getStrByArr(followfids)
-	rows, err := db.Query("SELECT fid FROM pre_forum_forum WHERE ((name like '" + species + "%') AND (fup IN (76, 78, 2))) AND fid NOT IN (" + str + ") AND (status=1) LIMIT 1")
+	var fidsql string
+	if len(followfids)!=0 {
+		str := getStrByArr(followfids)
+		fidsql = " AND fid NOT IN (" + str + ")"
+	}
+	rows, err := db.Query("SELECT fid FROM pre_forum_forum WHERE (name like '" + species + "%') AND fup IN (76, 78, 2)"+ fidsql +" AND status=1 LIMIT 1")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check pre_forum_forum sql prepare error: ", err)
@@ -583,8 +621,12 @@ func UnicodeIndex(str string) string {
 
 //地域俱乐部
 func getAreaClubByUid(province string, followfids []int, db *sql.DB) int {
-	str := getStrByArr(followfids)
-	rows, err := db.Query("SELECT fid FROM pre_forum_forum WHERE ((name like '" + province + "%') AND (fup IN (76, 78, 2))) AND fid NOT IN (" + str + ") AND (status=1) LIMIT 1")
+	var fidsql string
+	if len(followfids)!=0 {
+		str := getStrByArr(followfids)
+		fidsql = " AND fid NOT IN (" + str + ")"
+	}
+	rows, err := db.Query("SELECT fid FROM pre_forum_forum WHERE (name like '" + province + "%') AND fup IN (76, 78, 2)"+ fidsql +" AND status=1 LIMIT 1")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check pre_forum_forum sql prepare error: ", err)
@@ -603,8 +645,12 @@ func getAreaClubByUid(province string, followfids []int, db *sql.DB) int {
 
 //热门俱乐部
 func getHotClubs(count int, followfids []int, db *sql.DB) []int {
-	str := getStrByArr(followfids)
-	rows, err := db.Query("SELECT fid FROM pre_forum_forum WHERE ((status=1) AND (fid NOT IN (" + str + "))) AND (fup IN (76, 78, 2)) ORDER BY todayposts DESC LIMIT " + strconv.Itoa(count))
+	var fidsql string
+	if len(followfids)!=0 {
+		str := getStrByArr(followfids)
+		fidsql = " AND fid NOT IN (" + str + ")"
+	}
+	rows, err := db.Query("SELECT fid FROM pre_forum_forum WHERE status=1 AND fup IN (76, 78, 2)"+ fidsql +" ORDER BY todayposts DESC LIMIT " + strconv.Itoa(count))
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check pre_forum_forum sql prepare error: ", err)
@@ -622,7 +668,7 @@ func getHotClubs(count int, followfids []int, db *sql.DB) []int {
 //-------------商品
 
 //根据宠物犬种搜索商品
-func getGoods(tag string) [][]string {
+func GetGoods(tag string) []Goods {
 	tag = url.QueryEscape(tag)
 	// age = url.QueryEscape(age)
 	common := url.QueryEscape("通用")
@@ -631,7 +677,7 @@ func getGoods(tag string) [][]string {
 	jsonStr := getUrl(solr_url)
 	js, _ := simplejson.NewJson([]byte(jsonStr))
 	status, _ := js.Get("responseHeader").Get("status").Int()
-	var goods_infos [][]string
+	var goods_infos []Goods
 	if status == 0 {
 		numFound, _ := js.Get("response").Get("numFound").Int()
 		var docsLen int
@@ -648,9 +694,7 @@ func getGoods(tag string) [][]string {
 			goods_img, _ := docs.GetIndex(i).Get("img").String()
 			sales_count, _ := docs.GetIndex(i).Get("sum_sales_count").Int()
 			stock, _ := docs.GetIndex(i).Get("stock").Int()
-			salesCountStr := strconv.Itoa(sales_count)
-			stockStr := strconv.Itoa(stock)
-			goods_info := []string{goods_id, goods_name, goods_img, price, stockStr, salesCountStr}
+			goods_info := Goods{goods_id, goods_name, goods_img, price, stock, sales_count}
 			goods_infos = append(goods_infos, goods_info)
 		}
 	}
@@ -658,23 +702,22 @@ func getGoods(tag string) [][]string {
 }
 
 //------------------广告
-func getAdInfo(db *sql.DB) []*Ad {
+func GetAdInfo(db *sql.DB) []AdInfo {
 	t := time.Now().Format("2006-01-02")
 	s := t + " 00:00:00"
 	e := t + " 23:59:59"
-
-	rows, err := db.Query("SELECT id as aid,type as typeId,title,content,image FROM `ads_recommend` WHERE showtime > '" + s + "' AND showtime < '" + e + "' order by weight desc LIMIT 1")
+	rows, err := db.Query("SELECT id,type,title,content,image FROM backend.ads_recommend WHERE showtime > '" + s + "' AND showtime < '" + e + "' order by weight desc LIMIT 1")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check ads_recommend sql prepare error: ", err)
 		return nil
 	}
-	var rowsData []*Ad
+	var rowsData []AdInfo
 	for rows.Next() {
 		var row = new(Ad)
-		rows.Scan(&row.aid, &row.typeId, &row.title, &row.content, &row.image)
-		fmt.Println(row)
-		rowsData = append(rowsData, row)
+		rows.Scan(&row.Aid, &row.TypeId, &row.Title, &row.Content, &row.Image)
+		m := AdInfo{row.Aid, row.TypeId, row.Title, row.Content, row.Image}
+		rowsData = append(rowsData, m)
 	}
 	return rowsData
 }
