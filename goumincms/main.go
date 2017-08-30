@@ -24,6 +24,8 @@ var redisConn string = "127.0.0.1:6379"
 // var logger *log.Logger
 var logPath string = "/tmp/create_thread.log"
 
+var templatefile = "/data/thread/template.html"
+
 func Init() {
 
 	// loadConfig()
