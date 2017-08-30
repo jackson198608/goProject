@@ -54,6 +54,7 @@ func saveData(Uid int, TypeId int, Info string, db *sql.DB, session *mgo.Session
 func (e *RecommendNew) PushRecommendTask(uid int) error {
 	db := e.db
 	session := e.session
+	logger.Info("push uid ",uid)
 	// recommend forum
 	FidsData :=  mysql.GetFids(uid, db)
 	RecommendForum :=  mysql.GetClubsInfo(FidsData, db)

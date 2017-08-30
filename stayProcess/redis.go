@@ -336,6 +336,8 @@ func (t *RedisEngine) croutinePopJobRecommendActiveUserData(x chan int, i int) {
 	dbAuth := t.taskNewArgs[0]
 	dbDsn := t.taskNewArgs[1]
 	dbName := t.taskNewArgs[2]
+	pustLimit := t.taskNewArgs[4]
+	pustDogLimit := t.taskNewArgs[6]
 
 	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
 	if err != nil {
@@ -351,6 +353,14 @@ func (t *RedisEngine) croutinePopJobRecommendActiveUserData(x chan int, i int) {
 	}
 	defer session.Close()
 
+	mongoConn1 := t.taskNewArgs[5]
+	session1, err := mgo.Dial(mongoConn1)
+	if err != nil {
+		logger.Error("[error] connect mongodb err")
+		return
+	}
+	defer session1.Close()
+
 	for {
 		//doing until got nothing]
 		activeUserQueue := t.queueName
@@ -362,13 +372,20 @@ func (t *RedisEngine) croutinePopJobRecommendActiveUserData(x chan int, i int) {
 			return
 		}
 
-		recommendTask := recommendTask.NewTask(t.logLevel, redisStr, db, session)
+		recommendTask := recommendTask.NewTask(t.logLevel, redisStr, db, session, session1)
 		if recommendTask != nil {
-			recommendTask.Dopush()
+			if strings.Contains(activeUserQueue, "Dog") {
+				logger.Info("in do push dog by ", redisStr)
+				recommendTask.Dopushdog(pustDogLimit)
+			}else{
+				logger.Info("in do push user by ", redisStr)
+				recommendTask.Dopush(pustLimit)
+			}
 		}
 
 	}
 }
+
 func (t *RedisEngine) croutinePopJobRecommendPositionData(x chan int, i int) {
 	// fmt.Println(t.taskNewArgs)
 	dbAuth := t.taskNewArgs[0]

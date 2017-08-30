@@ -27,10 +27,10 @@ type Forum struct {
 }
 
 type ForumInfo struct {
-	Fid         int    `json:"fid"`
-	Name  		string `json:"name"`
-	Membernum   int `json:"membernum"`
-	Icon      	string `json:"icon"`
+	Fid         int    	`json:"fid"`
+	Name  		string 	`json:"name"`
+	Membernum   int 	`json:"membernum"`
+	Icon      	string 	`json:"icon"`
 }
 
 type Userinfo struct {
@@ -44,20 +44,20 @@ type Userinfo struct {
 }
 
 type Position struct {
-	latitude  string "latitude"
-	longitude string "longitude"
+	latitude  string 	"latitude"
+	longitude string 	"longitude"
 }
 
 type Near struct {
-	uid       int    "uid"
-	latitude  string "latitude"
-	longitude string "longitude"
+	uid       int    	"uid"
+	latitude  string 	"latitude"
+	longitude string 	"longitude"
 }
 
 type Pet struct {
-	DogSpecies int "dog_species"
-	DogBirth_y int "dog_birth_y"
-	DogBirth_m int "dog_birth_m"
+	DogSpecies int 	"dog_species"
+	DogBirth_y int 	"dog_birth_y"
+	DogBirth_m int 	"dog_birth_m"
 }
 
 type Petuids struct {
@@ -694,7 +694,7 @@ func GetGoods(tag string) []Goods {
 			goods_img, _ := docs.GetIndex(i).Get("img").String()
 			sales_count, _ := docs.GetIndex(i).Get("sum_sales_count").Int()
 			stock, _ := docs.GetIndex(i).Get("stock").Int()
-			goods_info := Goods{goods_id, goods_name, goods_img, price, stock, sales_count}
+			goods_info := Goods{goods_id, goods_name, "http://c1.cdn.goumin.com/cms"+goods_img, price, stock, sales_count}
 			goods_infos = append(goods_infos, goods_info)
 		}
 	}
@@ -716,7 +716,7 @@ func GetAdInfo(db *sql.DB) []AdInfo {
 	for rows.Next() {
 		var row = new(Ad)
 		rows.Scan(&row.Aid, &row.TypeId, &row.Title, &row.Content, &row.Image)
-		m := AdInfo{row.Aid, row.TypeId, row.Title, row.Content, row.Image}
+		m := AdInfo{row.Aid, row.TypeId, row.Title, row.Content, "http://c1.cdn.goumin.com/cms"+row.Image}
 		rowsData = append(rowsData, m)
 	}
 	return rowsData
