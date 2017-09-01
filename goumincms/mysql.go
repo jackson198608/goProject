@@ -32,6 +32,7 @@ type Post struct {
 	Subject  string
 	Dateline int
 	Message  string
+	Status   int
 }
 
 type Forum struct {
@@ -43,6 +44,22 @@ type Forum struct {
 type Relatelink struct {
 	Name string
 	Url  string
+}
+
+type UserInfo struct {
+	Uid        int
+	Username   string
+	Nickname   string
+	Grouptitle string
+	Avatar     string
+}
+
+type AttachmentX struct {
+	Aid        int
+	Attachment string
+	Thumb      string
+	Medium     string
+	Small      string
 }
 
 func LoadThreadByTid(tid int, db *sql.DB) *Thread {
@@ -63,7 +80,7 @@ func LoadThreadByTid(tid int, db *sql.DB) *Thread {
 
 func LoadFirstPostByTid(tid int, posttableid int, db *sql.DB) *Post {
 	tableName := "pre_forum_post_" + strconv.Itoa(posttableid)
-	rows, err := db.Query("select pid,tid,first,author,authorid,subject,dateline,message from `" + tableName + "` where invisible=0 and first=1 and tid=" + strconv.Itoa(int(tid)) + "")
+	rows, err := db.Query("select pid,tid,first,author,authorid,subject,dateline,message,status from `" + tableName + "` where invisible=0 and first=1 and tid=" + strconv.Itoa(int(tid)) + "")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check pre_forum_post first sql prepare error: ", err)
@@ -71,7 +88,7 @@ func LoadFirstPostByTid(tid int, posttableid int, db *sql.DB) *Post {
 	}
 	for rows.Next() {
 		var row = new(Post)
-		rows.Scan(&row.Pid, &row.Tid, &row.First, &row.Author, &row.Authorid, &row.Subject, &row.Dateline, &row.Message)
+		rows.Scan(&row.Pid, &row.Tid, &row.First, &row.Author, &row.Authorid, &row.Subject, &row.Dateline, &row.Message, &row.Status)
 		return row
 	}
 	return &Post{}
@@ -79,7 +96,7 @@ func LoadFirstPostByTid(tid int, posttableid int, db *sql.DB) *Post {
 
 func LoadPostsByTid(tid int, posttableid int, db *sql.DB) []*Post {
 	tableName := "pre_forum_post_" + strconv.Itoa(posttableid)
-	rows, err := db.Query("select pid,tid,first,author,authorid,subject,dateline,message from `" + tableName + "` where invisible=0 and tid=" + strconv.Itoa(int(tid)) + " order by dateline")
+	rows, err := db.Query("select pid,tid,first,author,authorid,subject,dateline,message,status from `" + tableName + "` where invisible=0 and tid=" + strconv.Itoa(int(tid)) + " order by dateline")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check pre_forum_post sql prepare error: ", err)
@@ -88,7 +105,7 @@ func LoadPostsByTid(tid int, posttableid int, db *sql.DB) []*Post {
 	var rowsData []*Post
 	for rows.Next() {
 		var row = new(Post)
-		rows.Scan(&row.Pid, &row.Tid, &row.First, &row.Author, &row.Authorid, &row.Subject, &row.Dateline, &row.Message)
+		rows.Scan(&row.Pid, &row.Tid, &row.First, &row.Author, &row.Authorid, &row.Subject, &row.Dateline, &row.Message, &row.Status)
 		rowsData = append(rowsData, row)
 	}
 	return rowsData
@@ -144,3 +161,85 @@ func LoadRelateLink(db *sql.DB) []*Relatelink {
 	}
 	return rowsData
 }
+
+func LoadUserinfoByUid(uid int, db *sql.DB) *UserInfo {
+	tableName := "pre_common_member"
+	rows, err := db.Query("select username,grouptitle from `" + tableName + "` as a left join pre_common_usergroup as b on a.groupid=b.groupid where uid=" + strconv.Itoa(int(uid)) + "")
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check pre_common_usergroup sql prepare error: ", err)
+		return nil
+	}
+	row1, err := db.Query("SELECT mem_nickname FROM `dog_member` WHERE `uid`=" + strconv.Itoa(int(uid)))
+	defer row1.Close()
+	if err != nil {
+		logger.Error("[error] check dog_member sql prepare error: ", err)
+		return nil
+	}
+	var avatar string
+	row2, err := db.Query("SELECT image FROM `album` WHERE type=5 and `uid`=" + strconv.Itoa(int(uid)))
+	defer row2.Close()
+	if err != nil {
+		logger.Error("[error] check album type=5 sql prepare error: ", err)
+		return nil
+	}
+	for row2.Next() {
+		row2.Scan(&avatar)
+	}
+	if avatar == "" {
+		row3, err := db.Query("SELECT image FROM `album` WHERE type=25 and `uid`=" + strconv.Itoa(int(uid)))
+		defer row3.Close()
+		if err != nil {
+			logger.Error("[error] check album type=25 sql prepare error: ", err)
+			return nil
+		}
+		for row3.Next() {
+			row3.Scan(&avatar)
+		}
+	}
+	if avatar == "" {
+		avatar = "head/cover-s.jpg"
+	}
+
+	var username string
+	var grouptitle string
+	var nickname string
+	for rows.Next() {
+		rows.Scan(&username, &grouptitle)
+	}
+	for row1.Next() {
+		row1.Scan(&nickname)
+	}
+	var row = new(UserInfo)
+	row.Uid = uid
+	row.Username = username
+	row.Nickname = nickname
+	row.Grouptitle = grouptitle
+	row.Avatar = diaryDomain + avatar
+	return row
+}
+
+func LoadAttachmentByPid(tid int, pid int, db *sql.DB) []*AttachmentX {
+	i := tid % 10
+	tableName := "pre_forum_attachment_" + strconv.Itoa(i)
+	rows, err := db.Query("select aid,attachment,mobile_thumb,mobile_medium,mobile_small from `" + tableName + "` where isimage in(-1,1) and pid=" + strconv.Itoa(pid) + " and tid=" + strconv.Itoa(int(tid)))
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check pre_forum_post sql prepare error: ", err)
+		return nil
+	}
+	var rowsData []*AttachmentX
+	for rows.Next() {
+		var row = new(AttachmentX)
+		rows.Scan(&row.Aid, &row.Attachment, &row.Thumb, &row.Medium, &row.Small)
+		rowsData = append(rowsData, row)
+	}
+	return rowsData
+}
+
+//SELECT * FROM `pre_common_member` WHERE `uid` IN (57172, 1)
+//SELECT * FROM `pre_common_usergroup` WHERE `groupid`=1
+//SELECT * FROM `dog_member` WHERE `uid`=57172
+//SELECT * FROM `dog_head_image` WHERE head_userid=57172
+//select * from album where type=5 and uid=57172\G;
+//select * from album where type=25 and uid=57172\G;

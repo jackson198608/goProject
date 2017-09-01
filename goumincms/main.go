@@ -13,7 +13,9 @@ var dbDsn string = "192.168.86.193:3307"
 
 var dbName string = "new_dog123"
 
-var saveDir string = "/data/cms/"
+var saveDir string = "/data/thread/"
+
+var staticH5Url string = "http://m.goumin.com/bbs/"
 
 var numloops int = 10
 
@@ -24,7 +26,9 @@ var redisConn string = "127.0.0.1:6379"
 // var logger *log.Logger
 var logPath string = "/tmp/create_thread.log"
 
-var templatefile = "/data/thread/template.html"
+var h5templatefile = "/data/thread/h5template.html"
+
+var diaryDomain = "http://c1.cdn.goumin.com/diary/"
 
 func Init() {
 
