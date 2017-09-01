@@ -68,7 +68,7 @@ type Goods struct {
 	GoodsId   		string      `json:"goods_id"`
 	GoodsName 		string    	`json:"goods_name"`
 	GoodsImg  		string 		`json:"goods_img"`
-	Price     		string 		`json:"price"`
+	Price     		float64 	`json:"price"`
 	Stock     	    int 		`json:"stock"`
 	SalesCount      int 		`json:"sales_count"`
 }
@@ -97,11 +97,14 @@ func GetUserInfoByUids(Fuid int, uids []int, db *sql.DB) []Userinfo {
 	var userInfos []Userinfo
 	//附近的人
 	near := getNearUser(Fuid, db)
-	uid,_ := strconv.Atoi(near[0])
-	m := Userinfo{uid, near[1],near[2],0,near[3],"",""}
-	for i := 0; i < 1; i++ {
-		userInfos = append(userInfos, m)
+	if len(near)>0 {
+		uid,_ := strconv.Atoi(near[0])
+		m := Userinfo{uid, near[1],near[2],0,near[3],"",""}
+		for i := 0; i < 1; i++ {
+			userInfos = append(userInfos, m)
+		}	
 	}
+
 	for key, uid := range uids {
 		nickname := GetNickname(uid, db)
 		avatar := GetAvatar(uid, db)
@@ -126,8 +129,10 @@ func GetUids(uid int, db *sql.DB) []int {
 	follows = append(follows, uid)
 	//附近的人
 	near := getNearUser(uid, db)
-	nearuid, _ := strconv.Atoi(near[0])
-	follows = append(follows, nearuid)
+	if len(near)>0 {
+		nearuid, _ := strconv.Atoi(near[0])
+		follows = append(follows, nearuid)
+	}
 
 	//相同犬种的人
 	Pet := GetPetInfoByUid(uid, db)
@@ -178,10 +183,15 @@ func getNearUser(uid int, db *sql.DB) []string {
 			nLatitude = v.latitude
 			nLongitude = v.longitude
 		}
+		var nearInfo []string
+		if len(Position)==0 {
+			return nearInfo
+		}
+
 		lat1, err1 := strconv.ParseFloat(Position[0], 64)
 		if err1 != nil {
 			logger.Error("[error] can not get latitude error: ", err1)
-		}
+		}		
 		lng1, err2 := strconv.ParseFloat(Position[1], 64)
 		if err1 != nil {
 			logger.Error("[error] can not get longitude error: ", err2)
@@ -199,7 +209,7 @@ func getNearUser(uid int, db *sql.DB) []string {
 		nickname := GetNickname(uid, db)
 		avatar := GetAvatar(uid, db)
 		source_desc := "相距" + strconv.Itoa(dis) + "米"
-		nearInfo := []string{strconv.Itoa(uid), nickname, avatar, source_desc}
+		nearInfo = []string{strconv.Itoa(uid), nickname, avatar, source_desc}
 		return nearInfo
 	}
 	return nil
@@ -309,15 +319,23 @@ func getPositionByUid(uid int, db *sql.DB) []*Position {
 
 //一个附近的人
 func NearbyUser(uid int, followuids []int, Position []string, db *sql.DB) []*Near {
-	str := getStrByArr(followuids)
-	rows, err := db.Query("SELECT uid,latitude,longitude FROM `user_location` WHERE latitude > (" + Position[0] + "-1) and latitude < (" + Position[0] + "+1) AND longitude > (" + Position[1] + "-1) and longitude < (" + Position[1] + "+1) AND uid NOT IN (" + str + ") ORDER BY ACOS(SIN(( " + Position[0] + " * 3.1415) / 180 ) *SIN((latitude * 3.1415) / 180 ) +COS((" + Position[0] + " * 3.1415) / 180 ) * COS((latitude * 3.1415) / 180 ) * COS((" + Position[1] + " * 3.1415) / 180 - (longitude * 3.1415) / 180 ) ) * 6380 LIMIT 1")
+	var rowsData []*Near
+	// str := getStrByArr(followuids)
+	var uidsql string
+	if len(Position)==0 {
+		return rowsData
+	}
+	if len(followuids)!=0 {
+		str := getStrByArr(followuids)
+		uidsql = " AND uid NOT IN (" + str + ")"
+	}
+	rows, err := db.Query("SELECT uid,latitude,longitude FROM `user_location` WHERE latitude > (" + Position[0] + "-1) and latitude < (" + Position[0] + "+1) AND longitude > (" + Position[1] + "-1) and longitude < (" + Position[1] + "+1)"+ uidsql +" ORDER BY ACOS(SIN(( " + Position[0] + " * 3.1415) / 180 ) *SIN((latitude * 3.1415) / 180 ) +COS((" + Position[0] + " * 3.1415) / 180 ) * COS((latitude * 3.1415) / 180 ) * COS((" + Position[1] + " * 3.1415) / 180 - (longitude * 3.1415) / 180 ) ) * 6380 LIMIT 1")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check follow sql prepare error: ", err)
 		return nil
 	}
 
-	var rowsData []*Near
 	for rows.Next() {
 		var row = new(Near)
 		rows.Scan(&row.uid, &row.latitude, &row.longitude)
@@ -361,14 +379,22 @@ func GetPetInfoByUid(uid int, db *sql.DB) []*Pet {
 
 //相同犬种年龄的人
 func getSameAgePetUsers(uid int, followuids []int, Pet []int, db *sql.DB) []*Petuids {
-	str := getStrByArr(followuids)
-	rows, err := db.Query("SELECT uid FROM pre_ucenter_members LEFT JOIN dog_doginfo ON pre_ucenter_members.uid = dog_doginfo.dog_userid WHERE (uid NOT IN ( " + str + " )) AND (((dog_birth_y=" + strconv.Itoa(Pet[1]) + ") AND (dog_birth_m=" + strconv.Itoa(Pet[2]) + ")) AND (dog_birth_d > 0)) LIMIT 3")
+	// str := getStrByArr(followuids)
+	var rowsData []*Petuids
+	if len(Pet)==0 {
+		return rowsData
+	}
+	var uidsql string
+	if len(followuids)!=0 {
+		str := getStrByArr(followuids)
+		uidsql = " AND uid NOT IN (" + str + ")"
+	}
+	rows, err := db.Query("SELECT uid FROM pre_ucenter_members LEFT JOIN dog_doginfo ON pre_ucenter_members.uid = dog_doginfo.dog_userid WHERE dog_birth_y=" + strconv.Itoa(Pet[1]) + " AND dog_birth_m=" + strconv.Itoa(Pet[2]) + " AND dog_birth_d > 0 "+ uidsql +" LIMIT 3")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check pre_ucenter_members sql prepare error: ", err)
 		return nil
 	}
-	var rowsData []*Petuids
 	for rows.Next() {
 		var row = new(Petuids)
 		rows.Scan(&row.uid)
@@ -379,14 +405,23 @@ func getSameAgePetUsers(uid int, followuids []int, Pet []int, db *sql.DB) []*Pet
 
 //相同犬种的人
 func getSameSpeciesPetUsers(uid int, followuids []int, Pet []int, db *sql.DB) []*Petuids {
-	str := getStrByArr(followuids)
-	rows, err := db.Query("SELECT uid FROM pre_ucenter_members LEFT JOIN dog_doginfo ON pre_ucenter_members.uid = dog_doginfo.dog_userid WHERE (uid NOT IN (" + str + ")) AND (dog_species=" + strconv.Itoa(Pet[0]) + ") LIMIT 4")
+	// str := getStrByArr(followuids)
+	var rowsData []*Petuids
+	if len(Pet)==0 {
+		return rowsData
+	}
+	var uidsql string
+	if len(followuids)!=0 {
+		str := getStrByArr(followuids)
+		uidsql = " AND uid NOT IN (" + str + ")"
+	}
+	rows, err := db.Query("SELECT uid FROM pre_ucenter_members LEFT JOIN dog_doginfo ON pre_ucenter_members.uid = dog_doginfo.dog_userid WHERE dog_species=" + strconv.Itoa(Pet[0]) + uidsql +" LIMIT 4")
 	defer rows.Close()
+
 	if err != nil {
 		logger.Error("[error] check pre_ucenter_members sql prepare error: ", err)
 		return nil
 	}
-	var rowsData []*Petuids
 	for rows.Next() {
 		var row = new(Petuids)
 		rows.Scan(&row.uid)
@@ -412,6 +447,9 @@ func getStrByArr(arr []int) string {
 //俱乐部数据格式化
 func GetClubsInfo(fids []int, db *sql.DB) []ForumInfo {
 	var clubsInfo []ForumInfo
+	if len(fids)==0 {
+		return clubsInfo
+	}
 	str := getStrByArr(fids)
 	rows, err := db.Query("SELECT name,fid FROM pre_forum_forum WHERE (fid IN (" + str + ")) AND (status=1)")
 	defer rows.Close()
@@ -449,7 +487,7 @@ func getClubIcon(fid int, db *sql.DB) string {
 			logger.Error("[error] check sql get rows error ", err)
 			return ""
 		}
-		return "/www/wwwroot/goumin.com/bbs/data/attachment/" + icon
+		return "http://f1.cdn.goumin.com/attachments/" + icon
 	}
 	return "http://c1.cdn.goumin.com/cms/picture/day_150814/20150814_4a95a1f.jpg"
 }
@@ -504,12 +542,15 @@ func GetFids(uid int, db *sql.DB) []int {
 	}
 	province := getCity(latitude, longitude)
 	//地域俱乐部id
-	fid2 := getAreaClubByUid(province, followfids, db)
-	if fid2 > 0 {
-		followfids = append(followfids, fid2)
-		num = num + 1
-		fids = append(fids, fid2)
+	if province!="" {
+		fid2 := getAreaClubByUid(province, followfids, db)
+		if fid2 > 0 {
+			followfids = append(followfids, fid2)
+			num = num + 1
+			fids = append(fids, fid2)
+		}
 	}
+
 	count := 4 - num
 	//热门俱乐部
 	hotfids := getHotClubs(count, followfids, db)
@@ -587,10 +628,13 @@ func getUrl(url string) string {
 	logger.Info("get url address", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
+		logger.Error("getUrl error ", err)
+		return ""
 	}
 	resp, err := client.Do(req)
 	if err != nil {
 		logger.Error("getUrl error ", err)
+		return ""
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
@@ -604,6 +648,9 @@ func getUrl(url string) string {
 func getCity(latitude string, longitude string) string {
 	url := "http://api.map.baidu.com/geocoder?output=json&location=" + latitude + "," + longitude
 	jsonStr := getUrl(url)
+	if jsonStr=="" {
+		return ""
+	}
 	js, _ := simplejson.NewJson([]byte(jsonStr))
 	status, _ := js.Get("status").String()
 	if status == "OK" {
@@ -685,8 +732,8 @@ func GetGoods(tag string) []Goods {
 	if status == 0 {
 		numFound, _ := js.Get("response").Get("numFound").Int()
 		var docsLen int
-		if numFound > 10 {
-			docsLen = 10
+		if numFound > 8 {
+			docsLen = 8
 		} else {
 			docsLen = numFound
 		}
@@ -694,7 +741,7 @@ func GetGoods(tag string) []Goods {
 		for i := 0; i < docsLen; i++ {
 			goods_name, _ := docs.GetIndex(i).Get("name").String()
 			goods_id, _ := docs.GetIndex(i).Get("id").String()
-			price, _ := docs.GetIndex(i).Get("lowest_price").String()
+			price, _ := docs.GetIndex(i).Get("lowest_price").Float64()
 			goods_img, _ := docs.GetIndex(i).Get("img").String()
 			sales_count, _ := docs.GetIndex(i).Get("sum_sales_count").Int()
 			stock, _ := docs.GetIndex(i).Get("stock").Int()
@@ -707,6 +754,7 @@ func GetGoods(tag string) []Goods {
 
 //------------------广告
 func GetAdInfo(db *sql.DB) []AdInfo {
+	var rowsData []AdInfo
 	t := time.Now().Format("2006-01-02")
 	s := t + " 00:00:00"
 	e := t + " 23:59:59"
@@ -714,9 +762,8 @@ func GetAdInfo(db *sql.DB) []AdInfo {
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check ads_recommend sql prepare error: ", err)
-		return nil
+		return rowsData
 	}
-	var rowsData []AdInfo
 	for rows.Next() {
 		var row = new(Ad)
 		rows.Scan(&row.Aid, &row.TypeId, &row.Title, &row.Content, &row.Image)

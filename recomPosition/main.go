@@ -4,6 +4,7 @@ import (
 	"github.com/donnie4w/go-logger/logger"
 	// "github.com/jackson198608/goProject/eventLog/task"
 	// "fmt"
+	// "reflect"
 	"github.com/jackson198608/goProject/recomPosition/Pushdata"
 	"github.com/jackson198608/goProject/stayProcess"
 	redis "gopkg.in/redis.v4"
@@ -63,12 +64,21 @@ func pushAllActiveUserToRedis(queueName string) bool {
 
 func push() {
 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn)
-
-	//生产任务
-	pushAllActiveUserToRedis(c.queueName)
+	rc := createClient()
+	v, _ := rc.Get(c.queueName+"Status").Result()
+	if v == "" {
+		logger.Info("start push active data ")
+		//生产任务
+		pushAllActiveUserToRedis(c.queueName)
+		err := rc.Set(c.queueName+"Status", 1, 0).Err()
+		if err != nil {
+		    panic(err)
+		}
+	}
 
 	//处理任务
 	r.LoopPushRecommendPosition()
+	rc.Del(c.queueName+"Status")
 }
 
 func Init() {

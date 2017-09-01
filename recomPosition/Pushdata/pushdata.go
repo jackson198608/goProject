@@ -56,18 +56,21 @@ func (e *RecommendNew) PushRecommendTask(uid int) error {
 	session := e.session
 	logger.Info("push uid ",uid)
 	// recommend forum
-	FidsData :=  mysql.GetFids(uid, db)
-	RecommendForum :=  mysql.GetClubsInfo(FidsData, db)
-	ForumJson ,_ := json.Marshal(RecommendForum)
-	forumStr := string(ForumJson)
-	err := saveData(uid, 1, forumStr, db, session)
-
+	isExists := CheckTypeIsExists(uid, 1, session)
+	if isExists==0 {
+		FidsData :=  mysql.GetFids(uid, db)
+		RecommendForum :=  mysql.GetClubsInfo(FidsData, db)
+		ForumJson ,_ := json.Marshal(RecommendForum)
+		forumStr := string(ForumJson)
+		saveData(uid, 1, forumStr, db, session)
+	}
+	
 	// recommend user
 	Uids := mysql.GetUids(uid, db)
 	RecommendUser := mysql.GetUserInfoByUids(uid, Uids, db)
 	UserJson,_ := json.Marshal(RecommendUser)
 	userStr := string(UserJson)
-	err = saveData(uid, 2, userStr, db, session)
+	err := saveData(uid, 2, userStr, db, session)
 
 	// recommend goods
 	Pet := mysql.GetPetInfoByUid(uid, db)
@@ -107,4 +110,21 @@ func GetAllActiveUsers(mongoConn string) []int {
 		panic(err)
 	}
 	return user
+}
+
+func CheckTypeIsExists(uid int, typeId int, session *mgo.Session) int {
+	var rp []*RecommendPosition
+	c := session.DB("RecommendData").C("recommend_position")
+	err := c.Find(bson.M{"uid": uid, "type": typeId}).All(&rp)
+
+	if err != nil {
+		logger.Error("mongodb find data", err, c)
+		return 1
+	}
+	if len(rp)==0 {
+		logger.Info("uid ",uid, " type ",typeId, "is not exists")
+		return 0
+	}
+	logger.Info("uid ",uid, " type ",typeId, "is exists")
+	return 1
 }
