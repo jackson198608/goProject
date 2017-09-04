@@ -34,6 +34,9 @@ var miptemplatefile = "/data/thread/miptemplate.html"
 
 var diaryDomain = "http://c1.cdn.goumin.com/diary/"
 
+var offset = 10
+var maxThreadid = 100
+
 func Init() {
 
 	// loadConfig()
@@ -46,6 +49,26 @@ func Init() {
 func createThreadHtml(templateType string) {
 	r := NewRedisEngine(logLevel, queueName, redisConn, "", 0, numloops, dbAuth, dbDsn, dbName, templateType)
 	r.Loop()
+}
+
+func createRedis() {
+	r := NewRedisEngine(logLevel, queueName, redisConn, "", 0, numloops, dbAuth, dbDsn, dbName)
+	page := 1
+	for {
+		tids := getThreadTask(page)
+		offset := page * offset
+		if offset > maxThreadid {
+			break
+		}
+		if len(tids) == 0 {
+			break
+		}
+		if tids == nil {
+			break
+		}
+		r.PushThreadTaskData(tids)
+		page++
+	}
 }
 
 func main() {
@@ -61,7 +84,9 @@ func main() {
 		createThreadHtml(templateType)
 	case "info": //资讯
 		logger.Info("in the info html create ")
-		// createInfoHtml()
+	case "create": //资讯
+		logger.Info("in the info html create ")
+		createRedis()
 	default:
 
 	}
