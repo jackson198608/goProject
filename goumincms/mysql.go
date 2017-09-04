@@ -102,6 +102,9 @@ func LoadThreadByTid(tid int, db *sql.DB) *Thread {
 
 func LoadFirstPostByTid(tid int, posttableid int, db *sql.DB) *Post {
 	tableName := "pre_forum_post_" + strconv.Itoa(posttableid)
+	if posttableid == 0 {
+		tableName = "pre_forum_post"
+	}
 	rows, err := db.Query("select pid,tid,first,author,authorid,subject,dateline,message,status from `" + tableName + "` where invisible=0 and first=1 and tid=" + strconv.Itoa(int(tid)) + "")
 	defer rows.Close()
 	if err != nil {
@@ -118,6 +121,9 @@ func LoadFirstPostByTid(tid int, posttableid int, db *sql.DB) *Post {
 
 func LoadPostsByTid(tid int, posttableid int, db *sql.DB) []*Post {
 	tableName := "pre_forum_post_" + strconv.Itoa(posttableid)
+	if posttableid == 0 {
+		tableName = "pre_forum_post"
+	}
 	rows, err := db.Query("select pid,tid,first,author,authorid,subject,dateline,message,status from `" + tableName + "` where invisible=0 and tid=" + strconv.Itoa(int(tid)) + " order by dateline")
 	defer rows.Close()
 	if err != nil {
@@ -272,7 +278,6 @@ func LoadRelateThread(tid int, db *sql.DB, session *mgo.Session) []*RelateThread
 	err := c.Find(&bson.M{"_id": tid}).One(&ms)
 	if err != nil {
 		logger.Error("BigData threads_recommend relate thread: ", err)
-		return nil
 	}
 	if len(ms.Related) == 0 {
 		rows, err := db.Query("select tid,subject,views,dateline from `pre_forum_thread` where displayorder>=0 and fid=34 order by tid desc limit 5")
@@ -309,14 +314,13 @@ func LoadRelateThread(tid int, db *sql.DB, session *mgo.Session) []*RelateThread
 }
 
 func LoadRelateAsk(tid int, db *sql.DB, session *mgo.Session) []*RelateAsk {
+	var rowsData []*RelateAsk
 	ms := new(ThreadsRecommend)
 	c := session.DB("BigData").C("threads_recommend")
 	err := c.Find(&bson.M{"_id": tid}).One(&ms)
 	if err != nil {
 		logger.Error("BigData threads_recommend relate ask: ", err)
-		return nil
 	}
-	var rowsData []*RelateAsk
 	if len(ms.RelatedAsk) == 0 {
 		rows, err := db.Query("select id,subject,browse_num from `ask`.`ask_question` where is_hide=1 order by ans_num desc limit 5")
 		defer rows.Close()
@@ -396,6 +400,30 @@ func LoadRelateDog(tid int, db *sql.DB, session *mgo.Session) []*RelateDog {
 		rowsData = append(rowsData, row)
 	}
 	return rowsData
+}
+
+func getThreadTask(page int) []int {
+	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+	if err != nil {
+		logger.Error("can not connect to mysql", dbDsn, dbName, dbAuth)
+
+		return nil
+	}
+	defer db.Close()
+	tableName := "pre_forum_thread"
+	rows, err := db.Query("select tid from `" + tableName + "` where displayorder in(0,1) order by tid asc limit " + strconv.Itoa(offset) + " offset " + strconv.Itoa(offset*(page-1)))
+	defer rows.Close()
+	if err != nil {
+		logger.Error("check pre_forum_thread sql prepare error: ", err)
+		return nil
+	}
+	var a []int
+	for rows.Next() {
+		var tid int
+		rows.Scan(&tid)
+		a = append(a, tid)
+	}
+	return a
 }
 
 //SELECT * FROM `pre_common_member` WHERE `uid` IN (57172, 1)

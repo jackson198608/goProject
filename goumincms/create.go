@@ -87,10 +87,10 @@ func relateThread(tid int, db *sql.DB, session *mgo.Session) string {
 	threads := LoadRelateThread(tid, db, session)
 	content := ""
 	for _, v := range threads {
-		// if v.Views < 3000 {
-		// 	v.Views = GenerateRangeNum(3000, 7000)
-		// }
-		content += "<a href=\"/bbs/thread-" + strconv.Itoa(v.Tid) + "-1-1.html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "</span></a>"
+		if v.Views < 3000 {
+			v.Views = rand.Intn(5000)
+		}
+		content += "<a href=\"/bbs/thread-" + strconv.Itoa(v.Tid) + "-1-1.html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
 	}
 	return content
 }
@@ -105,7 +105,7 @@ func relateAsk(tid int, db *sql.DB, session *mgo.Session) string {
 	asks := LoadRelateAsk(tid, db, session)
 	content := ""
 	for _, v := range asks {
-		content += "<a href=\"/ask/" + strconv.Itoa(v.Id) + ".html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "</span></a>"
+		content += "<a href=\"/ask/" + strconv.Itoa(v.Id) + ".html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
 	}
 	return content
 }
