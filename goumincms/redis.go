@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
+	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
 	"time"
 )
@@ -82,9 +83,16 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
 	if err != nil {
 		logger.Error("[error] connect db err")
+		return
 	}
 	defer db.Close()
 
+	session, err := mgo.Dial(mongoConn)
+	if err != nil {
+		logger.Error("[error] connect mongodb err")
+		return
+	}
+	defer session.Close()
 	for {
 		logger.Info("pop ", t.queueName)
 		redisStr := (*t.client).LPop(t.queueName).Val()
@@ -95,7 +103,7 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 			return
 		}
 		logger.Info("got redisStr ", redisStr)
-		task := NewTask(t.logLevel, redisStr, db)
+		task := NewTask(t.logLevel, redisStr, db, session)
 		if task != nil {
 			task.Do()
 		}

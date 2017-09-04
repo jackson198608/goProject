@@ -2,12 +2,15 @@ package main
 
 import (
 	"database/sql"
-	// "fmt"
+	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/yvasiyarov/php_session_decoder/php_serialize"
 	// "reflect"
+	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"strconv"
+	"strings"
 )
 
 type Thread struct {
@@ -60,6 +63,25 @@ type AttachmentX struct {
 	Thumb      string
 	Medium     string
 	Small      string
+}
+
+type RelateThread struct {
+	Tid      int
+	Subject  string
+	Views    int
+	Dateline int
+}
+
+type RelateAsk struct {
+	Id      int
+	Subject string
+	Views   int
+}
+
+type RelateDog struct {
+	Speid   int
+	Spename string
+	Img     string
 }
 
 func LoadThreadByTid(tid int, db *sql.DB) *Thread {
@@ -232,6 +254,145 @@ func LoadAttachmentByPid(tid int, pid int, db *sql.DB) []*AttachmentX {
 	for rows.Next() {
 		var row = new(AttachmentX)
 		rows.Scan(&row.Aid, &row.Attachment, &row.Thumb, &row.Medium, &row.Small)
+		rowsData = append(rowsData, row)
+	}
+	return rowsData
+}
+
+type ThreadsRecommend struct {
+	Id         int   "_id"
+	Related    []int "related"
+	RelatedAsk []int "related_ask"
+}
+
+func LoadRelateThread(tid int, db *sql.DB, session *mgo.Session) []*RelateThread {
+	var rowsData []*RelateThread
+	ms := new(ThreadsRecommend)
+	c := session.DB("BigData").C("threads_recommend")
+	err := c.Find(&bson.M{"_id": tid}).One(&ms)
+	if err != nil {
+		logger.Error("BigData threads_recommend relate thread: ", err)
+		return nil
+	}
+	if len(ms.Related) == 0 {
+		rows, err := db.Query("select tid,subject,views,dateline from `pre_forum_thread` where displayorder>=0 and fid=34 order by tid desc limit 5")
+		defer rows.Close()
+		if err != nil {
+			logger.Error("[error] check pre_forum_post sql prepare error: ", err)
+			return nil
+		}
+		for rows.Next() {
+			var row = new(RelateThread)
+			rows.Scan(&row.Tid, &row.Subject, &row.Views, &row.Dateline)
+			rowsData = append(rowsData, row)
+		}
+	} else {
+		tidstring := ""
+		for k, v := range ms.Related {
+			if k <= 4 {
+				tidstring += strconv.Itoa(v) + ","
+			}
+		}
+		rows, err := db.Query("select tid,subject,views,dateline from `pre_forum_thread` where displayorder>=0 and tid in (" + strings.Trim(tidstring, ",") + ") ")
+		defer rows.Close()
+		if err != nil {
+			logger.Error("check pre_forum_post sql prepare error: ", err)
+			return nil
+		}
+		for rows.Next() {
+			var row = new(RelateThread)
+			rows.Scan(&row.Tid, &row.Subject, &row.Views, &row.Dateline)
+			rowsData = append(rowsData, row)
+		}
+	}
+	return rowsData
+}
+
+func LoadRelateAsk(tid int, db *sql.DB, session *mgo.Session) []*RelateAsk {
+	ms := new(ThreadsRecommend)
+	c := session.DB("BigData").C("threads_recommend")
+	err := c.Find(&bson.M{"_id": tid}).One(&ms)
+	if err != nil {
+		logger.Error("BigData threads_recommend relate ask: ", err)
+		return nil
+	}
+	var rowsData []*RelateAsk
+	if len(ms.RelatedAsk) == 0 {
+		rows, err := db.Query("select id,subject,browse_num from `ask`.`ask_question` where is_hide=1 order by asn_num desc limit 5")
+		defer rows.Close()
+		if err != nil {
+			logger.Error("[error] check ask_question sql prepare error: ", err)
+			return nil
+		}
+		for rows.Next() {
+			var row = new(RelateAsk)
+			rows.Scan(&row.Id, &row.Subject, &row.Views)
+			rowsData = append(rowsData, row)
+		}
+	} else {
+		idstring := ""
+		for k, v := range ms.RelatedAsk {
+			if k <= 4 {
+				idstring += strconv.Itoa(v) + ","
+			}
+		}
+		rows, err := db.Query("select id,subject,browse_num from `ask`.`ask_question` where id in (" + strings.Trim(idstring, ",") + ")")
+		defer rows.Close()
+		if err != nil {
+			logger.Error("[error] check ask_question sql prepare error: ", err)
+			return nil
+		}
+		for rows.Next() {
+			var row = new(RelateAsk)
+			rows.Scan(&row.Id, &row.Subject, &row.Views)
+			rowsData = append(rowsData, row)
+		}
+	}
+	return rowsData
+}
+
+type Catedog struct {
+	Id    int
+	Type  int
+	Value int
+}
+
+func LoadRelateDog(tid int, db *sql.DB, session *mgo.Session) []*RelateDog {
+	var doginfo string
+	ms := new(Catedog)
+	c := session.DB("BigData").C("cate_dog")
+	err := c.Find(&bson.M{"id": tid, "type": 1}).One(&ms)
+	if err != nil {
+		logger.Error("BigData cate_dog relate dog: ", err)
+		// return nil
+		doginfo = "60,62,16,22,70,35"
+	}
+	rows, err := db.Query("select related from `related_pet` where spe_id=" + strconv.Itoa(ms.Value))
+	defer rows.Close()
+	if err != nil {
+		logger.Error("check relate_pet sql prepare error: ", err)
+		return nil
+	}
+	for rows.Next() {
+		var row string
+		rows.Scan(&row)
+		doginfo += row + ","
+	}
+	doginfo = strings.Trim(doginfo, ",")
+	if doginfo == "" {
+		doginfo = "60,62,16,22,70,35"
+	}
+	fmt.Println("doginfo" + doginfo)
+	rows1, err := db.Query("select dn.spe_id,spe_name_f,image_list from `dog_new_species` as dn left join dog_species as ds on dn.spe_id=ds.spe_id where dn.spe_id in(" + doginfo + ")")
+	defer rows1.Close()
+	if err != nil {
+		logger.Error("check dog_new_species sql prepare error: ", err)
+		return nil
+	}
+	var rowsData []*RelateDog
+	for rows1.Next() {
+		var row = new(RelateDog)
+		rows1.Scan(&row.Speid, &row.Spename, &row.Img)
 		rowsData = append(rowsData, row)
 	}
 	return rowsData
