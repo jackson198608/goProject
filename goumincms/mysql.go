@@ -318,7 +318,7 @@ func LoadRelateAsk(tid int, db *sql.DB, session *mgo.Session) []*RelateAsk {
 	}
 	var rowsData []*RelateAsk
 	if len(ms.RelatedAsk) == 0 {
-		rows, err := db.Query("select id,subject,browse_num from `ask`.`ask_question` where is_hide=1 order by asn_num desc limit 5")
+		rows, err := db.Query("select id,subject,browse_num from `ask`.`ask_question` where is_hide=1 order by ans_num desc limit 5")
 		defer rows.Close()
 		if err != nil {
 			logger.Error("[error] check ask_question sql prepare error: ", err)
