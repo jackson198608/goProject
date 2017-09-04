@@ -157,8 +157,13 @@ func groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts 
 		html = strings.Replace(html, "cmsTitle", title, -1)
 		cmsPage := ""
 		content := ""
-		tm1 := time.Unix(int64(thread.Dateline), 0)
-		dir := tm1.Format("20060102")
+		dir := strconv.Itoa(tid % 1000)
+		// if tid < 5000000 {
+		// tm1 := time.Unix(int64(thread.Dateline), 0)
+		// 	dir := tm1.Format("20060102")
+		// } else {
+		// 	dir := tid % 1000
+		// }
 		filename := dir + "/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i) + "-1.html"
 		start := (i - 1) * count
 		end := start + count
