@@ -1,6 +1,7 @@
 package main
 
 import (
+	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"os"
 )
@@ -28,7 +29,7 @@ var mongoConn string = "192.168.86.192:27017"
 // var logger *log.Logger
 var logPath string = "/tmp/create_thread.log"
 
-var h5templatefile = "/data/thread/miptemplate.html"
+var h5templatefile = "/data/thread/h5template.html"
 var miptemplatefile = "/data/thread/miptemplate.html"
 
 var diaryDomain = "http://c1.cdn.goumin.com/diary/"
@@ -42,18 +43,22 @@ func Init() {
 
 }
 
-func createThreadHtml() {
-	r := NewRedisEngine(logLevel, queueName, redisConn, "", 0, numloops, dbAuth, dbDsn, dbName)
+func createThreadHtml(templateType string) {
+	r := NewRedisEngine(logLevel, queueName, redisConn, "", 0, numloops, dbAuth, dbDsn, dbName, templateType)
 	r.Loop()
 }
 
 func main() {
 	Init()
 	jobType := os.Args[1]
+	templateType := ""
+	if len(os.Args) == 3 {
+		templateType = os.Args[2] //string 默认0不传参数或是参数是0为mip模板 ,1:h5
+	}
 	switch jobType {
 	case "thread": //thread
 		logger.Info("in the thread html create ")
-		createThreadHtml()
+		createThreadHtml(templateType)
 	case "info": //资讯
 		logger.Info("in the info html create ")
 		// createInfoHtml()

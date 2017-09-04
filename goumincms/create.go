@@ -33,7 +33,7 @@ func NewInfo(logLevel int, id int, typeid int, db *sql.DB, session *mgo.Session)
 	return e
 }
 
-func (e *InfoNew) CreateThreadHtmlContent(tid int) error {
+func (e *InfoNew) CreateThreadHtmlContent(tid int, templateType string) error {
 	thread := LoadThreadByTid(tid, e.db)
 	if thread.Tid <= 0 {
 		return nil
@@ -43,14 +43,14 @@ func (e *InfoNew) CreateThreadHtmlContent(tid int) error {
 	//相关问答 eg:tid=12
 	relateAsk := relateAsk(tid, e.db, e.session)
 	//相关犬种 eg:tid=4682521
-	relateDogs := relateDogs(tid, e.db, e.session)
+	relateDogs := relateDogs(tid, e.db, e.session, templateType)
 
 	posts := LoadPostsByTid(tid, thread.Posttableid, e.db)
 	forum := LoadForumByFid(thread.Fid, thread.Typeid, e.db)
 	firstpost := LoadFirstPostByTid(tid, thread.Posttableid, e.db)
 	relatelink := LoadRelateLink(e.db)
 
-	groupContentToSaveHtml(tid, thread, posts, forum, firstpost, relatelink, relateThread, relateAsk, relateDogs, e.db)
+	groupContentToSaveHtml(tid, templateType, thread, posts, forum, firstpost, relatelink, relateThread, relateAsk, relateDogs, e.db)
 	// saveContentToHtml(content, tid, page)
 	return nil
 }
@@ -110,18 +110,22 @@ func relateAsk(tid int, db *sql.DB, session *mgo.Session) string {
 	return content
 }
 
-func relateDogs(tid int, db *sql.DB, session *mgo.Session) string {
+func relateDogs(tid int, db *sql.DB, session *mgo.Session, templateType string) string {
 	dogs := LoadRelateDog(tid, db, session)
 	content := ""
 	for k, v := range dogs {
 		if k <= 5 {
-			content += "<li><a href=\"http://dog.m.goumin.com/pet/" + strconv.Itoa(v.Speid) + "\" class=\"relate-pet-a\"><mip-img  src=\"http://c1.cdn.goumin.com/cms" + v.Img + "\" alt=\"宠物百科\" class=\"relate-img\"></mip-img><span class=\"relate-pet-seenum\">" + v.Spename + "</span></a></li>"
+			if templateType == "1" {
+				content += "<li><a href=\"http://dog.m.goumin.com/pet/" + strconv.Itoa(v.Speid) + "\" class=\"relate-pet-a\"><img src=\"http://c1.cdn.goumin.com/cms" + v.Img + "\" alt=\"" + v.Spename + "\" class=\"relate-img\" /><span class=\"relate-pet-seenum\">" + v.Spename + "</span></a></li>"
+			} else {
+				content += "<li><a href=\"http://dog.m.goumin.com/pet/" + strconv.Itoa(v.Speid) + "\" class=\"relate-pet-a\"><mip-img  src=\"http://c1.cdn.goumin.com/cms" + v.Img + "\" alt=\"" + v.Spename + "\" class=\"relate-img\"></mip-img><span class=\"relate-pet-seenum\">" + v.Spename + "</span></a></li>"
+			}
 		}
 	}
 	return content
 }
 
-func groupContentToSaveHtml(tid int, thread *Thread, posts []*Post, forum *Forum, firstpost *Post, relatelink []*Relatelink, relateThread string, relateAsk string, relateDogs string, db *sql.DB) {
+func groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts []*Post, forum *Forum, firstpost *Post, relatelink []*Relatelink, relateThread string, relateAsk string, relateDogs string, db *sql.DB) {
 	var subject = thread.Subject
 	var url = staticH5Url + "thread-" + strconv.Itoa(tid) + "-1-1.html"
 	var threadUrl = "thread-" + strconv.Itoa(tid) + "-1-1.html"
@@ -131,7 +135,7 @@ func groupContentToSaveHtml(tid int, thread *Thread, posts []*Post, forum *Forum
 	var keyword = forum.Name + "，" + subject + subMessage + " ..."
 	var description = subMessage + " ... " + subject + " ,狗民网｜铃铛宠物App"
 	var views int = 0
-	html := getH5TemplateHtml()
+	html := getH5TemplateHtml(templateType)
 	html = strings.Replace(html, "cmsRand", strconv.Itoa(rand.Intn(3000)), -1)
 	html = strings.Replace(html, "cmsViews", strconv.Itoa(views), -1)
 	html = strings.Replace(html, "cmsSubject", subject, -1)
@@ -177,16 +181,19 @@ func groupContentToSaveHtml(tid int, thread *Thread, posts []*Post, forum *Forum
 				replace := "<a href='" + lv.Url + "'>" + lv.Name + "</a>"
 				message = strings.Replace(message, lv.Name, replace, -1)
 			}
-			content += "<div class=\"post-detail-a\"><div class=\"user-info\"><a href=\"javascript:;\"><mip-img src=\"" + userinfo.Avatar + "\" class=\"user-avatar\"></mip-img><span class=\"info\"><em class=\"user-name\">" + userinfo.Nickname + "</em>"
-			if v.First == 1 {
-				content += "<em class=\"identity\">楼主</em>"
+			if templateType == "1" {
+				content += "<div class=\"post-detail-a\"><div class=\"user-info\"><a href=\"javascript:;\"><img src=\"" + userinfo.Avatar + "\" alt=\"" + userinfo.Nickname + "\"><span class=\"info\"><em class=\"user-name\">" + userinfo.Nickname + "</em><em class=\"level\">" + userinfo.Grouptitle + "</em>"
+				if v.First == 1 {
+					content += "<em  class=\"identity\">楼主</em>"
+				}
+				content += "</span><span class=\"dataTime\">" + dateline + "</span><span class=\"floor\">" + strconv.Itoa(floor) + "楼</span></a></div><div class=\"post-detail-content\"><p>" + message + "</p></div></div>"
+			} else {
+				content += "<div class=\"post-detail-a\"><div class=\"user-info\"><a href=\"javascript:;\"><mip-img src=\"" + userinfo.Avatar + "\" class=\"user-avatar\"></mip-img><span class=\"info\"><em class=\"user-name\">" + userinfo.Nickname + "</em>"
+				if v.First == 1 {
+					content += "<em class=\"identity\">楼主</em>"
+				}
+				content += "</span><span class=\"dataTime\">" + userinfo.Grouptitle + "</span></a></div><div class=\"post-detail-content\"><div><p>" + message + "</p></div><div class=\"detail-date\"><span>" + strconv.Itoa(floor) + "楼</span><span>" + dateline + "</span></div></div></div>"
 			}
-			content += "</span><span class=\"dataTime\">" + userinfo.Grouptitle + "</span></a></div><div class=\"post-detail-content\"><div><p>" + message + "</p></div><div class=\"detail-date\"><span>" + strconv.Itoa(floor) + "楼</span><span>" + dateline + "</span></div></div></div>"
-			// content += "<div class=\"post-detail-a\"><div class=\"user-info\"><a href=\"javascript:;\"><img src=\"" + userinfo.Avatar + "\" alt=\"" + userinfo.Nickname + "\"><span class=\"info\"><em class=\"user-name\">" + userinfo.Nickname + "</em><em class=\"level\">" + userinfo.Grouptitle + "</em>"
-			// if v.First == 1 {
-			// 	content += "<em  class=\"identity\">楼主</em>"
-			// }
-			// content += "</span><span class=\"dataTime\">" + dateline + "</span><span class=\"floor\">" + strconv.Itoa(floor) + "楼</span></a></div><div class=\"post-detail-content\"><p>" + message + "</p></div></div>"
 		}
 		if totalpages == 1 {
 			cmsPage = ""
@@ -270,10 +277,14 @@ func changeMessage(content string, i int, images []*AttachmentX, str [][]string)
 	return content
 }
 
-func getH5TemplateHtml() string {
+func getH5TemplateHtml(templateType string) string {
 	html := ""
-	if checkFileIsExist(h5templatefile) {
-		fi, err := os.Open(h5templatefile)
+	templatefile := miptemplatefile
+	if templateType == "1" {
+		templatefile = h5templatefile
+	}
+	if checkFileIsExist(templatefile) {
+		fi, err := os.Open(templatefile)
 		if err != nil {
 			check(err)
 		}
