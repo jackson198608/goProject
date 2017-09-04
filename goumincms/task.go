@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
+	mgo "gopkg.in/mgo.v2"
 	"strconv"
 	"strings"
 )
@@ -14,9 +15,10 @@ type Task struct {
 	typeid      int
 	db          *sql.DB
 	loopNum     int
+	session     *mgo.Session
 }
 
-func NewTask(loggerLevel int, redisStr string, db *sql.DB) *Task {
+func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session) *Task {
 	if loggerLevel < 0 {
 		loggerLevel = 0
 	}
@@ -39,12 +41,13 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB) *Task {
 	t.id = id
 	t.typeid = typeid
 	t.db = db
+	t.session = session
 	return t
 
 }
 
 func (t *Task) Do() {
-	m := NewInfo(t.loggerLevel, t.id, t.typeid, t.db)
+	m := NewInfo(t.loggerLevel, t.id, t.typeid, t.db, t.session)
 	if m != nil {
 		fmt.Println(t.typeid)
 		if t.id > 0 && t.typeid == 0 {

@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
+	mgo "gopkg.in/mgo.v2"
 	"io/ioutil"
 	"math"
+	"math/rand"
 	"os"
 	"path"
 	"regexp"
@@ -15,17 +17,19 @@ import (
 )
 
 type InfoNew struct {
-	db     *sql.DB
-	id     int
-	typeid int
+	db      *sql.DB
+	id      int
+	typeid  int
+	session *mgo.Session
 }
 
-func NewInfo(logLevel int, id int, typeid int, db *sql.DB) *InfoNew {
+func NewInfo(logLevel int, id int, typeid int, db *sql.DB, session *mgo.Session) *InfoNew {
 	logger.SetLevel(logger.LEVEL(logLevel))
 	e := new(InfoNew)
 	e.db = db
 	e.id = id
 	e.typeid = typeid
+	e.session = session
 	return e
 }
 
@@ -34,12 +38,19 @@ func (e *InfoNew) CreateThreadHtmlContent(tid int) error {
 	if thread.Tid <= 0 {
 		return nil
 	}
+	//相关帖子 eg:tid=12
+	relateThread := relateThread(tid, e.db, e.session)
+	//相关问答 eg:tid=12
+	relateAsk := relateAsk(tid, e.db, e.session)
+	//相关犬种 eg:tid=4682521
+	relateDogs := relateDogs(tid, e.db, e.session)
+
 	posts := LoadPostsByTid(tid, thread.Posttableid, e.db)
 	forum := LoadForumByFid(thread.Fid, thread.Typeid, e.db)
 	firstpost := LoadFirstPostByTid(tid, thread.Posttableid, e.db)
 	relatelink := LoadRelateLink(e.db)
 
-	groupContentToSaveHtml(tid, thread, posts, forum, firstpost, relatelink, e.db)
+	groupContentToSaveHtml(tid, thread, posts, forum, firstpost, relatelink, relateThread, relateAsk, relateDogs, e.db)
 	// saveContentToHtml(content, tid, page)
 	return nil
 }
@@ -72,7 +83,45 @@ func check(e error) {
 	}
 }
 
-func groupContentToSaveHtml(tid int, thread *Thread, posts []*Post, forum *Forum, firstpost *Post, relatelink []*Relatelink, db *sql.DB) {
+func relateThread(tid int, db *sql.DB, session *mgo.Session) string {
+	threads := LoadRelateThread(tid, db, session)
+	content := ""
+	for _, v := range threads {
+		// if v.Views < 3000 {
+		// 	v.Views = GenerateRangeNum(3000, 7000)
+		// }
+		content += "<a href=\"/bbs/thread-" + strconv.Itoa(v.Tid) + "-1-1.html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "</span></a>"
+	}
+	return content
+}
+
+func GenerateRangeNum(min, max int) int {
+	rand.Seed(time.Now().Unix())
+	randNum := rand.Intn(max-min) + min
+	return randNum
+}
+
+func relateAsk(tid int, db *sql.DB, session *mgo.Session) string {
+	asks := LoadRelateAsk(tid, db, session)
+	content := ""
+	for _, v := range asks {
+		content += "<a href=\"/ask/" + strconv.Itoa(v.Id) + ".html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "</span></a>"
+	}
+	return content
+}
+
+func relateDogs(tid int, db *sql.DB, session *mgo.Session) string {
+	dogs := LoadRelateDog(tid, db, session)
+	content := ""
+	for k, v := range dogs {
+		if k <= 5 {
+			content += "<li><a href=\"http://dog.m.goumin.com/pet/" + strconv.Itoa(v.Speid) + "\" class=\"relate-pet-a\"><mip-img  src=\"http://c1.cdn.goumin.com/cms" + v.Img + "\" alt=\"宠物百科\" class=\"relate-img\"></mip-img><span class=\"relate-pet-seenum\">" + v.Spename + "</span></a></li>"
+		}
+	}
+	return content
+}
+
+func groupContentToSaveHtml(tid int, thread *Thread, posts []*Post, forum *Forum, firstpost *Post, relatelink []*Relatelink, relateThread string, relateAsk string, relateDogs string, db *sql.DB) {
 	var subject = thread.Subject
 	var url = staticH5Url + "thread-" + strconv.Itoa(tid) + "-1-1.html"
 	var threadUrl = "thread-" + strconv.Itoa(tid) + "-1-1.html"
@@ -82,11 +131,8 @@ func groupContentToSaveHtml(tid int, thread *Thread, posts []*Post, forum *Forum
 	var keyword = forum.Name + "，" + subject + subMessage + " ..."
 	var description = subMessage + " ... " + subject + " ,狗民网｜铃铛宠物App"
 	var views int = 0
-	// count := len(posts)
-	// page := count / 20
-	fmt.Println(keyword)
-	// content := url + title + description + keyword
 	html := getH5TemplateHtml()
+	html = strings.Replace(html, "cmsRand", strconv.Itoa(rand.Intn(3000)), -1)
 	html = strings.Replace(html, "cmsViews", strconv.Itoa(views), -1)
 	html = strings.Replace(html, "cmsSubject", subject, -1)
 	html = strings.Replace(html, "cmsKeywords", keyword, -1)
@@ -96,13 +142,15 @@ func groupContentToSaveHtml(tid int, thread *Thread, posts []*Post, forum *Forum
 	html = strings.Replace(html, "cmsForumUrl", forumUrl, -1)
 	html = strings.Replace(html, "cmsForumName", forum.Name, -1)
 	html = strings.Replace(html, "cmsTypeName", forum.Threadtype, -1)
+	html = strings.Replace(html, "cmsRelateThread", relateThread, -1)
+	html = strings.Replace(html, "cmsRelateAsk", relateAsk, -1)
+	html = strings.Replace(html, "cmsRelateDogs", relateDogs, -1)
 	len := len(posts)                                           //帖子楼层总数
 	count := 20                                                 //每页条数
 	totalpages := int(math.Ceil(float64(len) / float64(count))) //page总数
 	for i := 1; i <= totalpages; i++ {
 		var title = subject + " - 第" + strconv.Itoa(i) + "页 - " + forum.Name + " -  狗民社区-移动版"
 		html = strings.Replace(html, "cmsTitle", title, -1)
-		// floor := 0 //楼层
 		cmsPage := ""
 		content := ""
 		tm1 := time.Unix(int64(thread.Dateline), 0)
@@ -119,18 +167,26 @@ func groupContentToSaveHtml(tid int, thread *Thread, posts []*Post, forum *Forum
 		var message string = ""
 		for _, v := range pagepost {
 			message = regexp_string(v.Message)
-			fmt.Println(message)
 			floor++
 			userinfo := LoadUserinfoByUid(v.Authorid, db)
 			tm := time.Unix(int64(v.Dateline), 0)
 			dateline := tm.Format("2006-01-02 15:04:05")
 			images = LoadAttachmentByPid(tid, v.Pid, db)
 			message = replaceImgOrAttach(message, subject, images)
-			content += "<div class=\"post-detail-a\"><div class=\"user-info\"><a href=\"javascript:;\"><img src=\"" + userinfo.Avatar + "\" alt=\"" + userinfo.Nickname + "\"><span class=\"info\"><em class=\"user-name\">" + userinfo.Nickname + "</em><em class=\"level\">" + userinfo.Grouptitle + "</em>"
-			if v.First == 1 {
-				content += "<em  class=\"identity\">楼主</em>"
+			for _, lv := range relatelink {
+				replace := "<a href='" + lv.Url + "'>" + lv.Name + "</a>"
+				message = strings.Replace(message, lv.Name, replace, -1)
 			}
-			content += "</span><span class=\"dataTime\">" + dateline + "</span><span class=\"floor\">" + strconv.Itoa(floor) + "楼</span></a></div><div class=\"post-detail-content\"><p>" + message + "</p></div></div>"
+			content += "<div class=\"post-detail-a\"><div class=\"user-info\"><a href=\"javascript:;\"><mip-img src=\"" + userinfo.Avatar + "\" class=\"user-avatar\"></mip-img><span class=\"info\"><em class=\"user-name\">" + userinfo.Nickname + "</em>"
+			if v.First == 1 {
+				content += "<em class=\"identity\">楼主</em>"
+			}
+			content += "</span><span class=\"dataTime\">" + userinfo.Grouptitle + "</span></a></div><div class=\"post-detail-content\"><div><p>" + message + "</p></div><div class=\"detail-date\"><span>" + strconv.Itoa(floor) + "楼</span><span>" + dateline + "</span></div></div></div>"
+			// content += "<div class=\"post-detail-a\"><div class=\"user-info\"><a href=\"javascript:;\"><img src=\"" + userinfo.Avatar + "\" alt=\"" + userinfo.Nickname + "\"><span class=\"info\"><em class=\"user-name\">" + userinfo.Nickname + "</em><em class=\"level\">" + userinfo.Grouptitle + "</em>"
+			// if v.First == 1 {
+			// 	content += "<em  class=\"identity\">楼主</em>"
+			// }
+			// content += "</span><span class=\"dataTime\">" + dateline + "</span><span class=\"floor\">" + strconv.Itoa(floor) + "楼</span></a></div><div class=\"post-detail-content\"><p>" + message + "</p></div></div>"
 		}
 		if totalpages == 1 {
 			cmsPage = ""
@@ -146,9 +202,9 @@ func groupContentToSaveHtml(tid int, thread *Thread, posts []*Post, forum *Forum
 			if i == 1 {
 				cmsPage = "<a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-2-1.html\">下一页</a> <a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-2-1.html\">尾页</a>"
 			} else if i == totalpages {
-				cmsPage = "<a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a> <a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-1-1.html\">上一页</a>"
+				cmsPage = "<a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a> <a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i-1) + "-1.html\">上一页</a>"
 			} else {
-				cmsPage = "<a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a><a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i-1) + "-1.html\">上一页</a> <a href=\"/bbs/thread-" + strconv.Itoa(i+1) + "-1-1.html\">下一页</a><a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(totalpages) + "-1.html\">尾页</a>"
+				cmsPage = "<a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a><a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i-1) + "-1.html\">上一页</a> <a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i+1) + "-1.html\">下一页</a><a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(totalpages) + "-1.html\">尾页</a>"
 			}
 		}
 		htmlhtml := strings.Replace(html, "cmsPost", strconv.Itoa(len-1), -1)

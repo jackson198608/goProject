@@ -23,10 +23,13 @@ var queueName string = "createHtml"
 
 var redisConn string = "127.0.0.1:6379"
 
+var mongoConn string = "192.168.86.192:27017"
+
 // var logger *log.Logger
 var logPath string = "/tmp/create_thread.log"
 
-var h5templatefile = "/data/thread/h5template.html"
+var h5templatefile = "/data/thread/miptemplate.html"
+var miptemplatefile = "/data/thread/miptemplate.html"
 
 var diaryDomain = "http://c1.cdn.goumin.com/diary/"
 
