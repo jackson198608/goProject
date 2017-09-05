@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html mip>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+    <title>cmsTitle</title>
+    <link rel="stylesheet" type="text/css" href="https://mipcache.bdstatic.com/static/v1/mip.css">
+    <meta name="keywords" content="cmsKeywords">
+    <meta name="description" content="cmsDescription">
+    <link rel="canonical" href="http://m.goumin.com/bbs.html">
+    <style mip-custom>
+        html {
+            background-color: #f4f4f4;
+            font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Heiti SC", "Microsoft YaHei", sans-serif;
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+            font-size: 62.5%;
+        }
+
+        body {
+            max-width: 768px;
+            margin: 0 auto;
+        }
+
+        ul {
+            list-style-type: none;
+            overflow: hidden;
+        }
+
+        header ul,
+        footer ul {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+        }
+
+        header ul li,
+        footer ul li {
+            padding: 0 .8rem;
+            position: relative;
+        }
+
+        mip-iframe, mip-anim {
+            margin: 1rem auto !important;
+        }
+
+        mip-anim  img {
+            width: auto;
+            margin: 0 auto !important;
+            max-width: 100%;
+        }
+        mip-anim.mip-layout-container{
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+        }
+        img{
+            width: auto !important;
+            max-width: 100%;
+            height: auto !important;
+        }
+        /*导航*/
+
+        header {
+            height: 50px;
+            padding: 0 1rem;
+            background-color: #ff5a60;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+        }
+
+        header a {
+            color: #fff;
+        }
+
+        header a h1 {
+            font-size: 1.5rem;
+            color: #ff5a60;
+            background-color: #fff;
+            padding: .1rem .8rem;
+            border-radius: .3rem;
+        }
+
+        .gm-primary {
+            width: 100%;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: justify;
+            -ms-flex-pack: justify;
+            justify-content: space-between;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+        }
+
+        .gm-primary ul li+li:before {
+            content: "";
+            display: block;
+            width: 1px;
+            height: 66%;
+            background-color: #ffadb0;
+            position: absolute;
+            left: 0;
+            top: 53%;
+            
+            -webkit-transform: translateY(-50%);
+            transform: translateY(-50%);
+        }
+
+        .search {
+            display: none;
+        }
+
+        .bread-nav {
+            background: #fff;
+            border-top:#ddd solid 1px;
+            border-bottom:#ddd solid 1px;
+            line-height: 40px;
+            padding-left: 5%;
+        }
+        .bread-nav ul{
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+        }
+        .bread-nav .last{
+            color: #ff5a60;
+        }
+        .bread-nav .last a{
+            color: #ff5a60;
+        }
+
+        .title{    
+            font-weight: 700;
+            font-size: 1.8rem;
+            color: #000;
+            text-align: left;
+            line-height: 2rem;
+            padding: 1rem 0;
+            padding-left: 5%;
+        }
+        .club-name{
+            color: #6a7fa6;
+            font-size: 1.5rem;
+        }
+        /* 11.16 问答导流样式 */
+        .thread-grounp{
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: justify;
+            -ms-flex-pack: justify;
+            justify-content: space-between;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            padding-left: 5%;
+            padding-right: 5%;
+        }
+        .thread-solveCount{
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: start;
+            -ms-flex-pack: start;
+            justify-content: flex-start;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            border-radius: 1rem;
+            border-bottom-right-radius: 4rem 2rem;
+            border-top-right-radius: 4rem 2rem;
+            padding: 0 1rem 0 .5rem;
+            background: linear-gradient(90deg,#ff3f5a,#b977ef);
+            margin-right: .16rem;
+        }
+        .marked{
+            width: 1.8rem;
+            height: 1.8rem;
+            border-radius: 50%;
+            background: #fff;
+            overflow: hidden;
+            font-size: 1.5rem;
+            color: #ff5a60;
+            line-height: 1.8rem;
+            text-align: center;
+        }
+        .solve-count{
+            color: #fff;
+            margin-left: 1rem;
+            text-align: center;
+            font-size: .8rem;
+        }
+        .thread-solveCount::after{
+            content: "";
+            display: inline-block;
+            height: 1rem;
+            width: 1rem;
+            border-radius: 50%;
+            background: #b27dfe;
+            -webkit-transform: translateX(400%);
+            transform: translateX(400%);
+        }
+
+        section {
+        }
+
+        
+        .post{
+
+        }
+
+        .post-detail {
+            margin-top: 60px;
+        }
+
+        .post-detail .forum-name {
+            padding: 0 .5rem .5rem .5rem;
+            float: left;
+        }
+
+        .post-detail .forum-name span {
+            font-size: .875rem;
+            color: #eb6152;
+            padding-bottom: .5rem; /*background: #65cccd;padding: .1rem .2rem;border-radius: .3rem;*/
+        }
+
+        .user-info a {
+            display: block;
+            overflow: hidden;
+            color: #333;
+        }
+
+        .user-info a .user-avatar {
+            float: left;
+            display: inline-block;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 100%;
+            background: #e2e2e2;
+            margin-right: .5rem;
+            overflow: hidden;
+        }
+
+        .user-info a span.info {
+            display: block;
+            width: 80%;
+            overflow: hidden;
+        }
+
+        .user-info a span.dataTime {
+            display: block;
+            color: #999;
+            font-size: 1rem;
+            float: left;
+        }
+
+        .user-info a span em {
+            display: block;
+            font-size: 1.4rem;
+            margin-right: .5rem;
+            float: left;
+            font-style: normal;
+        }
+        .user-info a span em.user-name {
+            max-width: 60%;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: #333;
+            font-size: 1.6rem;
+            font-weight: bold;
+            overflow: hidden;
+        }
+
+        /*.user-info a span em.user-name {height: 1.25rem; max-width: 11.5rem;overflow: hidden;}*/
+        .user-info a span em.level {
+            color: #dcab7f;
+            font-size: .8rem;
+            margin-top: .1rem;
+        }
+
+        .user-info a span em.identity {
+            font-size: 1rem;
+            color: #ff5a60;
+            padding: 0 .1rem;
+            border-radius: .2rem;
+            font-weight: 100;
+            border: 1px solid #ff5a60;
+        }
+
+        .user-info a span i {
+            display: block;
+            color: #666;
+            font-size: .75rem;
+        }
+
+        .user-info a span.floor {
+            float: right;
+            color: #999;
+            font-size: .75rem;;
+        }
+
+        .post-detail-content {
+            min-height: 2rem;
+            margin-top: .2rem;
+            padding-left: 3.5rem;
+        }
+
+        .post-detail-content p {
+            white-space: pre-line;
+            font-size: 1.4rem;
+            line-height: 1.8rem;
+            padding: .5rem 0;
+            color: #333;
+            word-wrap: break-word;
+        }
+     
+
+        .post-detail-a {
+            padding-left:5%;
+            padding-right: 5%;
+            padding-top: 1rem;
+            margin-top: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e8e8e8;
+            background: #fff;
+        }
+
+        .post-detail-a:nth-child(1) {
+            border-bottom: 1px solid #eee;
+            background: #f4f4f4;
+        }
+        .post-detail-a:nth-child(1) .post-detail-content{
+            padding-left: 0;
+        }
+        
+        .post-detail-a .emotion{width:3rem;}
+        .detail-date{
+            color: #999;
+            margin-top: 1rem;
+        }
+        .detail-date span{
+            margin-right: 1rem;
+        }
+
+        .numbers {
+            text-align: right;
+            padding-bottom: 1rem;
+            padding-top: .5rem;
+        }
+
+        .comment-list {
+            margin-left: 3.5rem;
+            border-top: 1px solid #eee;
+            margin-top: 1rem;
+        }
+        .comment-info{
+            overflow:hidden;
+        }
+        .comment-list .reply-avatar{
+            width: 2.5rem;
+            height:2.5rem;
+            border-radius: 2.5rem;
+            overflow:hidden;
+            float: left;
+        }
+        .comment_author{
+            color: #ff5a60;
+            float: left;
+            line-height: 2.5rem;
+            padding-left:.5rem; 
+        }
+        .comment_author .comment-name{
+            color: #ff5a60;
+            max-width: 10rem;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            font-size: 1.4rem;
+            overflow: hidden;
+            float: left;
+        }
+        .author-self{
+            font-size: 1rem;
+            color: #ff5a60;
+            padding: 0 .1rem;
+            border-radius: .2rem;
+            font-weight: 100;
+            border: 1px solid #ff5a60;
+            margin-left: .5rem;
+        }
+        .floor-comment{
+            color: #444;
+            padding-top: .5rem;
+            padding-bottom: .5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .comment-date{
+            color: #999;
+        }
+        .comment-content{
+            padding-left: 3rem;
+        }
+
+
+
+
+
+        .page {
+            width: 85%;
+            margin-left: 7%;
+            color: #888;
+            overflow: hidden;
+            font-size: 1.4rem;
+            text-align: center;
+            margin: 0 auto;
+            overflow:hidden;
+            line-height:5rem;
+        }
+        .paging_page{
+            float: right;
+        }
+
+
+        .page div a {
+            float: left;
+            border-radius: 3px;
+            color: #444;
+            margin-right: .5rem;
+            border-radius: 3px;
+        }
+
+        .page a.on {
+            background: #ff5a60;
+            color: #fff;
+            border: 1px solid #ff5a60;
+        }
+    
+
+        .relate {
+            padding-bottom: 1rem;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .relate-title {
+            background: #E5F4FA;
+            display: block;
+            line-height: 2.5rem;
+            padding-left: 1rem;
+            color: #777;
+            font-size: 1.4rem;
+        }
+
+        .relate-a {
+            padding-left: 1rem;
+            color: #428bca;
+            border-bottom: #eee solid 1px;
+            line-height: 3rem;
+            overflow: hidden;
+            display: block;
+        }
+        
+
+        .relate-a .subj {
+            width: 70%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            -o-text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+            float: left;
+        }
+
+        .relate-a .seenum {
+            float: right;
+            color: #999;
+            display: block;
+            margin-right: 3%;
+        }
+        .relate-pet{
+            background: #fff;
+        }
+        .relate-pet-list li{
+            float: left;
+            width: 33%;
+            margin-bottom: 1rem;
+        }
+        .relate-img{width: 80%;margin:10%;height: auto !important;}
+        .relate-pet-seenum{
+            display: block;
+            height: 2rem;
+            line-height: 2rem;
+            width: 7rem;
+            text-align: center;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 2rem;
+            color: #FFFFFF;
+            overflow: hidden;
+        }
+
+        .gotop a {
+            position: fixed;
+            bottom: 2rem;
+            right: 1rem;
+            width: 2.5rem;
+            border-radius: 3rem;
+            border: 1px solid #ddd;
+            height: 2.5rem;
+            background: #fff;
+        }
+
+        .gotop a img {
+            width: 60%;
+            margin: 15% 20%;
+        }
+
+        .fotter-href {
+            text-align: center;
+        }
+
+        .fotter-href a {
+            padding: .2rem;
+            display: inline-block;
+        }
+
+        .footer {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 公共头部 -->
+    <mip-fixed type="top" data-block="99">
+        <header class="gm">
+            <div class="gm-primary">
+                <a href="http://m.goumin.com"><h1>狗民网</h1></a>
+                <nav>
+                    <ul>
+                        <li><a href="http://m.goumin.com/bbs.html">论坛</a></li>
+                        <li><a href="http://m.goumin.com/ask/list.html">问答</a></li>
+                        <li><a href="http://m.goumin.com/mall.html">商城</a></li>
+                        <li><a href="http://dog.m.goumin.com/pet">百科</a></li>
+                    </ul>
+                    <span data-name="搜索" class="search"></span>
+                </nav>
+            </div>
+        </header>
+    </mip-fixed>
+    <div class="post-detail">
+        <nav class="bread-nav">
+            <ul>
+                <li><a href="http://www.m.goumin.com/">狗民网</a></li>
+                <li>&gt;</li>
+                <li>论坛</li>
+                <li>&gt;</li>
+                <li class="last"><a href="http://m.goumin.com/bbs/cmsForumUrl">cmsForumName</a>&gt;</li>
+            </ul>
+        </nav>
+
+        <h2 class="title">cmsSubject</h2>
+        <div class="thread-grounp">
+            <a href="/thread/club/3" class="club-name">cmsForumName&gt;</a>
+            <div class="thread-solveCount">
+                <div class="marked">问</div>
+                <div class="solve-count">
+                    <p>cmsRand只狗狗</p>
+                    <p>已解决此问题</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="post">
+            cmsMessage
+        </div>
+        
+        <div class="page">
+            <div class="paging_page">
+                cmsPage
+            </div>
+        </div>
+    </div>
+    <!-- 相关帖子 start -->
+        <div class="relate">
+            <span class="relate-title">相关帖子</span>
+            cmsRelateThread
+        </div>
+    <!-- 相关问答 start -->
+    
+        <div class="relate">
+        <span class="relate-title">相关问答</span>
+            cmsRelateAsk
+        </div>
+    <!-- 相关犬种 start -->
+        <div class="relate-pet">
+            <span class="relate-title">相关犬种</span>
+            <ul class="relate-pet-list">
+                cmsRelateDogs
+            </ul>
+        </div>
+    <mip-fixed type="gototop" class="back-top">
+        <mip-gototop threshold='800'></mip-gototop>
+    </mip-fixed>
+    <div>
+        <p class="fotter-href">
+            <a href="//m.goumin.com/bbs.html">首页</a>|
+            <a href="//m.goumin.com/bbs.html">论坛</a>|
+            <a href="//ask.goumin.com/index.html">知道</a>|
+            <a href="//m.goumin.com/mall.html">商城</a>|
+            <a href="//dog.goumin.com/">知宠</a><br>
+            <a href="http://bbs.goumin.com/">©2017 goumin.com</a>
+        </p>
+    </div>
+    <!-- 百度统计 -->
+    <mip-stats-baidu token="ea8a600ffb76d5930a3afa6ab812f938"></mip-stats-baidu>
+
+    <script src="https://mipcache.bdstatic.com/static/v1/mip.js"></script>
+    <!-- 悬浮布局脚本 -->
+    <script src="https://mipcache.bdstatic.com/static/v1/mip-fixed/mip-fixed.js"></script>
+    <!-- 返回顶部脚本 -->
+    <script src="https://mipcache.bdstatic.com/static/v1/mip-gototop/mip-gototop.js"></script>
+    <!-- 历史记录脚本 -->
+    <script src="https://mipcache.bdstatic.com/static/v1/mip-history/mip-history.js"></script>   
+    <!--百度统计组件脚本-->
+    <script src="https://mipcache.bdstatic.com/static/v1/mip-stats-baidu/mip-stats-baidu.js"></script>
+    <!--App下载组件脚本-->
+    <script src="https://mipcache.bdstatic.com/static/v1/mip-appdl/mip-appdl.js"></script>
+</body>
+
+</html>
