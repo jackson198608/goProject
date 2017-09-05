@@ -271,7 +271,7 @@ type ThreadsRecommend struct {
 	RelatedAsk []int "related_ask"
 }
 
-func LoadRelateThread(tid int, db *sql.DB, session *mgo.Session) []*RelateThread {
+func LoadRelateThread(tid int, fid int, db *sql.DB, session *mgo.Session) []*RelateThread {
 	var rowsData []*RelateThread
 	ms := new(ThreadsRecommend)
 	c := session.DB("BigData").C("threads_recommend")
@@ -280,7 +280,7 @@ func LoadRelateThread(tid int, db *sql.DB, session *mgo.Session) []*RelateThread
 		logger.Error("BigData threads_recommend relate thread: ", err)
 	}
 	if len(ms.Related) == 0 {
-		rows, err := db.Query("select tid,subject,views,dateline from `pre_forum_thread` where displayorder>=0 and fid=34 order by tid desc limit 5")
+		rows, err := db.Query("select tid,subject,views,dateline from `pre_forum_thread` where displayorder>=0 and fid=" + strconv.Itoa(fid) + " order by dateline desc limit 5")
 		defer rows.Close()
 		if err != nil {
 			logger.Error("[error] check pre_forum_post sql prepare error: ", err)

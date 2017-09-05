@@ -47,7 +47,7 @@ func (e *InfoNew) CreateThreadHtmlContent(tid int) error {
 		return nil
 	}
 	//相关帖子 eg:tid=12
-	relateThread := relateThread(tid, e.db, e.session)
+	relateThread := relateThread(tid, thread.Fid, e.db, e.session)
 	//相关问答 eg:tid=12
 	relateAsk := relateAsk(tid, e.db, e.session)
 	//相关犬种 eg:tid=4682521
@@ -91,8 +91,8 @@ func check(e error) {
 	}
 }
 
-func relateThread(tid int, db *sql.DB, session *mgo.Session) string {
-	threads := LoadRelateThread(tid, db, session)
+func relateThread(tid int, fid int, db *sql.DB, session *mgo.Session) string {
+	threads := LoadRelateThread(tid, fid, db, session)
 	content := ""
 	for _, v := range threads {
 		if v.Views < 3000 {
