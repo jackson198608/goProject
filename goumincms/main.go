@@ -4,42 +4,55 @@ import (
 	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"os"
+	"strconv"
 )
 
-var logLevel int = 1
+var c Config = Config{
+	"192.168.86.193:3307",
+	"new_dog123",
+	"dog123:dog123",
+	10,
+	"127.0.0.1:6379",
+	"/data/thread/",
+	"/tmp/create_thread.log",
+	1,
+	"192.168.86.192:27017",
+	"/data/thread/h5template.html",
+	"/data/thread/miptemplate.html",
+	"100"}
 
-var dbAuth string = "dog123:dog123"
+// var logLevel int = 1
 
-var dbDsn string = "192.168.86.193:3307"
+// var dbAuth string = "dog123:dog123"
 
-var dbName string = "new_dog123"
+// var dbDsn string = "192.168.86.193:3307"
 
-var saveDir string = "/data/thread/"
+// var dbName string = "new_dog123"
 
-var staticH5Url string = "http://m.goumin.com/bbs/"
+// var saveDir string = "/data/thread/"
 
-var numloops int = 10
+// var numloops int = 10
 
-var queueName string = "createHtml"
+// var redisConn string = "127.0.0.1:6379"
 
-var redisConn string = "127.0.0.1:6379"
+// var mongoConn string = "192.168.86.192:27017"
 
-var mongoConn string = "192.168.86.192:27017"
+// // var logger *log.Logger
+// var logPath string = "/tmp/create_thread.log"
 
-// var logger *log.Logger
-var logPath string = "/tmp/create_thread.log"
+// var h5templatefile = "/data/thread/h5template.html"
+// var miptemplatefile = "/data/thread/miptemplate.html"
 
-var h5templatefile = "/data/thread/h5template.html"
-var miptemplatefile = "/data/thread/miptemplate.html"
+// var maxThreadid = 100
 
 var diaryDomain = "http://c1.cdn.goumin.com/diary/"
-
+var staticH5Url string = "http://m.goumin.com/bbs/"
+var queueName string = "createHtml"
 var offset = 10
-var maxThreadid = 100
 
 func Init() {
 
-	// loadConfig()
+	loadConfig()
 	logger.SetConsole(true)
 	logger.SetLevel(logger.DEBUG)
 	logger.Error(logger.DEBUG)
@@ -47,16 +60,22 @@ func Init() {
 }
 
 func createThreadHtml(templateType string) {
-	r := NewRedisEngine(logLevel, queueName, redisConn, "", 0, numloops, dbAuth, dbDsn, dbName, templateType)
+	templatefile := c.miptemplatefile
+	if templateType == "1" {
+		templatefile = c.h5templatefile
+	}
+
+	r := NewRedisEngine(c.logLevel, queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, templateType, templatefile, c.saveDir, c.maxThreadid)
 	r.Loop()
 }
 
 func createRedis() {
-	r := NewRedisEngine(logLevel, queueName, redisConn, "", 0, numloops, dbAuth, dbDsn, dbName)
+	r := NewRedisEngine(c.logLevel, queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
 	page := 1
 	for {
 		tids := getThreadTask(page)
 		offset := page * offset
+		maxThreadid, _ := strconv.Atoi(c.maxThreadid)
 		if offset > maxThreadid {
 			break
 		}

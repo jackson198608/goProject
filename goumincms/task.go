@@ -17,9 +17,10 @@ type Task struct {
 	loopNum      int
 	session      *mgo.Session
 	templateType string
+	taskNewArgs  []string
 }
 
-func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session, templateType string) *Task {
+func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session, taskNewArgs []string) *Task {
 	if loggerLevel < 0 {
 		loggerLevel = 0
 	}
@@ -43,18 +44,19 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session,
 	t.typeid = typeid
 	t.db = db
 	t.session = session
-	t.templateType = templateType
+	t.taskNewArgs = taskNewArgs
+	// t.templateType = templateType
 	return t
 
 }
 
 func (t *Task) Do() {
-	m := NewInfo(t.loggerLevel, t.id, t.typeid, t.db, t.session)
+	m := NewInfo(t.loggerLevel, t.id, t.typeid, t.db, t.session, t.taskNewArgs)
 	if m != nil {
 		fmt.Println(t.typeid)
 		if t.id > 0 && t.typeid == 0 {
 			logger.Info("export event to mongo")
-			m.CreateThreadHtmlContent(t.id, t.templateType)
+			m.CreateThreadHtmlContent(t.id)
 		}
 	}
 }

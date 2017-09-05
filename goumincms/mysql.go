@@ -403,9 +403,9 @@ func LoadRelateDog(tid int, db *sql.DB, session *mgo.Session) []*RelateDog {
 }
 
 func getThreadTask(page int) []int {
-	db, err := sql.Open("mysql", dbAuth+"@tcp("+dbDsn+")/"+dbName+"?charset=utf8mb4")
+	db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 	if err != nil {
-		logger.Error("can not connect to mysql", dbDsn, dbName, dbAuth)
+		logger.Error("can not connect to mysql", c.dbDsn, c.dbName, c.dbAuth)
 
 		return nil
 	}

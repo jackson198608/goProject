@@ -17,23 +17,31 @@ import (
 )
 
 type InfoNew struct {
-	db      *sql.DB
-	id      int
-	typeid  int
-	session *mgo.Session
+	db           *sql.DB
+	id           int
+	typeid       int
+	session      *mgo.Session
+	templateType string
+	templatefile string
+	saveDir      string
+	maxThreadid  string
 }
 
-func NewInfo(logLevel int, id int, typeid int, db *sql.DB, session *mgo.Session) *InfoNew {
+func NewInfo(logLevel int, id int, typeid int, db *sql.DB, session *mgo.Session, taskNewArgs []string) *InfoNew {
 	logger.SetLevel(logger.LEVEL(logLevel))
 	e := new(InfoNew)
 	e.db = db
 	e.id = id
 	e.typeid = typeid
 	e.session = session
+	e.templateType = taskNewArgs[3]
+	e.templatefile = taskNewArgs[4]
+	e.saveDir = taskNewArgs[5]
+	e.maxThreadid = taskNewArgs[6]
 	return e
 }
 
-func (e *InfoNew) CreateThreadHtmlContent(tid int, templateType string) error {
+func (e *InfoNew) CreateThreadHtmlContent(tid int) error {
 	thread := LoadThreadByTid(tid, e.db)
 	if thread.Tid <= 0 {
 		return nil
@@ -43,20 +51,20 @@ func (e *InfoNew) CreateThreadHtmlContent(tid int, templateType string) error {
 	//相关问答 eg:tid=12
 	relateAsk := relateAsk(tid, e.db, e.session)
 	//相关犬种 eg:tid=4682521
-	relateDogs := relateDogs(tid, e.db, e.session, templateType)
+	relateDogs := relateDogs(tid, e.db, e.session, e.templateType)
 
 	posts := LoadPostsByTid(tid, thread.Posttableid, e.db)
 	forum := LoadForumByFid(thread.Fid, thread.Typeid, e.db)
 	firstpost := LoadFirstPostByTid(tid, thread.Posttableid, e.db)
 	relatelink := LoadRelateLink(e.db)
 
-	groupContentToSaveHtml(tid, templateType, thread, posts, forum, firstpost, relatelink, relateThread, relateAsk, relateDogs, e.db)
+	e.groupContentToSaveHtml(tid, e.templateType, thread, posts, forum, firstpost, relatelink, relateThread, relateAsk, relateDogs, e.db)
 	// saveContentToHtml(content, tid, page)
 	return nil
 }
 
-func saveContentToHtml(urlname string, content string, tid int, page int) bool {
-	var filename = saveDir + urlname
+func (e *InfoNew) saveContentToHtml(urlname string, content string, tid int, page int) bool {
+	var filename = e.saveDir + urlname
 	var f *os.File
 	var err1 error
 	if checkFileIsExist(filename) { //如果文件存在
@@ -125,7 +133,7 @@ func relateDogs(tid int, db *sql.DB, session *mgo.Session, templateType string) 
 	return content
 }
 
-func groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts []*Post, forum *Forum, firstpost *Post, relatelink []*Relatelink, relateThread string, relateAsk string, relateDogs string, db *sql.DB) {
+func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts []*Post, forum *Forum, firstpost *Post, relatelink []*Relatelink, relateThread string, relateAsk string, relateDogs string, db *sql.DB) {
 	var subject = thread.Subject
 	var url = staticH5Url + "thread-" + strconv.Itoa(tid) + "-1-1.html"
 	var threadUrl = "thread-" + strconv.Itoa(tid) + "-1-1.html"
@@ -135,7 +143,7 @@ func groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts 
 	var keyword = forum.Name + "，" + subject + subMessage + " ..."
 	var description = subMessage + " ... " + subject + " ,狗民网｜铃铛宠物App"
 	var views int = 0
-	html := getH5TemplateHtml(templateType)
+	html := e.getH5TemplateHtml()
 	if html == "" {
 		logger.Error("template file not found")
 		return
@@ -228,7 +236,7 @@ func groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts 
 		content = findface(content)
 		htmlhtml = strings.Replace(htmlhtml, "cmsMessage", content, -1)
 		htmlhtml = strings.Replace(htmlhtml, "cmsPage", cmsPage, -1)
-		status := saveContentToHtml(filename, htmlhtml, tid, i)
+		status := e.saveContentToHtml(filename, htmlhtml, tid, i)
 		if status == true {
 			logger.Info("save content to html: ", filename)
 		} else {
@@ -287,12 +295,9 @@ func changeMessage(content string, i int, images []*AttachmentX, str [][]string)
 	return content
 }
 
-func getH5TemplateHtml(templateType string) string {
+func (e *InfoNew) getH5TemplateHtml() string {
 	html := ""
-	templatefile := miptemplatefile
-	if templateType == "1" {
-		templatefile = h5templatefile
-	}
+	templatefile := e.templatefile
 	if checkFileIsExist(templatefile) {
 		fi, err := os.Open(templatefile)
 		if err != nil {
