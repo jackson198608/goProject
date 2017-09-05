@@ -14,7 +14,7 @@ type RedisEngine struct {
 	logLevel      int
 	queueName     string
 	connstr       string
-	password      string
+	mongoConn     string
 	db            int
 	client        *redis.Client
 	taskNum       int
@@ -26,7 +26,7 @@ func NewRedisEngine(
 	logLevel int,
 	queueName string,
 	connstr string,
-	password string,
+	mongoConn string,
 	db int,
 	numForOneLoop int, taskarg ...string) *RedisEngine {
 
@@ -41,7 +41,7 @@ func NewRedisEngine(
 	t.logLevel = logLevel
 	t.queueName = queueName
 	t.connstr = connstr
-	t.password = password
+	t.mongoConn = mongoConn
 	t.db = db
 	t.numForOneLoop = numForOneLoop
 	t.taskNewArgs = taskarg
@@ -57,8 +57,8 @@ func NewRedisEngine(
 func (t *RedisEngine) connect() error {
 	t.client = redis.NewClient(&redis.Options{
 		Addr:     t.connstr,
-		Password: t.password, // no password set
-		DB:       t.db,       // use default DB
+		Password: "",   // no password set
+		DB:       t.db, // use default DB
 	})
 	_, err := t.client.Ping().Result()
 	if err != nil {
@@ -87,7 +87,7 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 	}
 	defer db.Close()
 
-	session, err := mgo.Dial(mongoConn)
+	session, err := mgo.Dial(t.mongoConn)
 	if err != nil {
 		logger.Error("[error] connect mongodb err")
 		return
@@ -103,7 +103,7 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 			return
 		}
 		logger.Info("got redisStr ", redisStr)
-		task := NewTask(t.logLevel, redisStr, db, session, t.taskNewArgs[3])
+		task := NewTask(t.logLevel, redisStr, db, session, t.taskNewArgs)
 		if task != nil {
 			task.Do()
 		}
