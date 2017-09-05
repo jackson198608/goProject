@@ -190,15 +190,15 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 		for _, v := range pagepost {
 			message = regexp_string(v.Message)
 			floor++
+			for _, lv := range relatelink {
+				replace := "<a href='" + lv.Url + "'>" + lv.Name + "</a>"
+				message = strings.Replace(message, lv.Name, replace, -1)
+			}
 			userinfo := LoadUserinfoByUid(v.Authorid, db)
 			tm := time.Unix(int64(v.Dateline), 0)
 			dateline := tm.Format("2006-01-02 15:04:05")
 			images = LoadAttachmentByPid(tid, v.Pid, db)
 			message = replaceImgOrAttach(message, subject, images)
-			for _, lv := range relatelink {
-				replace := "<a href='" + lv.Url + "'>" + lv.Name + "</a>"
-				message = strings.Replace(message, lv.Name, replace, -1)
-			}
 			if templateType == "1" {
 				content += "<div class=\"post-detail-a\"><div class=\"user-info\"><a href=\"javascript:;\"><img src=\"" + userinfo.Avatar + "\" alt=\"" + userinfo.Nickname + "\"><span class=\"info\"><em class=\"user-name\">" + userinfo.Nickname + "</em><em class=\"level\">" + userinfo.Grouptitle + "</em>"
 				if v.First == 1 {
