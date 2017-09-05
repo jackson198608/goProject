@@ -136,6 +136,10 @@ func groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts 
 	var description = subMessage + " ... " + subject + " ,狗民网｜铃铛宠物App"
 	var views int = 0
 	html := getH5TemplateHtml(templateType)
+	if html == "" {
+		logger.Error("template file not found")
+		return
+	}
 	html = strings.Replace(html, "cmsRand", strconv.Itoa(rand.Intn(3000)), -1)
 	html = strings.Replace(html, "cmsViews", strconv.Itoa(views), -1)
 	html = strings.Replace(html, "cmsSubject", subject, -1)
@@ -157,13 +161,14 @@ func groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts 
 		html = strings.Replace(html, "cmsTitle", title, -1)
 		cmsPage := ""
 		content := ""
-		dir := strconv.Itoa(tid % 1000)
-		// if tid < 5000000 {
-		// tm1 := time.Unix(int64(thread.Dateline), 0)
-		// 	dir := tm1.Format("20060102")
-		// } else {
-		// 	dir := tid % 1000
-		// }
+		// dir := strconv.Itoa(tid % 1000)
+		dir := ""
+		if tid < 5000000 { //tid<5百万的数据，生成目录4/tid%1000/
+			dir = "4/" + strconv.Itoa(tid%1000)
+
+		} else { //tid>5百万，每增加1百万，生成目录/tid%1百万/tid%500个
+			dir = strconv.Itoa(tid/1000000) + "/" + strconv.Itoa(tid%500)
+		}
 		filename := dir + "/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i) + "-1.html"
 		start := (i - 1) * count
 		end := start + count
@@ -296,6 +301,9 @@ func getH5TemplateHtml(templateType string) string {
 		defer fi.Close()
 		fd, err := ioutil.ReadAll(fi)
 		html = string(fd)
+	} else {
+		logger.Error("template file not found")
+		return ""
 	}
 	return html
 }
