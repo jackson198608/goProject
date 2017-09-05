@@ -103,7 +103,7 @@ func main() {
 		createThreadHtml(templateType)
 	case "info": //资讯
 		logger.Info("in the info html create ")
-	case "create": //资讯
+	case "create": //创建帖子idredis
 		logger.Info("in the info html create ")
 		createRedis()
 	default:
