@@ -59,7 +59,11 @@ type Pet struct {
 	DogBirth_y int 	"dog_birth_y"
 	DogBirth_m int 	"dog_birth_m"
 }
-
+type PetAvatar struct {
+	HeadId 		int 	"head_id"
+	HeadFileext string 	"head_fileext"
+	HeadCdate 	int64 	"head_cdate"
+}
 type Petuids struct {
 	uid int "uid"
 }
@@ -253,29 +257,113 @@ func GetNickname(uid int, db *sql.DB) string {
 
 //获得用户头像
 func GetAvatar(uid int, db *sql.DB) string {
+	avatar := "http://c1.cdn.goumin.com/diary/head/cover-s.jpg"
+	//用户维护的头像
 	rows, err := db.Query("SELECT image FROM `album` WHERE (`uid`=" + strconv.Itoa(uid) + ") AND `type`=5 LIMIT 1")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check album sql prepare error: ", err)
-		return ""
+		return avatar
 	}
+	for rows.Next() {
+		var a string
+		if err := rows.Scan(&a); err != nil {
+			logger.Error("[error] check sql get rows error ", err)
+			return avatar
+		}
+		avatar = "http://c1.cdn.goumin.com/diary/" + a
+		logger.Info("get user avatar")
+		return avatar
+	}
+	//第三方头像
 	if rows == nil {
 		rows, err := db.Query("SELECT image FROM `album` WHERE (`uid`=" + strconv.Itoa(uid) + ") AND `type`=25 LIMIT 1")
 		defer rows.Close()
 		if err != nil {
 			logger.Error("[error] check album sql prepare error: ", err)
-			return ""
+			return avatar
 		}
 	}
 	for rows.Next() {
 		var a string
 		if err := rows.Scan(&a); err != nil {
 			logger.Error("[error] check sql get rows error ", err)
-			return ""
+			return avatar
 		}
-		return "http://c1.cdn.goumin.com/diary/" + a
+		avatar = a
+		logger.Info("get user plat avatar")
+		return avatar
 	}
-	return "http://c1.cdn.goumin.com/diary/head/cover-s.jpg"
+
+	//宠物头像
+	dogid := GetPetDefaultId(uid, db)
+	if dogid==0 {
+		logger.Info("get user default avatar")
+		return avatar
+	}
+	avatar = GetPetAvatar(dogid, db)
+	logger.Info("get user pet avatar")
+	return avatar
+}
+
+func GetPetDefaultId(uid int, db *sql.DB) int {
+	rows, err := db.Query("SELECT mem_dog_default FROM `dog_member` WHERE (`uid`=" + strconv.Itoa(uid) + ") LIMIT 1")
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check dog_member sql prepare error: ", err)
+		return 0
+	}
+	for rows.Next() {
+		var a int
+		if err := rows.Scan(&a); err != nil {
+			logger.Error("[error] check sql get rows error ", err)
+			return 0
+		}
+		return a
+	}
+	return 0
+}
+
+func GetPetAvatar(dogid int, db *sql.DB) string {
+	avatar := "http://c1.cdn.goumin.com/diary/head/cover-s.jpg"
+	rows, err := db.Query("select head_id,head_fileext,head_cdate from dog_head_image where head_dogid=" + strconv.Itoa(dogid) +" order by head_id desc limit 1")
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check dog_head_image sql prepare error: ", err)
+		return avatar
+	}
+	for rows.Next() {
+		var row = new(PetAvatar)
+		var head_id int
+		var head_fileext string
+		var head_cdate int64
+		rows.Scan(&row.HeadId,&row.HeadFileext,&row.HeadCdate)
+		head_id = row.HeadId
+		head_fileext = row.HeadFileext
+		head_cdate = row.HeadCdate
+		if head_id > 0 {
+			var sub [5]int
+			sub[0] = head_id;
+	        sub[1] = sub[0] >> 8
+	        sub[2] = sub[1] >> 8
+	        sub[3] = sub[2] >> 8
+	        sub[4] = sub[3] >> 8
+
+			second := 3600
+	        t := time.Now()
+			tm := t.Unix()
+			currenttime := tm - int64(second)
+			var dir string
+	        if head_cdate < currenttime {
+	        	dir = "http://hd2.goumin.com"
+	        } else {
+	            dir = "http://www.goumin.com"
+	        }
+	        avatar = dir + "/attachments/head/" + strconv.Itoa(sub[4]) + "/" + strconv.Itoa(sub[3]) + "/" + strconv.Itoa(sub[2]) + "/" + strconv.Itoa(sub[1]) + "/" + strconv.Itoa(head_id) + "s." + head_fileext;
+	        return avatar
+	    }
+	}
+	return avatar
 }
 
 //已经关注的人
@@ -758,7 +846,7 @@ func GetAdInfo(db *sql.DB) []AdInfo {
 	t := time.Now().Format("2006-01-02")
 	s := t + " 00:00:00"
 	e := t + " 23:59:59"
-	rows, err := db.Query("SELECT id,type,title,content,image FROM backend.ads_recommend WHERE showtime > '" + s + "' AND showtime < '" + e + "' order by weight desc LIMIT 1")
+	rows, err := db.Query("SELECT id,type,title,content,image FROM backend.ads_recommend WHERE showtime >= '" + s + "' AND showtime <= '" + e + "' order by weight desc LIMIT 1")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check ads_recommend sql prepare error: ", err)

@@ -16,7 +16,7 @@ func TestGetFansData(t *testing.T) {
 		logger.Error("[error] connect db err")
 	}
 	// uid := 1
-	uid := 68296
+	// uid := 68296
 	// followuids := []int{68937, 187638, 68237}
 	// Position := []string{"39.9", "118.9"}
 	// fmt.Println(Position[0])
@@ -26,7 +26,7 @@ func TestGetFansData(t *testing.T) {
 	// followfids := []int{36, 10, 159}
 
 	// fans := getRauthinfoByUid(uid, db)
-	fans := getUids(uid, db)
+	// fans := getUids(uid, db)
 	// fans := getHotClubs(3, followfids, db)
 	// fans := UnicodeIndex("山东省")
 	// fans := getCity("34.60411", "119.2164")
@@ -39,8 +39,11 @@ func TestGetFansData(t *testing.T) {
 
 	// 	fmt.Println(v.latitude)
 	// }
-	fmt.Println(fans)
-	logger.Info(fans)
+	// fmt.Println(fans)
+	// logger.Info(fans)
+	// avatar := GetPetAvatar(2555840, db)
+	dogid := GetAvatar(2060500, db)
+	fmt.Println(dogid)
 }
 
 // func TestLoadById(t *testing.T) {
