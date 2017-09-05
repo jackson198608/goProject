@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
+	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
 	mgo "gopkg.in/mgo.v2"
 	"strconv"
@@ -53,7 +53,6 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session,
 func (t *Task) Do() {
 	m := NewInfo(t.loggerLevel, t.id, t.typeid, t.db, t.session, t.taskNewArgs)
 	if m != nil {
-		fmt.Println(t.typeid)
 		if t.id > 0 && t.typeid == 0 {
 			logger.Info("export event to mongo")
 			m.CreateThreadHtmlContent(t.id)
