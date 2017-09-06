@@ -7,6 +7,7 @@ import (
 	"github.com/donnie4w/go-logger/logger"
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
+	"strconv"
 	"time"
 )
 
@@ -161,5 +162,18 @@ func (t *RedisEngine) PushThreadTaskData(tasks interface{}) bool {
 		return false
 	}
 
+	return true
+}
+
+func (t *RedisEngine) PushTidData() bool {
+	redisStart, _ := strconv.Atoi(t.taskNewArgs[3])
+	redisEnd, _ := strconv.Atoi(t.taskNewArgs[4])
+	logger.Info("RPush queueName string")
+	for i := redisStart; i <= redisEnd; i++ {
+		err := (*t.client).RPush(queueName, i).Err()
+		if err != nil {
+			logger.Error("insert redis error", err)
+		}
+	}
 	return true
 }

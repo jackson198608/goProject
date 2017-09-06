@@ -16,7 +16,8 @@ type Config struct {
 	mongoConn       string
 	h5templatefile  string
 	miptemplatefile string
-	maxThreadid     string
+	tidStart        string
+	tidEnd          string
 }
 
 func loadConfig() {
@@ -32,5 +33,6 @@ func loadConfig() {
 	c.mongoConn = config.GetString("mongoConn")
 	c.h5templatefile = config.GetString("h5templatefile")
 	c.miptemplatefile = config.GetString("miptemplatefile")
-	c.maxThreadid = config.GetString("maxThreadid")
+	c.tidStart = config.GetString("tidStart")
+	c.tidEnd = config.GetString("tidEnd")
 }

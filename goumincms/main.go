@@ -19,7 +19,7 @@ var c Config = Config{
 	"192.168.86.192:27017",
 	"/data/thread/h5template.html",
 	"/data/thread/miptemplate.html",
-	"100"}
+	"300", "500"}
 
 // var logLevel int = 1
 
@@ -46,6 +46,7 @@ var c Config = Config{
 // var maxThreadid = 100
 
 var diaryDomain = "http://c1.cdn.goumin.com/diary/"
+var bbsDomain = "http://f1.cdn.goumin.com/attachments/"
 var staticH5Url string = "http://m.goumin.com/bbs/"
 var queueName string = "createHtml"
 var offset = 10
@@ -65,7 +66,7 @@ func createThreadHtml(templateType string) {
 		templatefile = c.h5templatefile
 	}
 
-	r := NewRedisEngine(c.logLevel, queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, templateType, templatefile, c.saveDir, c.maxThreadid)
+	r := NewRedisEngine(c.logLevel, queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, templateType, templatefile, c.saveDir, c.tidStart, c.tidEnd)
 	r.Loop()
 }
 
@@ -75,7 +76,7 @@ func createRedis() {
 	for {
 		tids := getThreadTask(page)
 		offset := page * offset
-		maxThreadid, _ := strconv.Atoi(c.maxThreadid)
+		maxThreadid, _ := strconv.Atoi(c.tidEnd)
 		if offset > maxThreadid {
 			break
 		}
@@ -88,6 +89,11 @@ func createRedis() {
 		r.PushThreadTaskData(tids)
 		page++
 	}
+}
+
+func createNumRedis() {
+	r := NewRedisEngine(c.logLevel, queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.tidStart, c.tidEnd)
+	r.PushTidData()
 }
 
 func main() {
@@ -106,6 +112,9 @@ func main() {
 	case "create": //创建帖子idredis
 		logger.Info("in the info html create ")
 		createRedis()
+	case "createnum": //创建帖子idredis
+		logger.Info("in the info html create ")
+		createNumRedis()
 	default:
 
 	}
