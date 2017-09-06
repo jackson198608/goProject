@@ -443,8 +443,14 @@ func regexp_string(content string) string {
 	re, _ = regexp.Compile("\\[audio\\](.*?)\\[/audio\\]")
 	content = re.ReplaceAllString(content, "<audio src='$1' controls></audio>")
 
+	re, _ = regexp.Compile("\\[audio(.*?)\\](.*?)\\[/audio\\]")
+	content = re.ReplaceAllString(content, "<audio src='$2' controls></audio>")
+
 	// 视频 media
 	re, _ = regexp.Compile("\\[media\\](.*?\\.mp4)\\[/media\\]")
+	content = re.ReplaceAllString(content, "<video src='$1' controls></video>")
+
+	re, _ = regexp.Compile("\\[media(.*?)\\](.*?)\\[/media\\]")
 	content = re.ReplaceAllString(content, "<video src='$1' controls></video>")
 
 	re, _ = regexp.Compile("\\[media.*?\\]http:\\/\\/v\\.youku\\.com\\/v_show\\/id_(.*?)\\.html.*?\\[/media\\]")
