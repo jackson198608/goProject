@@ -24,7 +24,8 @@ type InfoNew struct {
 	templateType string
 	templatefile string
 	saveDir      string
-	maxThreadid  string
+	tidStart     string
+	tidEnd       string
 }
 
 func NewInfo(logLevel int, id int, typeid int, db *sql.DB, session *mgo.Session, taskNewArgs []string) *InfoNew {
@@ -37,13 +38,15 @@ func NewInfo(logLevel int, id int, typeid int, db *sql.DB, session *mgo.Session,
 	e.templateType = taskNewArgs[3]
 	e.templatefile = taskNewArgs[4]
 	e.saveDir = taskNewArgs[5]
-	e.maxThreadid = taskNewArgs[6]
+	e.tidStart = taskNewArgs[6]
+	e.tidEnd = taskNewArgs[7]
 	return e
 }
 
 func (e *InfoNew) CreateThreadHtmlContent(tid int) error {
 	thread := LoadThreadByTid(tid, e.db)
 	if thread.Tid <= 0 {
+		logger.Info("thread is not exist")
 		return nil
 	}
 	//相关帖子 eg:tid=12
@@ -267,9 +270,9 @@ func replaceImgOrAttach(content string, subject string, images []*AttachmentX) s
 	} else {
 		for _, v := range images {
 			if v.Thumb == "" {
-				content += "<img class='imgs' src='" + diaryDomain + v.Attachment + "' />"
+				content += "<img class='imgs' src='" + bbsDomain + v.Attachment + "' />"
 			} else {
-				content += "<img class='imgs' src='" + diaryDomain + v.Thumb + "' />"
+				content += "<img class='imgs' src='" + bbsDomain + v.Thumb + "' />"
 			}
 		}
 	}
@@ -285,9 +288,9 @@ func changeMessage(content string, i int, images []*AttachmentX, str [][]string)
 		aid, _ := strconv.Atoi(str[i][1])
 		if v.Aid == aid {
 			if v.Thumb == "" {
-				img = "<img class='imgs' src='" + diaryDomain + v.Attachment + "' />"
+				img = "<img class='imgs' src='" + bbsDomain + v.Attachment + "' />"
 			} else {
-				img = "<img class='imgs' src='" + diaryDomain + v.Thumb + "' />"
+				img = "<img class='imgs' src='" + bbsDomain + v.Thumb + "' />"
 			}
 		}
 	}
@@ -347,36 +350,200 @@ func show_substr(s string, l int) string {
 	return ss
 }
 
-func regexp_string(src string) string {
+func regexp_string(content string) string {
 
-	m := strings.Index(src, "[quote]")
-	n := strings.Index(src, "[/quote]")
+	m := strings.Index(content, "[quote]")
+	n := strings.Index(content, "[/quote]")
 	if m >= 0 && n > 0 {
-		substr := src[m:n]
-		src = strings.Replace(src, substr+"[/quote]", "", -1)
+		substr := content[m:n]
+		content = strings.Replace(content, substr+"[/quote]", "", -1)
 	}
 	re, _ := regexp.Compile("\\<[\\S\\s]+?\\>")
-	src = re.ReplaceAllStringFunc(src, strings.ToLower)
+	content = re.ReplaceAllStringFunc(content, strings.ToLower)
 
 	//去除STYLE
 	re, _ = regexp.Compile("\\<style[\\S\\s]+?\\</style\\>")
-	src = re.ReplaceAllString(src, "")
+	content = re.ReplaceAllString(content, "")
 
 	//去除SCRIPT
 	re, _ = regexp.Compile("\\<script[\\S\\s]+?\\</script\\>")
-	src = re.ReplaceAllString(src, "")
-	//
-	re, _ = regexp.Compile("\\[quote\\](.*?)\\[/quote\\]")
-	src = re.ReplaceAllString(src, "")
+	content = re.ReplaceAllString(content, "")
 
 	//去除所有尖括号内的HTML代码，并换成换行符
-	re, _ = regexp.Compile("\\<[\\S\\s]+?\\>")
-	src = re.ReplaceAllString(src, "\n")
+	// re, _ = regexp.Compile("\\<[\\S\\s]+?\\>")
+	// content = re.ReplaceAllString(content, "\n")
 	//去除连续的换行符
 	re, _ = regexp.Compile("\\s{2,}")
-	src = re.ReplaceAllString(src, "\n")
+	content = re.ReplaceAllString(content, "\n")
 
-	return strings.TrimSpace(src)
+	re, _ = regexp.Compile("\\[hr\\]")
+	content = re.ReplaceAllString(content, "<hr>")
+
+	re, _ = regexp.Compile("\\[size\\=(.*?)\\](.*?)")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[font\\=(.*?)\\](.*?)")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[color\\=(.*?)\\](.*?)")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[backcolor\\=(.*?)\\](.*?)")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[/size\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[/font\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[/color\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[/backcolor\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[list=(\\d+)\\]")
+	content = re.ReplaceAllString(content, "<ul class='numeric'>")
+
+	re, _ = regexp.Compile("\\[list\\]")
+	content = re.ReplaceAllString(content, "<ul class='dot'>")
+
+	re, _ = regexp.Compile("\\[/list\\]")
+	content = re.ReplaceAllString(content, "</ul>")
+
+	re, _ = regexp.Compile("\\[img(.*?)\\](.*?)\\[/img\\]")
+	content = re.ReplaceAllString(content, "<div><img class='post_content_image' src='$2' /></div>")
+
+	re, _ = regexp.Compile("\\[url=.*?goto=findpost&pid=\\d+&ptid=\\d+\\](.*?)\\[/url\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[url=(http://bbs.goumin.com/)?forum-\\d+-\\d+\\.html\\](.*?)\\[/url\\]")
+	content = re.ReplaceAllString(content, "$2")
+
+	re, _ = regexp.Compile("\\[url=home.php\\?mod=space&uid=\\d+\\](.*?)\\[/url\\]")
+	content = re.ReplaceAllString(content, "$1")
+
+	re, _ = regexp.Compile("\\[url=(http.*?)\\](.*?)\\[/url\\]")
+	content = re.ReplaceAllString(content, "<a href='$1'>$2</a>")
+
+	re, _ = regexp.Compile("\\[url\\](.*?)\\[/url\\]")
+	content = re.ReplaceAllString(content, "<a href='$1'>$1</a>")
+
+	re, _ = regexp.Compile("\\[url=(mailto:.*?)\\](.*?)\\[/url\\]")
+	content = re.ReplaceAllString(content, "<a href='$1'>$2</a>")
+
+	re, _ = regexp.Compile("(http:\\/\\/bbs\\.goumin\\.com\\/thread-\\d+-\\d+-\\d+.html)")
+	content = re.ReplaceAllString(content, "<a href='$1'>$2</a>")
+
+	//代码 code
+	re, _ = regexp.Compile("\\[code\\](.*?)\\[/code\\]")
+	content = re.ReplaceAllString(content, "<div class='code'><pre>$1</pre></div>")
+	// 音视频 audio
+	re, _ = regexp.Compile("\\[audio\\](.*?)\\[/audio\\]")
+	content = re.ReplaceAllString(content, "<audio src='$1' controls></audio>")
+
+	// 视频 media
+	re, _ = regexp.Compile("\\[media\\](.*?\\.mp4)\\[/media\\]")
+	content = re.ReplaceAllString(content, "<video src='$1' controls></video>")
+
+	re, _ = regexp.Compile("\\[media.*?\\]http:\\/\\/v\\.youku\\.com\\/v_show\\/id_(.*?)\\.html.*?\\[/media\\]")
+	content = re.ReplaceAllString(content, "<a class='post_content_link' href='http://v.youku.com/v_show/id_$1.html'>***优酷视频点击播放***</a>")
+
+	re, _ = regexp.Compile("\\[media.*?\\]http:/\\/player\\.youku\\.com\\/player\\.php\\/sid\\/(.*?)\\/v\\.swf\\[/media\\]")
+	content = re.ReplaceAllString(content, "<a class='post_content_link' href='http://v.youku.com/v_show/id_$1.html'>***优酷视频点击播放***</a>")
+
+	re, _ = regexp.Compile("\\[media.*?\\]http:\\/\\/www\\.tudou\\.com\\/programs\\/view\\/(.*?)\\/\\[/media\\]")
+	content = re.ReplaceAllString(content, "<a class='post_content_link' href='http://www.tudou.com/programs/view/$1/'>***土豆视频点击播放***</a>")
+
+	re, _ = regexp.Compile("\\[media\\](.*?)\\[/media\\]")
+	content = re.ReplaceAllString(content, "")
+
+	// 表格 table td tr
+	re, _ = regexp.Compile("\\[table.*?\\]")
+	content = re.ReplaceAllString(content, "<table class='post_table'>")
+
+	re, _ = regexp.Compile("\\[\\/table\\]")
+	content = re.ReplaceAllString(content, "</table>")
+
+	re, _ = regexp.Compile("\\[tr(=.*?)?\\]")
+	content = re.ReplaceAllString(content, "<tr>")
+
+	re, _ = regexp.Compile("\\[\\/tr\\]")
+	content = re.ReplaceAllString(content, "</tr>")
+
+	re, _ = regexp.Compile("\\[td(=.*?)?\\]")
+	content = re.ReplaceAllString(content, "<td>")
+
+	re, _ = regexp.Compile("\\[\\/td\\]")
+	content = re.ReplaceAllString(content, "</td>")
+
+	re, _ = regexp.Compile("\\[\\/td\\]")
+	content = re.ReplaceAllString(content, "</td>")
+
+	re, _ = regexp.Compile("\\[\\*\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[flash\\](.*?)\\[/flash\\]")
+	content = re.ReplaceAllString(content, "<embed width=\"330\" height=\"240\" allownetworking=\"internal\" allowscriptaccess=\"never\" src='$1' quality=\"high\" bgcolor=\"#ffffff\" wmode=\"transparent\" allowfullscreen=\"true\" type=\"application/x-shockwave-flash\">")
+
+	// re, _ = regexp.Compile("\r\n")
+	// content = re.ReplaceAllString(content, "")
+
+	// re, _ = regexp.Compile("\r")
+	// content = re.ReplaceAllString(content, "")
+
+	// re, _ = regexp.Compile("\n")
+	// content = re.ReplaceAllString(content, "")
+
+	// 左右对齐align，浮动 float
+	re, _ = regexp.Compile("\\[align=(.*?)\\](.*?)\\[/align\\]")
+	content = re.ReplaceAllString(content, "<div align='$1'><p>$2</p></div>")
+
+	re, _ = regexp.Compile("\\[align.*?\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[/align\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[float=(.*?)\\](.*?)\\[/float\\]")
+	content = re.ReplaceAllString(content, "<div style='float:$1'>$2</div>")
+
+	re, _ = regexp.Compile("\\[float.*?\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[quote\\](.*?)\\[/quote\\]")
+	content = re.ReplaceAllString(content, "<div class='quote'><blockquote>“$1”</blockquote></div>")
+
+	re, _ = regexp.Compile("\\[free\\](.*?)\\[/free\\]")
+	content = re.ReplaceAllString(content, "<div class='quote'><blockquote>“$1”</blockquote></div>")
+
+	re, _ = regexp.Compile("\\[hide\\](.*?)\\[/hide\\]")
+	content = re.ReplaceAllString(content, "<div class='quote'><blockquote>“$1”</blockquote></div>")
+
+	re, _ = regexp.Compile("\\[qq\\](.*?)\\[/qq\\]")
+	content = re.ReplaceAllString(content, "QQ:$1")
+
+	// i
+	re, _ = regexp.Compile("\\[i.*?\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[/i\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[u.*?\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[/u\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[b.*?\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[/b\\]")
+	content = re.ReplaceAllString(content, "")
+
+	return strings.TrimSpace(content)
 }
 
 //替换表情标签
