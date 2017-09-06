@@ -348,6 +348,13 @@ func show_substr(s string, l int) string {
 }
 
 func regexp_string(src string) string {
+
+	m := strings.Index(src, "[quote]")
+	n := strings.Index(src, "[/quote]")
+	if m >= 0 && n > 0 {
+		substr := src[m:n]
+		src = strings.Replace(src, substr+"[/quote]", "", -1)
+	}
 	re, _ := regexp.Compile("\\<[\\S\\s]+?\\>")
 	src = re.ReplaceAllStringFunc(src, strings.ToLower)
 
