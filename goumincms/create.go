@@ -433,8 +433,8 @@ func regexp_string(content string) string {
 	re, _ = regexp.Compile("\\[url=(mailto:.*?)\\](.*?)\\[/url\\]")
 	content = re.ReplaceAllString(content, "<a href='$1'>$2</a>")
 
-	re, _ = regexp.Compile("(http:\\/\\/bbs\\.goumin\\.com\\/thread-\\d+-\\d+-\\d+.html)")
-	content = re.ReplaceAllString(content, "<a href='$1'>$2</a>")
+	// re, _ = regexp.Compile("(http:\\/\\/bbs\\.goumin\\.com\\/thread-\\d+-\\d+-\\d+.html)")
+	// content = re.ReplaceAllString(content, "<a href='$1'>$2</a>")
 
 	//代码 code
 	re, _ = regexp.Compile("\\[code\\](.*?)\\[/code\\]")
@@ -518,8 +518,8 @@ func regexp_string(content string) string {
 	re, _ = regexp.Compile("\\[float.*?\\]")
 	content = re.ReplaceAllString(content, "")
 
-	re, _ = regexp.Compile("\\[quote\\](.*?)\\[/quote\\]")
-	content = re.ReplaceAllString(content, "<div class='quote'><blockquote>“$1”</blockquote></div>")
+	// re, _ = regexp.Compile("\\[quote\\][\n\r]*(.+?)[\n\r]*\\[\\/quote\\]")
+	// content = re.ReplaceAllString(content, "<div class='quote'><blockquote>“$1”</blockquote></div>")
 
 	re, _ = regexp.Compile("\\[free\\](.*?)\\[/free\\]")
 	content = re.ReplaceAllString(content, "<div class='quote'><blockquote>“$1”</blockquote></div>")
@@ -547,6 +547,9 @@ func regexp_string(content string) string {
 	content = re.ReplaceAllString(content, "")
 
 	re, _ = regexp.Compile("\\[/b\\]")
+	content = re.ReplaceAllString(content, "")
+
+	re, _ = regexp.Compile("\\[/url\\]")
 	content = re.ReplaceAllString(content, "")
 
 	return strings.TrimSpace(content)
