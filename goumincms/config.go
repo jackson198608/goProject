@@ -24,8 +24,8 @@ type Config struct {
 func loadConfig(args []string) {
 	var config *jconfig.Config
 
-	if len(args) >= 3 && args[2] == "new" {
-		config = jconfig.LoadConfig("/etc/goumincmsnew.json")
+	if len(args) >= 3 {
+		config = jconfig.LoadConfig(args[2])
 	} else {
 		config = jconfig.LoadConfig("/etc/goumincms.json")
 	}
