@@ -141,10 +141,13 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 	var url = staticH5Url + "thread-" + strconv.Itoa(tid) + "-1-1.html"
 	var threadUrl = "thread-" + strconv.Itoa(tid) + "-1-1.html"
 	var forumUrl = "forum-" + strconv.Itoa(thread.Fid) + "-1.html"
+	var subMessage string = ""
+	var keyword string = ""
+	var description string = ""
 
-	var subMessage = show_substr(firstpost.Message, 160)
-	var keyword = forum.Name + "，" + subject + subMessage + " ..."
-	var description = subMessage + " ... " + subject + " ,狗民网｜铃铛宠物App"
+	// var subMessage = show_substr(firstpost.Message, 160)
+	// var keyword = forum.Name + "，" + subject + subMessage + " ..."
+	// var description = subMessage + " ... " + subject + " ,狗民网｜铃铛宠物App"
 	var views int = 0
 	html := e.getH5TemplateHtml()
 	if html == "" {
@@ -153,10 +156,10 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 	}
 	html = strings.Replace(html, "cmsRand", strconv.Itoa(rand.Intn(3000)), -1)
 	html = strings.Replace(html, "cmsViews", strconv.Itoa(views), -1)
-	html = strings.Replace(html, "cmsSubject", subject, -1)
-	html = strings.Replace(html, "cmsKeywords", keyword, -1)
 	html = strings.Replace(html, "cmsLink", url, -1)
-	html = strings.Replace(html, "cmsDescription", description, -1)
+	html = strings.Replace(html, "cmsSubject", subject, -1)
+	// html = strings.Replace(html, "cmsKeywords", keyword, -1)
+	// html = strings.Replace(html, "cmsDescription", description, -1)
 	html = strings.Replace(html, "cmsThreadUrl", threadUrl, -1)
 	html = strings.Replace(html, "cmsForumUrl", forumUrl, -1)
 	html = strings.Replace(html, "cmsForumName", forum.Name, -1)
@@ -167,20 +170,13 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 	len := len(posts)                                           //帖子楼层总数
 	count := 20                                                 //每页条数
 	totalpages := int(math.Ceil(float64(len) / float64(count))) //page总数
+
 	for i := 1; i <= totalpages; i++ {
 		var title = subject + " - 第" + strconv.Itoa(i) + "页 - " + forum.Name + " -  狗民社区-移动版"
 		html = strings.Replace(html, "cmsTitle", title, -1)
 		cmsPage := ""
 		content := ""
-		// dir := strconv.Itoa(tid % 1000)
-		// dir := ""
-		// if tid < 5000000 { //tid<5百万的数据，生成目录4/tid%1000/
-		// 	dir = "4/" + strconv.Itoa(tid%1000)
 
-		// } else { //tid>5百万，每增加1百万，生成目录/tid%1百万/tid%500个
-		// 	dir = strconv.Itoa(tid/1000000) + "/" + strconv.Itoa(tid%500)
-		// }
-		// filename := dir + "/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i) + "-1.html"
 		filename := createFileName(tid, i, 0)
 		start := (i - 1) * count
 		end := start + count
@@ -191,7 +187,8 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 		floor := count * (i - 1) //楼层
 		var images []*AttachmentX
 		var message string = ""
-		for _, v := range pagepost {
+		var metaMessage string = ""
+		for k, v := range pagepost {
 			message = regexp_string(v.Message)
 			floor++
 			for _, lv := range relatelink {
@@ -216,6 +213,9 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 				}
 				content += "</span><span class=\"dataTime\">" + userinfo.Grouptitle + "</span></a></div><div class=\"post-detail-content\"><div><p>" + message + "</p></div><div class=\"detail-date\"><span>" + strconv.Itoa(floor) + "楼</span><span>" + dateline + "</span></div></div></div>"
 			}
+			if k == 0 {
+				metaMessage = message
+			}
 		}
 		if totalpages == 1 {
 			cmsPage = ""
@@ -236,7 +236,13 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 				cmsPage = "<a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a><a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i-1) + "-1.html\">上一页</a> <a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i+1) + "-1.html\">下一页</a><a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(totalpages) + "-1.html\">尾页</a>"
 			}
 		}
+		subMessage = show_substr(metaMessage, 160)
+		keyword = forum.Name + "，" + subject + subMessage + " ..."
+		description = subMessage + " ... " + subject + " ,狗民网｜铃铛宠物App"
+
 		htmlhtml := strings.Replace(html, "cmsPost", strconv.Itoa(len-1), -1)
+		htmlhtml = strings.Replace(htmlhtml, "cmsKeywords", keyword, -1)
+		htmlhtml = strings.Replace(htmlhtml, "cmsDescription", description, -1)
 		content = findface(content)
 		htmlhtml = strings.Replace(htmlhtml, "cmsMessage", content, -1)
 		htmlhtml = strings.Replace(htmlhtml, "cmsPage", cmsPage, -1)
@@ -354,6 +360,10 @@ func checkFileIsExist(filename string) bool {
 
 func show_substr(s string, l int) string {
 	s = regexp_string(s)
+	re, _ := regexp.Compile("\\<[\\S\\s]+?\\>")
+	s = re.ReplaceAllString(s, "")
+	re, _ = regexp.Compile("\\s")
+	s = re.ReplaceAllString(s, "")
 	if len(s) <= l {
 		return s
 	}
