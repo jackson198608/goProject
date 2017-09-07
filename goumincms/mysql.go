@@ -11,6 +11,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Thread struct {
@@ -205,6 +206,8 @@ func LoadUserinfoByUid(uid int, db *sql.DB) *UserInfo {
 		return nil
 	}
 	var avatar string
+	var dir string = diaryDomain
+
 	row2, err := db.Query("SELECT image FROM `album` WHERE type=5 and `uid`=" + strconv.Itoa(int(uid)))
 	defer row2.Close()
 	if err != nil {
@@ -225,6 +228,36 @@ func LoadUserinfoByUid(uid int, db *sql.DB) *UserInfo {
 			row3.Scan(&avatar)
 		}
 	}
+
+	if avatar == "" {
+		row3, err := db.Query("SELECT head_id,head_fileext,head_cdate FROM `dog_head_image` WHERE head_userid=" + strconv.Itoa(int(uid)) + " limit 1")
+		defer row3.Close()
+		if err != nil {
+			logger.Error("[error] check album type=25 sql prepare error: ", err)
+			return nil
+		}
+		var head_id int = 0
+		var head_fileext string = ""
+		var head_cdate int = 0
+		for row3.Next() {
+			row3.Scan(&head_id, &head_fileext, &head_cdate)
+		}
+		if head_id > 0 {
+			sub0 := head_id
+			sub1 := sub0 >> 8
+			sub2 := sub1 >> 8
+			sub3 := sub2 >> 8
+			sub4 := sub3 >> 8
+			time := time.Now().Unix()
+			if head_cdate < int(time)-3600 {
+				dir = "http://hd2.goumin.com"
+			} else {
+				dir = "http://www.goumin.com"
+			}
+			avatar = "/attachments/head/" + strconv.Itoa(sub4) + "/" + strconv.Itoa(sub3) + "/" + strconv.Itoa(sub2) + "/" + strconv.Itoa(sub1) + "/" + strconv.Itoa(head_id) + "s." + head_fileext
+		}
+	}
+
 	if avatar == "" {
 		avatar = "head/cover-s.jpg"
 	}
@@ -243,7 +276,7 @@ func LoadUserinfoByUid(uid int, db *sql.DB) *UserInfo {
 	row.Username = username
 	row.Nickname = nickname
 	row.Grouptitle = grouptitle
-	row.Avatar = diaryDomain + avatar
+	row.Avatar = dir + avatar
 	return row
 }
 
