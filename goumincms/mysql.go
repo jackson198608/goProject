@@ -224,6 +224,7 @@ func LoadUserinfoByUid(uid int, db *sql.DB) *UserInfo {
 			logger.Error("[error] check album type=25 sql prepare error: ", err)
 			return nil
 		}
+		dir = ""
 		for row3.Next() {
 			row3.Scan(&avatar)
 		}
