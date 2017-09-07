@@ -260,9 +260,9 @@ func createFileName(tid int, page int, typeid int) string {
 			dir = strconv.Itoa(tid/1000000) + "/" + strconv.Itoa(tid%500)
 		}
 	} else {
-		n4 := tid % 10
-		n3 := (tid - n4) % 100
-		n2 := (tid - n4 - n3) % 1000
+		n4 := tid % 10               //个位数
+		n3 := (tid - n4) % 100       //十位数
+		n2 := (tid - n4 - n3) % 1000 //百位数
 		dir = strconv.Itoa(n2/100) + "/" + strconv.Itoa(n3/10) + "/" + strconv.Itoa(n4)
 	}
 	filename = dir + "/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(page) + "-1.html"
