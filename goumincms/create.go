@@ -173,14 +173,15 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 		cmsPage := ""
 		content := ""
 		// dir := strconv.Itoa(tid % 1000)
-		dir := ""
-		if tid < 5000000 { //tid<5百万的数据，生成目录4/tid%1000/
-			dir = "4/" + strconv.Itoa(tid%1000)
+		// dir := ""
+		// if tid < 5000000 { //tid<5百万的数据，生成目录4/tid%1000/
+		// 	dir = "4/" + strconv.Itoa(tid%1000)
 
-		} else { //tid>5百万，每增加1百万，生成目录/tid%1百万/tid%500个
-			dir = strconv.Itoa(tid/1000000) + "/" + strconv.Itoa(tid%500)
-		}
-		filename := dir + "/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i) + "-1.html"
+		// } else { //tid>5百万，每增加1百万，生成目录/tid%1百万/tid%500个
+		// 	dir = strconv.Itoa(tid/1000000) + "/" + strconv.Itoa(tid%500)
+		// }
+		// filename := dir + "/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i) + "-1.html"
+		filename := createFileName(tid, i, 0)
 		start := (i - 1) * count
 		end := start + count
 		if end > len {
@@ -246,6 +247,26 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 			logger.Error("[error] to html error ")
 		}
 	}
+}
+
+func createFileName(tid int, page int, typeid int) string {
+	filename := ""
+	dir := ""
+	if typeid == 1 {
+		if tid < 5000000 { //tid<5百万的数据，生成目录4/tid%1000/
+			dir = "4/" + strconv.Itoa(tid%1000)
+
+		} else { //tid>5百万，每增加1百万，生成目录/tid%1百万/tid%500个
+			dir = strconv.Itoa(tid/1000000) + "/" + strconv.Itoa(tid%500)
+		}
+	} else {
+		n4 := tid % 10
+		n3 := (tid - n4) % 100
+		n2 := (tid - n4 - n3) % 1000
+		dir = strconv.Itoa(n2/100) + "/" + strconv.Itoa(n3/10) + "/" + strconv.Itoa(n4)
+	}
+	filename = dir + "/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(page) + "-1.html"
+	return filename
 }
 
 func replaceImgOrAttach(content string, subject string, images []*AttachmentX) string {
