@@ -10,6 +10,7 @@ type Config struct {
 	dbAuth          string
 	numloops        int
 	redisConn       string
+	queueName       string
 	saveDir         string
 	logFile         string
 	logLevel        int
@@ -20,13 +21,20 @@ type Config struct {
 	tidEnd          string
 }
 
-func loadConfig() {
-	config := jconfig.LoadConfig("/etc/goumincms.json")
+func loadConfig(args []string) {
+	var config *jconfig.Config
+
+	if len(args) == 4 && args[3] == "new" {
+		config = jconfig.LoadConfig("/etc/goumincmsnew.json")
+	} else {
+		config = jconfig.LoadConfig("/etc/goumincms.json")
+	}
 	c.dbDsn = config.GetString("dbDsn")
 	c.dbName = config.GetString("dbName")
 	c.dbAuth = config.GetString("dbAuth")
 	c.numloops = config.GetInt("numloops")
 	c.redisConn = config.GetString("redisConn")
+	c.queueName = config.GetString("queueName")
 	c.saveDir = config.GetString("saveDir")
 	c.logFile = config.GetString("logFile")
 	c.logLevel = config.GetInt("logLevel")

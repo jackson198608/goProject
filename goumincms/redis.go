@@ -142,7 +142,7 @@ func (t *RedisEngine) PushThreadTaskData(tasks interface{}) bool {
 	case []string:
 		logger.Info("this is string task", realTasks)
 		for i := 0; i < len(realTasks); i++ {
-			err := (*t.client).RPush(queueName, realTasks[i]).Err()
+			err := (*t.client).RPush(t.queueName, realTasks[i]).Err()
 			if err != nil {
 				logger.Error("insert redis error", err)
 			}
@@ -151,7 +151,7 @@ func (t *RedisEngine) PushThreadTaskData(tasks interface{}) bool {
 	case []int:
 		logger.Info("this is int task", realTasks)
 		for i := 0; i < len(realTasks); i++ {
-			err := (*t.client).RPush(queueName, realTasks[i]).Err()
+			err := (*t.client).RPush(t.queueName, realTasks[i]).Err()
 			if err != nil {
 				logger.Error("insert redis error", err)
 			}
@@ -170,7 +170,7 @@ func (t *RedisEngine) PushTidData() bool {
 	redisEnd, _ := strconv.Atoi(t.taskNewArgs[4])
 	logger.Info("RPush queueName string")
 	for i := redisStart; i <= redisEnd; i++ {
-		err := (*t.client).RPush(queueName, i).Err()
+		err := (*t.client).RPush(t.queueName, i).Err()
 		if err != nil {
 			logger.Error("insert redis error", err)
 		}

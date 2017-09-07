@@ -13,6 +13,7 @@ var c Config = Config{
 	"dog123:dog123",
 	10,
 	"127.0.0.1:6379",
+	"createHtml",
 	"/data/thread/",
 	"/tmp/create_thread.log",
 	1,
@@ -48,12 +49,13 @@ var c Config = Config{
 var diaryDomain = "http://c1.cdn.goumin.com/diary/"
 var bbsDomain = "http://f1.cdn.goumin.com/attachments/"
 var staticH5Url string = "http://m.goumin.com/bbs/"
-var queueName string = "createHtml"
+
+// var queueName string = "createHtml"
 var offset = 10
 
-func Init() {
+func Init(args []string) {
 
-	loadConfig()
+	loadConfig(args)
 	logger.SetConsole(true)
 	logger.SetLevel(logger.DEBUG)
 	logger.Error(logger.DEBUG)
@@ -66,12 +68,12 @@ func createThreadHtml(templateType string) {
 		templatefile = c.h5templatefile
 	}
 
-	r := NewRedisEngine(c.logLevel, queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, templateType, templatefile, c.saveDir, c.tidStart, c.tidEnd)
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, templateType, templatefile, c.saveDir, c.tidStart, c.tidEnd)
 	r.Loop()
 }
 
 func createRedis() {
-	r := NewRedisEngine(c.logLevel, queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
 	page := 1
 	for {
 		tids := getThreadTask(page)
@@ -92,12 +94,12 @@ func createRedis() {
 }
 
 func createNumRedis() {
-	r := NewRedisEngine(c.logLevel, queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.tidStart, c.tidEnd)
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.tidStart, c.tidEnd)
 	r.PushTidData()
 }
 
 func main() {
-	Init()
+	Init(os.Args)
 	jobType := os.Args[1]
 	templateType := ""
 	if len(os.Args) == 3 {
