@@ -168,7 +168,7 @@ func (t *RedisEngine) PushThreadTaskData(tasks interface{}) bool {
 func (t *RedisEngine) PushTidData() bool {
 	redisStart, _ := strconv.Atoi(t.taskNewArgs[3])
 	redisEnd, _ := strconv.Atoi(t.taskNewArgs[4])
-	logger.Info("RPush queueName string")
+	logger.Info("RPush queueName string", t.queueName)
 	for i := redisStart; i <= redisEnd; i++ {
 		err := (*t.client).RPush(t.queueName, i).Err()
 		if err != nil {

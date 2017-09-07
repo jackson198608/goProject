@@ -102,8 +102,8 @@ func main() {
 	Init(os.Args)
 	jobType := os.Args[1]
 	templateType := ""
-	if len(os.Args) == 3 {
-		templateType = os.Args[2] //string 默认0不传参数或是参数是0为mip模板 ,1:h5
+	if len(os.Args) >= 4 {
+		templateType = os.Args[3] //string 默认0不传参数或是参数是0为mip模板 ,1:h5
 	}
 	switch jobType {
 	case "thread": //thread
