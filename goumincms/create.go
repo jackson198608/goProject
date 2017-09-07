@@ -257,15 +257,19 @@ func createFileName(tid int, page int, typeid int) string {
 			dir = "4/" + strconv.Itoa(tid%1000)
 
 		} else { //tid>5百万，每增加1百万，生成目录/tid%1百万/tid%500个
-			dir = strconv.Itoa(tid/1000000) + "/" + strconv.Itoa(tid%500)
+			dir = strconv.Itoa(tid/1000000) + "/" + strconv.Itoa(tid%500) + "/"
 		}
 	} else {
-		n4 := tid % 10               //个位数
-		n3 := (tid - n4) % 100       //十位数
-		n2 := (tid - n4 - n3) % 1000 //百位数
-		dir = strconv.Itoa(n2/100) + "/" + strconv.Itoa(n3/10) + "/" + strconv.Itoa(n4)
+		if tid < 1000 {
+			dir = ""
+		} else {
+			n4 := tid % 10               //个位数
+			n3 := (tid - n4) % 100       //十位数
+			n2 := (tid - n4 - n3) % 1000 //百位数
+			dir = strconv.Itoa(n2/100) + "/" + strconv.Itoa(n3/10) + "/" + strconv.Itoa(n4) + "/"
+		}
 	}
-	filename = dir + "/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(page) + "-1.html"
+	filename = dir + "thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(page) + "-1.html"
 	return filename
 }
 
