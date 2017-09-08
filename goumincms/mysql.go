@@ -106,7 +106,7 @@ func LoadFirstPostByTid(tid int, posttableid int, db *sql.DB) *Post {
 	if posttableid == 0 {
 		tableName = "pre_forum_post"
 	}
-	rows, err := db.Query("select pid,tid,first,author,authorid,subject,dateline,message,status from `" + tableName + "` where invisible=0 and first=1 and tid=" + strconv.Itoa(int(tid)) + "")
+	rows, err := db.Query("select pid,tid,first,author,authorid,subject,dateline,message,p.status from `" + tableName + "` as p inner join `pre_common_member` as m on p.authorid=m.uid where m.groupid!=4 and invisible=0 and first=1 and tid=" + strconv.Itoa(int(tid)) + "")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check pre_forum_post first sql prepare error: ", err)
@@ -125,7 +125,7 @@ func LoadPostsByTid(tid int, posttableid int, db *sql.DB) []*Post {
 	if posttableid == 0 {
 		tableName = "pre_forum_post"
 	}
-	rows, err := db.Query("select pid,tid,first,author,authorid,subject,dateline,message,status from `" + tableName + "` where invisible=0 and tid=" + strconv.Itoa(int(tid)) + " order by dateline")
+	rows, err := db.Query("select pid,tid,first,author,authorid,subject,dateline,message,p.status from `" + tableName + "` as p inner join `pre_common_member` as m on p.authorid=m.uid where m.groupid!=4 and invisible=0 and tid=" + strconv.Itoa(int(tid)) + " order by dateline")
 	defer rows.Close()
 	if err != nil {
 		logger.Error("[error] check pre_forum_post sql prepare error: ", err)
