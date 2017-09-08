@@ -260,6 +260,7 @@ func LoadUserinfoByUid(uid int, db *sql.DB) *UserInfo {
 	}
 
 	if avatar == "" {
+		dir = diaryDomain
 		avatar = "head/cover-s.jpg"
 	}
 
