@@ -246,13 +246,13 @@
             padding-bottom: .5rem; /*background: #65cccd;padding: .1rem .2rem;border-radius: .3rem;*/
         }
 
-        .user-info a {
+        .user-info {
             display: block;
             overflow: hidden;
             color: #333;
         }
 
-        .user-info a .user-avatar {
+        .user-info .user-avatar {
             float: left;
             display: inline-block;
             width: 3rem;
@@ -263,27 +263,27 @@
             overflow: hidden;
         }
 
-        .user-info a span.info {
+        .user-info span.info {
             display: block;
             width: 80%;
             overflow: hidden;
         }
 
-        .user-info a span.dataTime {
+        .user-info span.dataTime {
             display: block;
             color: #999;
             font-size: 1rem;
             float: left;
         }
 
-        .user-info a span em {
+        .user-info span em {
             display: block;
             font-size: 1.4rem;
             margin-right: .5rem;
             float: left;
             font-style: normal;
         }
-        .user-info a span em.user-name {
+        .user-info span em.user-name {
             max-width: 60%;
             white-space: nowrap;
             text-overflow: ellipsis;
@@ -294,13 +294,13 @@
         }
 
         /*.user-info a span em.user-name {height: 1.25rem; max-width: 11.5rem;overflow: hidden;}*/
-        .user-info a span em.level {
+        .user-info span em.level {
             color: #dcab7f;
             font-size: .8rem;
             margin-top: .1rem;
         }
 
-        .user-info a span em.identity {
+        .user-info span em.identity {
             font-size: 1rem;
             color: #ff5a60;
             padding: 0 .1rem;
@@ -309,13 +309,13 @@
             border: 1px solid #ff5a60;
         }
 
-        .user-info a span i {
+        .user-info span i {
             display: block;
             color: #666;
             font-size: .75rem;
         }
 
-        .user-info a span.floor {
+        .user-info span.floor {
             float: right;
             color: #999;
             font-size: .75rem;;
@@ -330,7 +330,7 @@
         .post-detail-content p {
             white-space: pre-line;
             font-size: 1.4rem;
-            line-height: 1.8rem;
+            line-height: 2rem;
             padding: .5rem 0;
             color: #333;
             word-wrap: break-word;
@@ -548,6 +548,17 @@
         .footer {
             margin-bottom: 1rem;
         }
+        .replyand{
+            float: right;
+        }
+        .replyand span{
+            float: left;
+            margin-right:1rem;
+            color: #ff5a60;
+        }
+        .icon-views{
+            width: 1.4rem;float: left;margin-right: .8rem;margin-left: .2rem;margin-top: .1rem;
+        }
     </style>
 </head>
 
@@ -589,7 +600,15 @@
 
         <h2 class="title">cmsSubject</h2>
         <div class="thread-grounp">
-            <a href="/thread/club/3" class="club-name">cmsForumName&gt;</a>
+            <mip-list template="mip-view-id" src="https://m.goumin.com/bbs/view.html?tid=cmsTid" id="mip-view"  preLoad>
+                <template type="mip-mustache" id="mip-view-id">
+                    <div class="replyand">
+                    <mip-img src="http://c1.cdn.goumin.com/cms/aichong/day_170911/20170911_e5dcb51.png" class="icon-views"></mip-img><span>{{views}}</span>
+                    <mip-img src="http://c1.cdn.goumin.com/cms/aichong/day_170911/20170911_b032378.png" class="icon-views"></mip-img><span>{{replies}}</span>
+                </div>
+                </template>
+            </mip-list>
+            
             <div class="thread-solveCount">
                 <div class="marked">问</div>
                 <div class="solve-count">
