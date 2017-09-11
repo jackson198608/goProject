@@ -154,6 +154,7 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 		logger.Error("template file not found")
 		return
 	}
+	html = strings.Replace(html, "cmsTid", strconv.Itoa(tid), -1)
 	html = strings.Replace(html, "cmsRand", strconv.Itoa(rand.Intn(3000)), -1)
 	html = strings.Replace(html, "cmsViews", strconv.Itoa(views), -1)
 	html = strings.Replace(html, "cmsLink", url, -1)
@@ -207,11 +208,11 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 				}
 				content += "</span><span class=\"dataTime\">" + dateline + "</span><span class=\"floor\">" + strconv.Itoa(floor) + "楼</span></a></div><div class=\"post-detail-content\"><p>" + message + "</p></div></div>"
 			} else {
-				content += "<div class=\"post-detail-a\"><div class=\"user-info\"><a href=\"javascript:;\"><mip-img src=\"" + userinfo.Avatar + "\" class=\"user-avatar\"></mip-img><span class=\"info\"><em class=\"user-name\">" + userinfo.Nickname + "</em>"
+				content += "<div class=\"post-detail-a\"><div class=\"user-info\"><mip-img src=\"" + userinfo.Avatar + "\" class=\"user-avatar\"></mip-img><span class=\"info\"><em class=\"user-name\">" + userinfo.Nickname + "</em>"
 				if v.First == 1 {
 					content += "<em class=\"identity\">楼主</em>"
 				}
-				content += "</span><span class=\"dataTime\">" + userinfo.Grouptitle + "</span></a></div><div class=\"post-detail-content\"><div><p>" + message + "</p></div><div class=\"detail-date\"><span>" + strconv.Itoa(floor) + "楼</span><span>" + dateline + "</span></div></div></div>"
+				content += "</span><span class=\"dataTime\">" + userinfo.Grouptitle + "</span></div><div class=\"post-detail-content\"><div><p>" + message + "</p></div><div class=\"detail-date\"><span>" + strconv.Itoa(floor) + "楼</span><span>" + dateline + "</span></div></div></div>"
 			}
 			if k == 0 {
 				metaMessage = message
@@ -281,7 +282,7 @@ func createFileName(tid int, page int, typeid int) string {
 
 func replaceImgOrAttach(content string, subject string, images []*AttachmentX) string {
 	re, _ := regexp.Compile("\\[img(.*?)\\](.*?)\\[\\/img\\]")
-	content = re.ReplaceAllString(content, "<img alt=\""+subject+"\" src=\"$2\">")
+	content = re.ReplaceAllString(content, "<mip-img alt=\""+subject+"\" src=\"$2\"></mip-img>")
 	len := len(images)
 	if len == 0 {
 		return content
@@ -301,9 +302,9 @@ func replaceImgOrAttach(content string, subject string, images []*AttachmentX) s
 	} else {
 		for _, v := range images {
 			if v.Thumb == "" {
-				content += "<img class='imgs' src='" + bbsDomain + v.Attachment + "' />"
+				content += "<mip-img class='imgs' src='" + bbsDomain + v.Attachment + "' ></mip-img>"
 			} else {
-				content += "<img class='imgs' src='" + bbsDomain + v.Thumb + "' />"
+				content += "<mip-img class='imgs' src='" + bbsDomain + v.Thumb + "' ></mip-img>"
 			}
 		}
 	}
@@ -319,9 +320,9 @@ func changeMessage(content string, i int, images []*AttachmentX, str [][]string)
 		aid, _ := strconv.Atoi(str[i][1])
 		if v.Aid == aid {
 			if v.Thumb == "" {
-				img = "<img class='imgs' src='" + bbsDomain + v.Attachment + "' />"
+				img = "<mip-img class='imgs' src='" + bbsDomain + v.Attachment + "' ></mip-img>"
 			} else {
-				img = "<img class='imgs' src='" + bbsDomain + v.Thumb + "' />"
+				img = "<mip-img class='imgs' src='" + bbsDomain + v.Thumb + "' ></mip-img>"
 			}
 		}
 	}
@@ -448,7 +449,7 @@ func regexp_string(content string) string {
 	content = re.ReplaceAllString(content, "</ul>")
 
 	re, _ = regexp.Compile("\\[img(.*?)\\](.*?)\\[/img\\]")
-	content = re.ReplaceAllString(content, "<div><img class='post_content_image' src='$2' /></div>")
+	content = re.ReplaceAllString(content, "<div><mip-img class='post_content_image' src='$2' ></mip-img></div>")
 
 	re, _ = regexp.Compile("\\[url=.*?goto=findpost&pid=\\d+&ptid=\\d+\\](.*?)\\[/url\\]")
 	content = re.ReplaceAllString(content, "")
@@ -592,91 +593,91 @@ func regexp_string(content string) string {
 
 //替换表情标签
 func findface(content string) string {
-	content = strings.Replace(content, ":cm101:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-01.gif'>", -1)
-	content = strings.Replace(content, ":cm102:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-02.gif'>", -1)
-	content = strings.Replace(content, ":cm103:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-03.gif'>", -1)
-	content = strings.Replace(content, ":cm104:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-04.gif'>", -1)
-	content = strings.Replace(content, ":cm105:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-05.gif'>", -1)
-	content = strings.Replace(content, ":cm106:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-06.gif'>", -1)
-	content = strings.Replace(content, ":cm107:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-07.gif'>", -1)
-	content = strings.Replace(content, ":cm108:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-08.gif'>", -1)
-	content = strings.Replace(content, ":cm109:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-09.gif'>", -1)
-	content = strings.Replace(content, ":cm110:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-10.gif'>", -1)
-	content = strings.Replace(content, ":cm111:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-11.gif'>", -1)
-	content = strings.Replace(content, ":cm112:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-12.gif'>", -1)
-	content = strings.Replace(content, ":cm113:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-13.gif'>", -1)
-	content = strings.Replace(content, ":cm114:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-14.gif'>", -1)
-	content = strings.Replace(content, ":cm115:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-15.gif'>", -1)
-	content = strings.Replace(content, ":cm116:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-16.gif'>", -1)
-	content = strings.Replace(content, ":cm117:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-17.gif'>", -1)
-	content = strings.Replace(content, ":cm118:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-18.gif'>", -1)
-	content = strings.Replace(content, ":cm119:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-19.gif'>", -1)
-	content = strings.Replace(content, ":cm120:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-20.gif'>", -1)
-	content = strings.Replace(content, ":cm121:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-21.gif'>", -1)
-	content = strings.Replace(content, ":cm122:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-22.gif'>", -1)
-	content = strings.Replace(content, ":cm123:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-23.gif'>", -1)
-	content = strings.Replace(content, ":cm124:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-24.gif'>", -1)
-	content = strings.Replace(content, ":cm125:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-25.gif'>", -1)
-	content = strings.Replace(content, ":cm126:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-26.gif'>", -1)
-	content = strings.Replace(content, ":cm127:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-27.gif'>", -1)
-	content = strings.Replace(content, ":cm128:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-28.gif'>", -1)
-	content = strings.Replace(content, ":cm129:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-29.gif'>", -1)
-	content = strings.Replace(content, ":cm130:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-30.gif'>", -1)
-	content = strings.Replace(content, ":cm131:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-31.gif'>", -1)
-	content = strings.Replace(content, ":cm132:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-32.gif'>", -1)
-	content = strings.Replace(content, ":cm133:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-33.gif'>", -1)
-	content = strings.Replace(content, ":cm134:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-34.gif'>", -1)
-	content = strings.Replace(content, ":cm135:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-35.gif'>", -1)
-	content = strings.Replace(content, ":cm136:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-36.gif'>", -1)
-	content = strings.Replace(content, ":cm137:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-37.gif'>", -1)
-	content = strings.Replace(content, ":cm138:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-38.gif'>", -1)
-	content = strings.Replace(content, ":cm139:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-39.gif'>", -1)
-	content = strings.Replace(content, ":cm140:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-40.gif'>", -1)
-	content = strings.Replace(content, ":cm141:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-41.gif'>", -1)
-	content = strings.Replace(content, ":cm142:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-42.gif'>", -1)
-	content = strings.Replace(content, ":cm143:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-43.gif'>", -1)
-	content = strings.Replace(content, ":cm144:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-44.gif'>", -1)
-	content = strings.Replace(content, ":cm145:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-45.gif'>", -1)
-	content = strings.Replace(content, ":cm146:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-46.gif'>", -1)
-	content = strings.Replace(content, ":cm147:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-47.gif'>", -1)
-	content = strings.Replace(content, ":cm148:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-48.gif'>", -1)
-	content = strings.Replace(content, ":cm149:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-49.gif'>", -1)
-	content = strings.Replace(content, ":cm150:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-50.gif'>", -1)
-	content = strings.Replace(content, ":cm151:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-51.gif'>", -1)
-	content = strings.Replace(content, ":cm152:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-52.gif'>", -1)
-	content = strings.Replace(content, ":cm153:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-53.gif'>", -1)
-	content = strings.Replace(content, ":cm154:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-54.gif'>", -1)
-	content = strings.Replace(content, ":cm155:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-55.gif'>", -1)
-	content = strings.Replace(content, ":cm156:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-56.gif'>", -1)
-	content = strings.Replace(content, ":cm157:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-57.gif'>", -1)
-	content = strings.Replace(content, ":cm158:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-58.gif'>", -1)
-	content = strings.Replace(content, ":cm159:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-59.gif'>", -1)
-	content = strings.Replace(content, ":cm160:", "<img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-60.gif'>", -1)
-	content = strings.Replace(content, ":dog61:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/61.gif'>", -1)
-	content = strings.Replace(content, ":dog62:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/62.gif'>", -1)
-	content = strings.Replace(content, ":dog63:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/63.gif'>", -1)
-	content = strings.Replace(content, ":dog64:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/64.gif'>", -1)
-	content = strings.Replace(content, ":dog65:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/65.gif'>", -1)
-	content = strings.Replace(content, ":dog66:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/66.gif'>", -1)
-	content = strings.Replace(content, ":dog67:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/67.gif'>", -1)
-	content = strings.Replace(content, ":dog68:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/68.gif'>", -1)
-	content = strings.Replace(content, ":dog69:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/69.gif'>", -1)
-	content = strings.Replace(content, ":dog70:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/70.gif'>", -1)
-	content = strings.Replace(content, ":dog71:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/71.gif'>", -1)
-	content = strings.Replace(content, ":dog72:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/72.gif'>", -1)
-	content = strings.Replace(content, ":dog73:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/73.gif'>", -1)
-	content = strings.Replace(content, ":dog74:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/74.gif'>", -1)
-	content = strings.Replace(content, ":dog75:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/75.gif'>", -1)
-	content = strings.Replace(content, ":dog76:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/76.gif'>", -1)
-	content = strings.Replace(content, ":dog77:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/77.gif'>", -1)
-	content = strings.Replace(content, ":dog78:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/78.gif'>", -1)
-	content = strings.Replace(content, ":dog79:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/79.gif'>", -1)
-	content = strings.Replace(content, ":dog80:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/80.gif'>", -1)
-	content = strings.Replace(content, ":dog81:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/81.gif'>", -1)
-	content = strings.Replace(content, ":dog82:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/82.gif'>", -1)
-	content = strings.Replace(content, ":dog83:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/83.gif'>", -1)
-	content = strings.Replace(content, ":dog84:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/84.gif'>", -1)
-	content = strings.Replace(content, ":dog85:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/85.gif'>", -1)
-	content = strings.Replace(content, ":dog86:", "<img src='http://bbs.goumin.com/static/image/smiley/default/dog/86.gif'>", -1)
+	content = strings.Replace(content, ":cm101:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-01.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm102:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-02.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm103:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-03.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm104:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-04.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm105:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-05.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm106:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-06.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm107:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-07.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm108:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-08.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm109:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-09.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm110:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-10.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm111:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-11.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm112:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-12.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm113:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-13.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm114:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-14.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm115:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-15.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm116:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-16.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm117:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-17.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm118:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-18.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm119:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-19.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm120:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-20.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm121:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-21.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm122:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-22.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm123:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-23.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm124:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-24.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm125:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-25.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm126:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-26.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm127:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-27.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm128:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-28.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm129:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-29.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm130:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-30.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm131:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-31.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm132:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-32.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm133:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-33.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm134:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-34.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm135:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-35.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm136:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-36.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm137:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-37.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm138:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-38.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm139:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-39.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm140:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-40.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm141:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-41.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm142:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-42.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm143:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-43.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm144:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-44.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm145:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-45.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm146:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-46.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm147:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-47.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm148:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-48.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm149:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-49.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm150:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-50.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm151:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-51.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm152:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-52.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm153:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-53.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm154:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-54.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm155:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-55.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm156:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-56.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm157:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-57.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm158:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-58.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm159:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-59.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":cm160:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/emot/emot-60.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog61:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/61.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog62:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/62.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog63:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/63.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog64:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/64.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog65:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/65.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog66:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/66.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog67:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/67.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog68:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/68.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog69:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/69.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog70:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/70.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog71:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/71.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog72:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/72.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog73:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/73.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog74:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/74.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog75:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/75.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog76:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/76.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog77:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/77.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog78:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/78.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog79:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/79.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog80:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/80.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog81:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/81.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog82:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/82.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog83:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/83.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog84:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/84.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog85:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/85.gif'></mip-img>", -1)
+	content = strings.Replace(content, ":dog86:", "<mip-img src='http://bbs.goumin.com/static/image/smiley/default/dog/86.gif'></mip-img>", -1)
 	return content
 }

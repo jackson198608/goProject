@@ -231,7 +231,8 @@
         }
 
         .post-detail {
-            margin-top: 60px;
+            margin-top: 50px;
+            margin-bottom: 1rem;
         }
 
         .post-detail .forum-name {
@@ -569,6 +570,13 @@
         </header>
     </mip-fixed>
     <div class="post-detail">
+        <mip-list template="mip-template-id" src="https://m.goumin.com/bbs/advert.html" id="mip-list"  preLoad>
+            <template type="mip-mustache" id="mip-template-id">
+                <div>
+                    <a href="{{url}}" target="_blank"><mip-img src="{{path}}"></mip-img></a>
+                </div>
+            </template>
+        </mip-list>
         <nav class="bread-nav">
             <ul>
                 <li><a href="http://www.m.goumin.com/">狗民网</a></li>
@@ -632,6 +640,17 @@
             <a href="http://bbs.goumin.com/">©2017 goumin.com</a>
         </p>
     </div>
+    <mip-fixed type="bottom">
+        <mip-appdl
+            tpl="imageText"
+            src="http://c1.cdn.goumin.com/cms/aichong/day_170821/20170821_4ff7ff2.png"
+            texttip= "['铃铛宠物APP','宠物生病免费问，在线医师秒回复','宠物生病免费问，在线医师秒回复']"
+            downbtntext="立即下载"
+            Other-downsrc="http://a.app.qq.com/o/simple.jsp?pkgname=com.goumin.forum"
+            Android-downsrc="http://a.app.qq.com/o/simple.jsp?pkgname=com.goumin.forum"
+            Ios-downsrc="http://a.app.qq.com/o/simple.jsp?pkgname=com.goumin.forum" postiontye="fixed"
+        ></mip-appdl>
+    </mip-fixed>
     <!-- 百度统计 -->
     <mip-stats-baidu token="ea8a600ffb76d5930a3afa6ab812f938"></mip-stats-baidu>
 
@@ -646,6 +665,8 @@
     <script src="https://mipcache.bdstatic.com/static/v1/mip-stats-baidu/mip-stats-baidu.js"></script>
     <!--App下载组件脚本-->
     <script src="https://mipcache.bdstatic.com/static/v1/mip-appdl/mip-appdl.js"></script>
+    <script src="https://mipcache.bdstatic.com/static/v1/mip-mustache/mip-mustache.js"></script>
+    <script src="https://mipcache.bdstatic.com/static/v1/mip-list/mip-list.js"></script>
 </body>
 
 </html>
