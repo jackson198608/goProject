@@ -140,6 +140,21 @@ func LoadPostsByTid(tid int, posttableid int, db *sql.DB) []*Post {
 	return rowsData
 }
 
+func LoadForumNameByTid(fid int, db *sql.DB) string {
+	rows, err := db.Query("select name from `pre_forum_forum` where fid=" + strconv.Itoa(int(fid)))
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check pre_forum_post sql prepare error: ", err)
+		return ""
+	}
+	var name string = ""
+	for rows.Next() {
+		rows.Scan(&name)
+		return name
+	}
+	return name
+}
+
 func LoadForumByFid(fid int, typeid int, db *sql.DB) *Forum {
 	rows, err := db.Query("SELECT ff.fid, f.name,ff.threadtypes FROM pre_forum_forum f LEFT JOIN pre_forum_forumfield ff ON ff.fid=f.fid WHERE f.fid=" + strconv.Itoa(int(fid)) + "")
 	defer rows.Close()

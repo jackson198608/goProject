@@ -58,10 +58,11 @@ func (e *InfoNew) CreateThreadHtmlContent(tid int) error {
 
 	posts := LoadPostsByTid(tid, thread.Posttableid, e.db)
 	forum := LoadForumByFid(thread.Fid, thread.Typeid, e.db)
+	forumname := LoadForumNameByTid(thread.Fid, e.db)
 	firstpost := LoadFirstPostByTid(tid, thread.Posttableid, e.db)
 	relatelink := LoadRelateLink(e.db)
 
-	e.groupContentToSaveHtml(tid, e.templateType, thread, posts, forum, firstpost, relatelink, relateThread, relateAsk, relateDogs, e.db)
+	e.groupContentToSaveHtml(tid, e.templateType, thread, posts, forum, firstpost, relatelink, relateThread, relateAsk, relateDogs, forumname, e.db)
 	// saveContentToHtml(content, tid, page)
 	return nil
 }
@@ -136,7 +137,7 @@ func relateDogs(tid int, db *sql.DB, session *mgo.Session, templateType string) 
 	return content
 }
 
-func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts []*Post, forum *Forum, firstpost *Post, relatelink []*Relatelink, relateThread string, relateAsk string, relateDogs string, db *sql.DB) {
+func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts []*Post, forum *Forum, firstpost *Post, relatelink []*Relatelink, relateThread string, relateAsk string, relateDogs string, forumName string, db *sql.DB) {
 	var subject = thread.Subject
 	var url = staticH5Url + "thread-" + strconv.Itoa(tid) + "-1-1.html"
 	var threadUrl = "thread-" + strconv.Itoa(tid) + "-1-1.html"
@@ -163,7 +164,7 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 	// html = strings.Replace(html, "cmsDescription", description, -1)
 	html = strings.Replace(html, "cmsThreadUrl", threadUrl, -1)
 	html = strings.Replace(html, "cmsForumUrl", forumUrl, -1)
-	html = strings.Replace(html, "cmsForumName", forum.Name, -1)
+	html = strings.Replace(html, "cmsForumName", forumName, -1)
 	html = strings.Replace(html, "cmsTypeName", forum.Threadtype, -1)
 	html = strings.Replace(html, "cmsRelateThread", relateThread, -1)
 	html = strings.Replace(html, "cmsRelateAsk", relateAsk, -1)
@@ -238,7 +239,7 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 			}
 		}
 		subMessage = show_substr(metaMessage, 160)
-		keyword = forum.Name + "，" + subject + subMessage + " ..."
+		keyword = forumName + "，" + subject + subMessage + " ..."
 		description = subMessage + " ... " + subject + " ,狗民网｜铃铛宠物App"
 
 		htmlhtml := strings.Replace(html, "cmsPost", strconv.Itoa(len-1), -1)
