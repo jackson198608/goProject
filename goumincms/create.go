@@ -46,7 +46,7 @@ func NewInfo(logLevel int, id int, typeid int, db *sql.DB, session *mgo.Session,
 func (e *InfoNew) CreateThreadHtmlContent(tid int) error {
 	thread := LoadThreadByTid(tid, e.db)
 	if thread.Tid <= 0 {
-		logger.Info("thread is not exist")
+		logger.Info("thread is not exist tid=", tid)
 		return nil
 	}
 	//相关帖子 eg:tid=12
@@ -55,14 +55,20 @@ func (e *InfoNew) CreateThreadHtmlContent(tid int) error {
 	relateAsk := relateAsk(tid, e.db, e.session)
 	//相关犬种 eg:tid=4682521
 	relateDogs := relateDogs(tid, e.db, e.session, e.templateType)
-
 	posts := LoadPostsByTid(tid, thread.Posttableid, e.db)
+	if posts == nil {
+		logger.Info("post is not exist tid=", tid)
+		return nil
+	}
 	// forum := LoadForumByFid(thread.Fid, thread.Typeid, e.db)
 	forumname := LoadForumNameByTid(thread.Fid, e.db)
-	firstpost := LoadFirstPostByTid(tid, thread.Posttableid, e.db)
+	// firstpost := LoadFirstPostByTid(tid, thread.Posttableid, e.db)
 	relatelink := LoadRelateLink(e.db)
-
-	e.groupContentToSaveHtml(tid, e.templateType, thread, posts, firstpost, relatelink, relateThread, relateAsk, relateDogs, forumname, e.db)
+	if relatelink == nil {
+		logger.Info("relatelink is not exist")
+		return nil
+	}
+	e.groupContentToSaveHtml(tid, e.templateType, thread, posts, relatelink, relateThread, relateAsk, relateDogs, forumname, e.db)
 	// saveContentToHtml(content, tid, page)
 	return nil
 }
@@ -97,6 +103,10 @@ func check(e error) {
 
 func relateThread(tid int, fid int, db *sql.DB, session *mgo.Session) string {
 	threads := LoadRelateThread(tid, fid, db, session)
+	if threads == nil {
+		logger.Error("relate threads data not found tid=", tid)
+		return ""
+	}
 	content := ""
 	for _, v := range threads {
 		if v.Views < 3000 {
@@ -115,6 +125,10 @@ func GenerateRangeNum(min, max int) int {
 
 func relateAsk(tid int, db *sql.DB, session *mgo.Session) string {
 	asks := LoadRelateAsk(tid, db, session)
+	if asks == nil {
+		logger.Error("relate ask data not found tid=", tid)
+		return ""
+	}
 	content := ""
 	for _, v := range asks {
 		content += "<a href=\"/ask/" + strconv.Itoa(v.Id) + ".html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
@@ -124,6 +138,10 @@ func relateAsk(tid int, db *sql.DB, session *mgo.Session) string {
 
 func relateDogs(tid int, db *sql.DB, session *mgo.Session, templateType string) string {
 	dogs := LoadRelateDog(tid, db, session)
+	if dogs == nil {
+		logger.Error("relate dog data not found tid=", tid)
+		return ""
+	}
 	content := ""
 	for k, v := range dogs {
 		if k <= 5 {
@@ -137,7 +155,7 @@ func relateDogs(tid int, db *sql.DB, session *mgo.Session, templateType string) 
 	return content
 }
 
-func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts []*Post, firstpost *Post, relatelink []*Relatelink, relateThread string, relateAsk string, relateDogs string, forumName string, db *sql.DB) {
+func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *Thread, posts []*Post, relatelink []*Relatelink, relateThread string, relateAsk string, relateDogs string, forumName string, db *sql.DB) {
 	var subject = thread.Subject
 	var url = staticH5Url + "thread-" + strconv.Itoa(tid) + "-1-1.html"
 	var threadUrl = "thread-" + strconv.Itoa(tid) + "-1-1.html"
@@ -198,6 +216,9 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 				message = strings.Replace(message, lv.Name, replace, -1)
 			}
 			userinfo := LoadUserinfoByUid(v.Authorid, db)
+			if userinfo == nil {
+				continue
+			}
 			tm := time.Unix(int64(v.Dateline), 0)
 			dateline := tm.Format("2006-01-02 15:04:05")
 			images = LoadAttachmentByPid(tid, v.Pid, db)
@@ -313,17 +334,22 @@ func replaceImgOrAttach(content string, subject string, images []*AttachmentX) s
 }
 
 func changeMessage(content string, i int, images []*AttachmentX, str [][]string) string {
-	if len(str) == 0 || len(images) == 0 {
+	if len(str) <= 0 || len(images) == 0 {
 		return content
 	}
 	img := ""
+	if len(str) < i+1 || len(str[i]) < 1 {
+		return content
+	}
 	for _, v := range images {
-		aid, _ := strconv.Atoi(str[i][1])
-		if v.Aid == aid {
-			if v.Thumb == "" {
-				img = "<mip-img class='imgs' src='" + bbsDomain + v.Attachment + "' ></mip-img>"
-			} else {
-				img = "<mip-img class='imgs' src='" + bbsDomain + v.Thumb + "' ></mip-img>"
+		if len(str[i]) >= 2 {
+			aid, _ := strconv.Atoi(str[i][1])
+			if v.Aid == aid {
+				if v.Thumb == "" {
+					img = "<mip-img class='imgs' src='" + bbsDomain + v.Attachment + "' ></mip-img>"
+				} else {
+					img = "<mip-img class='imgs' src='" + bbsDomain + v.Thumb + "' ></mip-img>"
+				}
 			}
 		}
 	}
