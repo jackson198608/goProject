@@ -94,6 +94,7 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 		return
 	}
 	defer session.Close()
+	relateAsk := LoadDefaultRelateAsk(db)
 	for {
 		logger.Info("pop ", t.queueName)
 		redisStr := (*t.client).LPop(t.queueName).Val()
@@ -104,7 +105,7 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 			return
 		}
 		logger.Info("got redisStr ", redisStr)
-		task := NewTask(t.logLevel, redisStr, db, session, t.taskNewArgs)
+		task := NewTask(t.logLevel, redisStr, db, session, t.taskNewArgs, relateAsk)
 		if task != nil {
 			task.Do()
 		}

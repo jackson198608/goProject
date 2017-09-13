@@ -43,7 +43,7 @@ func NewInfo(logLevel int, id int, typeid int, db *sql.DB, session *mgo.Session,
 	return e
 }
 
-func (e *InfoNew) CreateThreadHtmlContent(tid int) error {
+func (e *InfoNew) CreateThreadHtmlContent(tid int, relateDefaultAsk string) error {
 	thread := LoadThreadByTid(tid, e.db)
 	if thread.Tid <= 0 {
 		logger.Info("thread is not exist tid=", tid)
@@ -53,6 +53,9 @@ func (e *InfoNew) CreateThreadHtmlContent(tid int) error {
 	relateThread := relateThread(tid, thread.Fid, e.db, e.session)
 	//相关问答 eg:tid=12
 	relateAsk := relateAsk(tid, e.db, e.session)
+	if relateAsk == "" {
+		relateAsk = relateDefaultAsk
+	}
 	//相关犬种 eg:tid=4682521
 	relateDogs := relateDogs(tid, e.db, e.session, e.templateType)
 	posts := LoadPostsByTid(tid, thread.Posttableid, e.db)

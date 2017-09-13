@@ -371,19 +371,20 @@ func LoadRelateAsk(tid int, db *sql.DB, session *mgo.Session) []*RelateAsk {
 	if err != nil {
 		logger.Error("BigData threads_recommend relate ask: ", err)
 	}
-	if len(ms.RelatedAsk) == 0 {
-		rows, err := db.Query("select id,subject,browse_num from `ask`.`ask_question` where is_hide=1 order by ans_num desc limit 5")
-		defer rows.Close()
-		if err != nil {
-			logger.Error("[error] check ask_question sql prepare error: ", err)
-			return nil
-		}
-		for rows.Next() {
-			var row = new(RelateAsk)
-			rows.Scan(&row.Id, &row.Subject, &row.Views)
-			rowsData = append(rowsData, row)
-		}
-	} else {
+	// if len(ms.RelatedAsk) == 0 {
+	// 	rows, err := db.Query("select id,subject,browse_num from `ask`.`ask_question` where is_hide=1 order by ans_num desc limit 5")
+	// 	defer rows.Close()
+	// 	if err != nil {
+	// 		logger.Error("[error] check ask_question sql prepare error: ", err)
+	// 		return nil
+	// 	}
+	// 	for rows.Next() {
+	// 		var row = new(RelateAsk)
+	// 		rows.Scan(&row.Id, &row.Subject, &row.Views)
+	// 		rowsData = append(rowsData, row)
+	// 	}
+	// } else {
+	if len(ms.RelatedAsk) > 0 {
 		idstring := ""
 		for k, v := range ms.RelatedAsk {
 			if k <= 4 {
@@ -402,6 +403,7 @@ func LoadRelateAsk(tid int, db *sql.DB, session *mgo.Session) []*RelateAsk {
 			rowsData = append(rowsData, row)
 		}
 	}
+	// }
 	return rowsData
 }
 
@@ -474,6 +476,26 @@ func getThreadTask(page int) []int {
 		a = append(a, tid)
 	}
 	return a
+}
+
+func LoadDefaultRelateAsk(db *sql.DB) string {
+	rows, err := db.Query("select id,subject,browse_num from `ask`.`ask_question` where is_hide=1 order by ans_num desc limit 5")
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check ask_question sql prepare error: ", err)
+		return ""
+	}
+	var rowsData []*RelateAsk
+	for rows.Next() {
+		var row = new(RelateAsk)
+		rows.Scan(&row.Id, &row.Subject, &row.Views)
+		rowsData = append(rowsData, row)
+	}
+	content := ""
+	for _, v := range rowsData {
+		content += "<a href=\"/ask/" + strconv.Itoa(v.Id) + ".html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
+	}
+	return content
 }
 
 //SELECT * FROM `pre_common_member` WHERE `uid` IN (57172, 1)
