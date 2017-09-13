@@ -26,6 +26,7 @@ type InfoNew struct {
 	saveDir      string
 	tidStart     string
 	tidEnd       string
+	domain       string
 }
 
 func NewInfo(logLevel int, id int, typeid int, db *sql.DB, session *mgo.Session, taskNewArgs []string) *InfoNew {
@@ -40,6 +41,7 @@ func NewInfo(logLevel int, id int, typeid int, db *sql.DB, session *mgo.Session,
 	e.saveDir = taskNewArgs[5]
 	e.tidStart = taskNewArgs[6]
 	e.tidEnd = taskNewArgs[7]
+	e.domain = taskNewArgs[8]
 	return e
 }
 
@@ -50,7 +52,7 @@ func (e *InfoNew) CreateThreadHtmlContent(tid int, relateDefaultAsk string) erro
 		return nil
 	}
 	//相关帖子 eg:tid=12
-	relateThread := relateThread(tid, thread.Fid, e.db, e.session)
+	relateThread := e.relateThread(tid, thread.Fid, e.db, e.session)
 	//相关问答 eg:tid=12
 	relateAsk := relateAsk(tid, e.db, e.session)
 	if relateAsk == "" {
@@ -104,7 +106,7 @@ func check(e error) {
 	}
 }
 
-func relateThread(tid int, fid int, db *sql.DB, session *mgo.Session) string {
+func (e *InfoNew) relateThread(tid int, fid int, db *sql.DB, session *mgo.Session) string {
 	threads := LoadRelateThread(tid, fid, db, session)
 	if threads == nil {
 		logger.Error("relate threads data not found tid=", tid)
@@ -115,7 +117,7 @@ func relateThread(tid int, fid int, db *sql.DB, session *mgo.Session) string {
 		if v.Views < 3000 {
 			v.Views = rand.Intn(5000)
 		}
-		content += "<a href=\"/bbs/thread-" + strconv.Itoa(v.Tid) + "-1-1.html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
+		content += "<a href=\"" + e.domain + "thread-" + strconv.Itoa(v.Tid) + "-1-1.html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
 	}
 	return content
 }
@@ -134,7 +136,7 @@ func relateAsk(tid int, db *sql.DB, session *mgo.Session) string {
 	}
 	content := ""
 	for _, v := range asks {
-		content += "<a href=\"/ask/" + strconv.Itoa(v.Id) + ".html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
+		content += "<a href=\"https://m.goumin.com/ask/" + strconv.Itoa(v.Id) + ".html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
 	}
 	return content
 }
@@ -176,6 +178,7 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 		logger.Error("template file not found")
 		return
 	}
+
 	html = strings.Replace(html, "cmsTid", strconv.Itoa(tid), -1)
 	html = strings.Replace(html, "cmsRand", strconv.Itoa(rand.Intn(3000)), -1)
 	html = strings.Replace(html, "cmsViews", strconv.Itoa(views), -1)
@@ -193,10 +196,9 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 	len := len(posts)                                           //帖子楼层总数
 	count := 20                                                 //每页条数
 	totalpages := int(math.Ceil(float64(len) / float64(count))) //page总数
-
 	for i := 1; i <= totalpages; i++ {
 		var title = subject + " - 第" + strconv.Itoa(i) + "页 - " + forumName + " -  狗民社区-移动版"
-		html = strings.Replace(html, "cmsTitle", title, -1)
+
 		cmsPage := ""
 		content := ""
 
@@ -248,25 +250,28 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 		}
 		if totalpages == 2 {
 			if i == 1 {
-				cmsPage = "<a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-2-1.html\">下一页</a> <a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-2-1.html\">尾页</a>"
+				cmsPage = "<a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-2-1.html\">下一页</a> <a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-2-1.html\">尾页</a>"
 			} else {
-				cmsPage = "<a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a> <a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-1-1.html\">上一页</a>"
+				cmsPage = "<a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a> <a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-1-1.html\">上一页</a>"
 			}
 		}
 		if totalpages > 2 {
 			if i == 1 {
-				cmsPage = "<a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-2-1.html\">下一页</a> <a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-2-1.html\">尾页</a>"
+				cmsPage = "<a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-2-1.html\">下一页</a> <a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-2-1.html\">尾页</a>"
 			} else if i == totalpages {
-				cmsPage = "<a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a> <a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i-1) + "-1.html\">上一页</a>"
+				cmsPage = "<a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a> <a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i-1) + "-1.html\">上一页</a>"
 			} else {
-				cmsPage = "<a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a><a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i-1) + "-1.html\">上一页</a> <a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i+1) + "-1.html\">下一页</a><a href=\"/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(totalpages) + "-1.html\">尾页</a>"
+				cmsPage = "<a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a><a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i-1) + "-1.html\">上一页</a> <a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i+1) + "-1.html\">下一页</a><a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(totalpages) + "-1.html\">尾页</a>"
 			}
 		}
 		subMessage = show_substr(metaMessage, 160)
 		keyword = forumName + "，" + subject + subMessage + " ..."
 		description = subMessage + " ... " + subject + " ,狗民网｜铃铛宠物App"
+		oldThreadUrl := "http://m.goumin.com/bbs/thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i) + "-1.html"
 
 		htmlhtml := strings.Replace(html, "cmsPost", strconv.Itoa(len-1), -1)
+		htmlhtml = strings.Replace(htmlhtml, "cmsTitle", title, -1)
+		htmlhtml = strings.Replace(htmlhtml, "cmsCanical", oldThreadUrl, -1)
 		htmlhtml = strings.Replace(htmlhtml, "cmsKeywords", keyword, -1)
 		htmlhtml = strings.Replace(htmlhtml, "cmsDescription", description, -1)
 		content = findface(content)
@@ -514,10 +519,10 @@ func regexp_string(content string) string {
 
 	// 视频 media
 	re, _ = regexp.Compile("\\[media\\](.*?\\.mp4)\\[/media\\]")
-	content = re.ReplaceAllString(content, "<video src='$1' controls></video>")
+	content = re.ReplaceAllString(content, "<mip-video src='$1' controls ></mip-video>")
 
 	re, _ = regexp.Compile("\\[media(.*?)\\](.*?)\\[/media\\]")
-	content = re.ReplaceAllString(content, "<video src='$1' controls></video>")
+	content = re.ReplaceAllString(content, "<mip-video src='$1' controls></mip-video>")
 
 	re, _ = regexp.Compile("\\[media.*?\\]http:\\/\\/v\\.youku\\.com\\/v_show\\/id_(.*?)\\.html.*?\\[/media\\]")
 	content = re.ReplaceAllString(content, "<a class='post_content_link' href='http://v.youku.com/v_show/id_$1.html'>***优酷视频点击播放***</a>")
@@ -597,11 +602,14 @@ func regexp_string(content string) string {
 	content = re.ReplaceAllString(content, "QQ:$1")
 
 	// i
-	re, _ = regexp.Compile("\\[i.*?\\]")
+	re, _ = regexp.Compile("\\[i.*?\\](.*?)\\[/i\\]")
 	content = re.ReplaceAllString(content, "")
 
-	re, _ = regexp.Compile("\\[/i\\]")
+	re, _ = regexp.Compile("\\[\\]")
 	content = re.ReplaceAllString(content, "")
+
+	// re, _ = regexp.Compile("\\[/i\\]")
+	// content = re.ReplaceAllString(content, "")
 
 	re, _ = regexp.Compile("\\[u.*?\\]")
 	content = re.ReplaceAllString(content, "")

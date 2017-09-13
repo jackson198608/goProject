@@ -19,6 +19,7 @@ type Config struct {
 	miptemplatefile string
 	tidStart        string
 	tidEnd          string
+	domain          string
 }
 
 func loadConfig(args []string) {
@@ -43,4 +44,5 @@ func loadConfig(args []string) {
 	c.miptemplatefile = config.GetString("miptemplatefile")
 	c.tidStart = config.GetString("tidStart")
 	c.tidEnd = config.GetString("tidEnd")
+	c.domain = config.GetString("domain")
 }

@@ -20,7 +20,7 @@ var c Config = Config{
 	"192.168.86.192:27017",
 	"/data/thread/h5template.html",
 	"/data/thread/miptemplate.html",
-	"300", "500"}
+	"300", "500", "http://m.goumin.com/bbs/"}
 
 // var logLevel int = 1
 
@@ -68,7 +68,7 @@ func createThreadHtml(templateType string) {
 		templatefile = c.h5templatefile
 	}
 
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, templateType, templatefile, c.saveDir, c.tidStart, c.tidEnd)
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, templateType, templatefile, c.saveDir, c.tidStart, c.tidEnd, c.domain)
 	r.Loop()
 }
 

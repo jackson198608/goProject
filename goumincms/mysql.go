@@ -493,7 +493,7 @@ func LoadDefaultRelateAsk(db *sql.DB) string {
 	}
 	content := ""
 	for _, v := range rowsData {
-		content += "<a href=\"/ask/" + strconv.Itoa(v.Id) + ".html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
+		content += "<a href=\"https://m.goumin.com/ask/" + strconv.Itoa(v.Id) + ".html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
 	}
 	return content
 }
