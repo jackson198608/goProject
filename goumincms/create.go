@@ -512,10 +512,10 @@ func regexp_string(content string) string {
 	content = re.ReplaceAllString(content, "<div class='code'><pre>$1</pre></div>")
 	// 音视频 audio
 	re, _ = regexp.Compile("\\[audio\\](.*?)\\[/audio\\]")
-	content = re.ReplaceAllString(content, "<audio src='$1' controls></audio>")
+	content = re.ReplaceAllString(content, "<mip-audio src='$1' controls></mip-audio>")
 
 	re, _ = regexp.Compile("\\[audio(.*?)\\](.*?)\\[/audio\\]")
-	content = re.ReplaceAllString(content, "<audio src='$2' controls></audio>")
+	content = re.ReplaceAllString(content, "<mip-audio src='$2' controls></mip-audio>")
 
 	// 视频 media
 	re, _ = regexp.Compile("\\[media\\](.*?\\.mp4)\\[/media\\]")
@@ -562,7 +562,7 @@ func regexp_string(content string) string {
 	content = re.ReplaceAllString(content, "")
 
 	re, _ = regexp.Compile("\\[flash\\](.*?)\\[/flash\\]")
-	content = re.ReplaceAllString(content, "<embed width=\"330\" height=\"240\" allownetworking=\"internal\" allowscriptaccess=\"never\" src='$1' quality=\"high\" bgcolor=\"#ffffff\" wmode=\"transparent\" allowfullscreen=\"true\" type=\"application/x-shockwave-flash\">")
+	content = re.ReplaceAllString(content, "<a href='$1' target=\"_blank\">$1</a>")
 
 	// re, _ = regexp.Compile("\r\n")
 	// content = re.ReplaceAllString(content, "")
@@ -584,7 +584,7 @@ func regexp_string(content string) string {
 	content = re.ReplaceAllString(content, "")
 
 	re, _ = regexp.Compile("\\[float=(.*?)\\](.*?)\\[/float\\]")
-	content = re.ReplaceAllString(content, "<div style='float:$1'>$2</div>")
+	content = re.ReplaceAllString(content, "<div>$2</div>")
 
 	re, _ = regexp.Compile("\\[float.*?\\]")
 	content = re.ReplaceAllString(content, "")
