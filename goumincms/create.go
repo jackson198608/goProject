@@ -484,7 +484,7 @@ func regexp_string(content string) string {
 	content = re.ReplaceAllString(content, "</ul>")
 
 	re, _ = regexp.Compile("\\[img(.*?)\\](.*?)\\[/img\\]")
-	content = re.ReplaceAllString(content, "<div><mip-img class='post_content_image' src='$2' ></mip-img></div>")
+	content = re.ReplaceAllString(content, "<mip-img class='post_content_image' src='$2' ></mip-img>")
 
 	re, _ = regexp.Compile("\\[url=.*?goto=findpost&pid=\\d+&ptid=\\d+\\](.*?)\\[/url\\]")
 	content = re.ReplaceAllString(content, "")
