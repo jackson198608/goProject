@@ -16,7 +16,7 @@ type RedisEngine struct {
 	queueName     string
 	connstr       string
 	mongoConn     string
-	db            int
+	jobType       string
 	client        *redis.Client
 	taskNum       int
 	numForOneLoop int
@@ -28,7 +28,7 @@ func NewRedisEngine(
 	queueName string,
 	connstr string,
 	mongoConn string,
-	db int,
+	jobType string,
 	numForOneLoop int, taskarg ...string) *RedisEngine {
 
 	logger.SetLevel(logger.LEVEL(logLevel))
@@ -43,7 +43,7 @@ func NewRedisEngine(
 	t.queueName = queueName
 	t.connstr = connstr
 	t.mongoConn = mongoConn
-	t.db = db
+	t.jobType = jobType
 	t.numForOneLoop = numForOneLoop
 	t.taskNewArgs = taskarg
 	err := t.connect()
@@ -58,8 +58,8 @@ func NewRedisEngine(
 func (t *RedisEngine) connect() error {
 	t.client = redis.NewClient(&redis.Options{
 		Addr:     t.connstr,
-		Password: "",   // no password set
-		DB:       t.db, // use default DB
+		Password: "", // no password set
+		DB:       0,  //e.db use default DB
 	})
 	_, err := t.client.Ping().Result()
 	if err != nil {
@@ -94,18 +94,27 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 		return
 	}
 	defer session.Close()
-	relateAsk := LoadDefaultRelateAsk(db)
+	relateAsk := ""
+	if t.jobType == "thread" {
+		fmt.Println("&&&&")
+		relateAsk = LoadDefaultRelateAsk(db)
+	}
+	doctors := ""
+	if t.jobType == "ask" {
+		fmt.Println("defalt doctor data")
+		doctors = DefaultDoctors(db)
+	}
 	for {
 		logger.Info("pop ", t.queueName)
 		redisStr := (*t.client).LPop(t.queueName).Val()
 		fmt.Println(redisStr)
 		if redisStr == "" {
-			logger.Info("got nothing", t.queueName)
+			logger.Info("got nothing ", t.queueName)
 			c <- 1
 			return
 		}
 		logger.Info("got redisStr ", redisStr)
-		task := NewTask(t.logLevel, redisStr, db, session, t.taskNewArgs, relateAsk)
+		task := NewTask(t.logLevel, redisStr, db, session, t.taskNewArgs, relateAsk, t.jobType)
 		if task != nil {
 			task.Do()
 		}
@@ -166,7 +175,7 @@ func (t *RedisEngine) PushThreadTaskData(tasks interface{}) bool {
 	return true
 }
 
-func (t *RedisEngine) PushTidData() bool {
+func (t *RedisEngine) PushIdData() bool {
 	redisStart, _ := strconv.Atoi(t.taskNewArgs[3])
 	redisEnd, _ := strconv.Atoi(t.taskNewArgs[4])
 	logger.Info("RPush queueName string", t.queueName)

@@ -425,7 +425,8 @@ func regexp_string(content string) string {
 
 	m := strings.Index(content, "[quote]")
 	n := strings.Index(content, "[/quote]")
-	if m >= 0 && n > 0 {
+	// fmt.Println(m, n)
+	if m >= 0 && n > 0 && m < n {
 		substr := content[m:n]
 		content = strings.Replace(content, substr+"[/quote]", "", -1)
 	}

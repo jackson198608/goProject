@@ -19,9 +19,10 @@ type Task struct {
 	templateType string
 	taskNewArgs  []string
 	relateAsk    string
+	jobType      string
 }
 
-func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session, taskNewArgs []string, relateAsk string) *Task {
+func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session, taskNewArgs []string, relateAsk string, jobType string) *Task {
 	if loggerLevel < 0 {
 		loggerLevel = 0
 	}
@@ -30,12 +31,8 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session,
 	var id int
 	var typeid int = 0
 	if len(redisArr) == 2 {
-		if redisArr[1] == "1" { //thread
-			id, _ = strconv.Atoi(redisArr[0])
-			typeid, _ = strconv.Atoi(redisArr[1])
-		} else {
-			// id, _ = strconv.Atoi(redisArr[0])
-		}
+		id, _ = strconv.Atoi(redisArr[0])
+		typeid, _ = strconv.Atoi(redisArr[1])
 	}
 	if len(redisArr) == 1 {
 		id, _ = strconv.Atoi(redisStr)
@@ -47,17 +44,29 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session,
 	t.session = session
 	t.taskNewArgs = taskNewArgs
 	t.relateAsk = relateAsk
-	// t.templateType = templateType
+	t.jobType = jobType
 	return t
 
 }
 
 func (t *Task) Do() {
-	m := NewInfo(t.loggerLevel, t.id, t.typeid, t.db, t.session, t.taskNewArgs)
-	if m != nil {
-		if t.id > 0 && t.typeid == 0 {
-			logger.Info("export event to mongo")
-			m.CreateThreadHtmlContent(t.id, t.relateAsk)
+	if t.jobType == "thread" {
+		m := NewInfo(t.loggerLevel, t.id, t.typeid, t.db, t.session, t.taskNewArgs)
+		if m != nil {
+			if t.id > 0 && t.typeid == 0 {
+				logger.Info("export thread to miphtml")
+				m.CreateThreadHtmlContent(t.id, t.relateAsk)
+			}
+
+		}
+	}
+	if t.jobType == "ask" {
+		m := NewAskInfo(t.loggerLevel, t.id, t.db, t.session, t.taskNewArgs)
+		if m != nil {
+			if t.id > 0 {
+				logger.Info("export ask to miphtml")
+				m.CreateAskHtmlContent(t.id)
+			}
 		}
 	}
 }

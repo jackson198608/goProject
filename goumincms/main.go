@@ -3,6 +3,8 @@ package main
 import (
 	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
+	// "github.com/jackson198608/goProject/goumincms/Create"
+	// "github.com/jackson198608/goProject/goumincms/mysql"
 	"os"
 	"strconv"
 )
@@ -47,8 +49,10 @@ var c Config = Config{
 // var maxThreadid = 100
 
 var diaryDomain = "http://c1.cdn.goumin.com/diary/"
+var askDomain = "http://c1.cdn.goumin.com/cms"
 var bbsDomain = "http://f1.cdn.goumin.com/attachments/"
 var staticH5Url string = "http://m.goumin.com/bbs/"
+var doctorUrl = "http://s.goumin.com/"
 
 // var queueName string = "createHtml"
 var offset = 10
@@ -62,18 +66,18 @@ func Init(args []string) {
 
 }
 
-func createThreadHtml(templateType string) {
+func createMipHtml(templateType string, jobType string) {
 	templatefile := c.miptemplatefile
 	if templateType == "1" {
 		templatefile = c.h5templatefile
 	}
 
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, templateType, templatefile, c.saveDir, c.tidStart, c.tidEnd, c.domain)
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, c.mongoConn, jobType, c.numloops, c.dbAuth, c.dbDsn, c.dbName, templateType, templatefile, c.saveDir, c.tidStart, c.tidEnd, c.domain)
 	r.Loop()
 }
 
 func createRedis() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName)
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, c.mongoConn, "", c.numloops, c.dbAuth, c.dbDsn, c.dbName)
 	page := 1
 	for {
 		tids := getThreadTask(page)
@@ -94,8 +98,8 @@ func createRedis() {
 }
 
 func createNumRedis() {
-	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, c.mongoConn, 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.tidStart, c.tidEnd)
-	r.PushTidData()
+	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, c.mongoConn, "", c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.tidStart, c.tidEnd)
+	r.PushIdData()
 }
 
 func main() {
@@ -108,9 +112,10 @@ func main() {
 	switch jobType {
 	case "thread": //thread
 		logger.Info("in the thread html create ")
-		createThreadHtml(templateType)
-	case "info": //资讯
-		logger.Info("in the info html create ")
+		createMipHtml(templateType, jobType)
+	case "ask": //资讯
+		logger.Info("in the ask html create ")
+		createMipHtml(templateType, jobType)
 	case "create": //创建帖子idredis
 		logger.Info("in the info html create ")
 		createRedis()

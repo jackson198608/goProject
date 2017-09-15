@@ -371,19 +371,6 @@ func LoadRelateAsk(tid int, db *sql.DB, session *mgo.Session) []*RelateAsk {
 	if err != nil {
 		logger.Error("BigData threads_recommend relate ask: ", err)
 	}
-	// if len(ms.RelatedAsk) == 0 {
-	// 	rows, err := db.Query("select id,subject,browse_num from `ask`.`ask_question` where is_hide=1 order by ans_num desc limit 5")
-	// 	defer rows.Close()
-	// 	if err != nil {
-	// 		logger.Error("[error] check ask_question sql prepare error: ", err)
-	// 		return nil
-	// 	}
-	// 	for rows.Next() {
-	// 		var row = new(RelateAsk)
-	// 		rows.Scan(&row.Id, &row.Subject, &row.Views)
-	// 		rowsData = append(rowsData, row)
-	// 	}
-	// } else {
 	if len(ms.RelatedAsk) > 0 {
 		idstring := ""
 		for k, v := range ms.RelatedAsk {
@@ -403,7 +390,6 @@ func LoadRelateAsk(tid int, db *sql.DB, session *mgo.Session) []*RelateAsk {
 			rowsData = append(rowsData, row)
 		}
 	}
-	// }
 	return rowsData
 }
 
