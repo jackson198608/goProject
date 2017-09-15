@@ -96,11 +96,9 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 	defer session.Close()
 	relateDefaultData := ""
 	if t.jobType == "thread" {
-		fmt.Println("&&&&")
 		relateDefaultData = LoadDefaultRelateAsk(db)
 	}
 	if t.jobType == "ask" {
-		fmt.Println("defalt threads data")
 		relateDefaultData = LoadDefaultRelateThreadByAsk(db)
 	}
 	for {
