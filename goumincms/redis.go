@@ -94,15 +94,14 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 		return
 	}
 	defer session.Close()
-	relateAsk := ""
+	relateDefaultData := ""
 	if t.jobType == "thread" {
 		fmt.Println("&&&&")
-		relateAsk = LoadDefaultRelateAsk(db)
+		relateDefaultData = LoadDefaultRelateAsk(db)
 	}
-	doctors := ""
 	if t.jobType == "ask" {
-		fmt.Println("defalt doctor data")
-		doctors = DefaultDoctors(db)
+		fmt.Println("defalt threads data")
+		relateDefaultData = LoadDefaultRelateThreadByAsk(db)
 	}
 	for {
 		logger.Info("pop ", t.queueName)
@@ -114,7 +113,7 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 			return
 		}
 		logger.Info("got redisStr ", redisStr)
-		task := NewTask(t.logLevel, redisStr, db, session, t.taskNewArgs, relateAsk, t.jobType)
+		task := NewTask(t.logLevel, redisStr, db, session, t.taskNewArgs, relateDefaultData, t.jobType)
 		if task != nil {
 			task.Do()
 		}

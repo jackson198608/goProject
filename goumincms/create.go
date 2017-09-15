@@ -78,7 +78,7 @@ func (e *InfoNew) CreateThreadHtmlContent(tid int, relateDefaultAsk string) erro
 	return nil
 }
 
-func (e *InfoNew) saveContentToHtml(urlname string, content string, tid int, page int) bool {
+func (e *InfoNew) saveContentToHtml(urlname string, content string) bool {
 	var filename = e.saveDir + urlname
 	var f *os.File
 	var err1 error
@@ -277,7 +277,7 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 		content = findface(content)
 		htmlhtml = strings.Replace(htmlhtml, "cmsMessage", content, -1)
 		htmlhtml = strings.Replace(htmlhtml, "cmsPage", cmsPage, -1)
-		status := e.saveContentToHtml(filename, htmlhtml, tid, i)
+		status := e.saveContentToHtml(filename, htmlhtml)
 		if status == true {
 			logger.Info("save content to html: ", filename)
 		} else {

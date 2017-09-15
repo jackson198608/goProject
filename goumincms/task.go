@@ -10,19 +10,19 @@ import (
 )
 
 type Task struct {
-	loggerLevel  int
-	id           int
-	typeid       int
-	db           *sql.DB
-	loopNum      int
-	session      *mgo.Session
-	templateType string
-	taskNewArgs  []string
-	relateAsk    string
-	jobType      string
+	loggerLevel       int
+	id                int
+	typeid            int
+	db                *sql.DB
+	loopNum           int
+	session           *mgo.Session
+	templateType      string
+	taskNewArgs       []string
+	relateDefaultData string
+	jobType           string
 }
 
-func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session, taskNewArgs []string, relateAsk string, jobType string) *Task {
+func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session, taskNewArgs []string, relateDefaultData string, jobType string) *Task {
 	if loggerLevel < 0 {
 		loggerLevel = 0
 	}
@@ -43,7 +43,7 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, session *mgo.Session,
 	t.db = db
 	t.session = session
 	t.taskNewArgs = taskNewArgs
-	t.relateAsk = relateAsk
+	t.relateDefaultData = relateDefaultData
 	t.jobType = jobType
 	return t
 
@@ -55,7 +55,7 @@ func (t *Task) Do() {
 		if m != nil {
 			if t.id > 0 && t.typeid == 0 {
 				logger.Info("export thread to miphtml")
-				m.CreateThreadHtmlContent(t.id, t.relateAsk)
+				m.CreateThreadHtmlContent(t.id, t.relateDefaultData)
 			}
 
 		}
@@ -65,7 +65,7 @@ func (t *Task) Do() {
 		if m != nil {
 			if t.id > 0 {
 				logger.Info("export ask to miphtml")
-				m.CreateAskHtmlContent(t.id)
+				m.CreateAskHtmlContent(t.id, t.relateDefaultData)
 			}
 		}
 	}

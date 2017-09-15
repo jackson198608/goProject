@@ -53,6 +53,7 @@ var askDomain = "http://c1.cdn.goumin.com/cms"
 var bbsDomain = "http://f1.cdn.goumin.com/attachments/"
 var staticH5Url string = "http://m.goumin.com/bbs/"
 var doctorUrl = "http://s.goumin.com/"
+var mipBbsUrl = "http://m.goumin.com/mip/bbs/"
 
 // var queueName string = "createHtml"
 var offset = 10
