@@ -257,7 +257,7 @@ func (e *InfoNew) groupContentToSaveHtml(tid int, templateType string, thread *T
 		}
 		if totalpages > 2 {
 			if i == 1 {
-				cmsPage = "<a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-2-1.html\">下一页</a> <a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-2-1.html\">尾页</a>"
+				cmsPage = "<a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-2-1.html\">下一页</a> <a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(totalpages) + "-1.html\">尾页</a>"
 			} else if i == totalpages {
 				cmsPage = "<a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-1-1.html\">首页</a> <a href=\"" + e.domain + "thread-" + strconv.Itoa(tid) + "-" + strconv.Itoa(i-1) + "-1.html\">上一页</a>"
 			} else {
