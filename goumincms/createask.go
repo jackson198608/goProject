@@ -159,7 +159,10 @@ func getCommentListHtml(ans_id int, db *sql.DB) string {
 	var s string = ""
 	comments := LoadCommentsById(ans_id, db)
 	if len(comments) > 0 {
-		s += "<div class=\"reply-container\"><mip-showmore bottomshadow='1' maxheight='screen:0.1' animatetime='.3' id=\"showmore" + strconv.Itoa(ans_id) + "\">"
+		s += "<div class=\"reply-container\">"
+		if len(comments) > 3 {
+			s += "<mip-showmore bottomshadow='1' maxheight='screen:0.1' animatetime='.3' id=\"showmore" + strconv.Itoa(ans_id) + "\">"
+		}
 		for _, v := range comments {
 			content := filterContent(v.Content)
 			userinfo := LoadUserinfoByUid(v.Uid, db)
@@ -172,9 +175,9 @@ func getCommentListHtml(ans_id int, db *sql.DB) string {
 			}
 			s += "<span class=\"reply-con\">" + content + "</span><span class=\"reply-date\">" + v.Created + "</span></div>"
 		}
-		s += "</mip-showmore>"
+		// s += "</mip-showmore>"
 		if len(comments) > 3 {
-			s += "<div on=\"tap:showmore" + strconv.Itoa(ans_id) + ".toggle\" data-closetext=\"收起\" class=\"mip-showmore-btn\">查看所有评论…</div>"
+			s += "</mip-showmore><div on=\"tap:showmore" + strconv.Itoa(ans_id) + ".toggle\" data-closetext=\"收起\" class=\"mip-showmore-btn\">查看所有评论…</div>"
 		}
 		s += "</div>"
 	}
