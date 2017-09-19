@@ -98,7 +98,6 @@ func (e *InfoAsk) groupContentToSaveAskHtml(question *Question, relateThread str
 	basicinfo := "<span class=\"pet-kind\">" + question.Varieties + "</span><span class=\"pet-sex\">" + question.Gender + "</span><span class=\"pet-age\">" + question.Age + "</span>"
 	html = strings.Replace(html, "cmsBasicInfo", basicinfo, -1)
 	questionContent := filterContent(question.Content)
-	fmt.Println(questionContent)
 	questionContent = findface(questionContent)
 	html = strings.Replace(html, "cmsQuestionContent", questionContent, -1)
 	images := imageHtml(question.Images)
