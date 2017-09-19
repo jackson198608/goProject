@@ -47,7 +47,6 @@ func (e *InfoAsk) CreateAskHtmlContent(id int, relateDefaultThread string) error
 		logger.Info("ask_question is not exist id=", id)
 		return nil
 	}
-	fmt.Println(question.Images)
 	//相关帖子 eg:tid=12
 	relateThread := threadByAsk(question.Id, e.db, e.session)
 	if relateThread == "" {
@@ -88,6 +87,7 @@ func (e *InfoAsk) groupContentToSaveAskHtml(question *Question, relateThread str
 		return
 	}
 	html = strings.Replace(html, "cmsTypeName", getTypeName(question.Typeid), -1)
+	html = strings.Replace(html, "cmsAskId", strconv.Itoa(question.Id), -1)
 	html = strings.Replace(html, "cmsTitle", title, -1)
 	html = strings.Replace(html, "cmsSubject", question.Subject, -1)
 	html = strings.Replace(html, "cmsRelateThread", relateThread, -1)
@@ -95,7 +95,10 @@ func (e *InfoAsk) groupContentToSaveAskHtml(question *Question, relateThread str
 	html = strings.Replace(html, "cmsRelateDogs", relateDogs, -1)
 	html = strings.Replace(html, "cmsKeywords", keyword, -1)
 	html = strings.Replace(html, "cmsDescription", description, -1)
+	basicinfo := "<span class=\"pet-kind\">" + question.Varieties + "</span><span class=\"pet-sex\">" + question.Gender + "</span><span class=\"pet-age\">" + question.Age + "</span>"
+	html = strings.Replace(html, "cmsBasicInfo", basicinfo, -1)
 	questionContent := filterContent(question.Content)
+	fmt.Println(questionContent)
 	questionContent = findface(questionContent)
 	html = strings.Replace(html, "cmsQuestionContent", questionContent, -1)
 	images := imageHtml(question.Images)
@@ -103,6 +106,13 @@ func (e *InfoAsk) groupContentToSaveAskHtml(question *Question, relateThread str
 	content := ""
 	filename := createAskFileName(question.Id)
 	len := len(answers) //总数
+	questioner := LoadUserinfoByUid(question.Uid, e.db)
+	additioninfo := ""
+	if questioner.Uid > 0 {
+		additioninfo += "<span class=\"asker\">" + questioner.Nickname + "</span>"
+	}
+	additioninfo += "<span class=\"ask-date\">" + question.Created + "</span>"
+	html = strings.Replace(html, "cmsAdditionalInfo", additioninfo, -1)
 	// count := 20                                                 //每页条数
 	// totalpages := int(math.Ceil(float64(len) / float64(count))) //page总数
 	// for i := 1; i <= totalpages; i++ {
@@ -119,15 +129,23 @@ func (e *InfoAsk) groupContentToSaveAskHtml(question *Question, relateThread str
 			if userinfo == nil {
 				continue
 			}
-			content += "<li><p class=\"text\">" + message + "</p><mip-img src=\"" + userinfo.Avatar + "\"></mip-img><span class=\"time\">回答者：<em class=\"name\"><span>" + userinfo.Nickname + "</span>-" + userinfo.Grouptitle + "</em><em class=\"num\">" + v.Created + "</em></span>"
+			content += "<div class=\"answer-item\">"
+			content += "<div class=\"user\"><mip-img src=\"" + userinfo.Avatar + "\"></mip-img><div class=\"user-name\"><span class=\"name\">" + userinfo.Nickname + "</span><span class=\"level\">" + userinfo.Grouptitle + "</span></div><span class=\"answer-date\">" + v.Created + "</span></div>"
+			content += "<div class=\"answer-body\">"
+			content += "<p>" + message + "</p>"
 			comment := getCommentListHtml(v.Id, e.db)
 			content += comment
+			content += "</div>"
+			content += "</div>"
 		}
 	}
 	// cmsPage := cmsPage(totalpages, question.Id)
 	oldUrl := "http://m.goumin.com/ask/" + strconv.Itoa(question.Id) + ".html"
 	html = strings.Replace(html, "cmsCanical", oldUrl, -1)
 	content = findface(content)
+	if content == "" {
+		content = "<p class=\"no-answer\">暂无回答 ~~</p>"
+	}
 	html = strings.Replace(html, "cmsAnswers", content, -1)
 	status := e.saveContentToHtml(filename, html)
 	if status == true {
@@ -142,16 +160,24 @@ func getCommentListHtml(ans_id int, db *sql.DB) string {
 	var s string = ""
 	comments := LoadCommentsById(ans_id, db)
 	if len(comments) > 0 {
+		s += "<div class=\"reply-container\"><mip-showmore bottomshadow='1' maxheight='screen:0.1' animatetime='.3' id=\"showmore" + strconv.Itoa(ans_id) + "\">"
 		for _, v := range comments {
 			content := filterContent(v.Content)
 			userinfo := LoadUserinfoByUid(v.Uid, db)
-			s += "<li><div class=\"com-head\"><div class=\"cavatar\"><a href=\"http://i.goumin.com/user/" + strconv.Itoa(v.Uid) + "\"><img src=\"" + userinfo.Avatar + "\" alt=\"\"></a></div><div class=\"c-head\"><p><span class=\"c-user\"><a href=\"http://i.goumin.com/user/" + strconv.Itoa(v.Uid) + "\">" + userinfo.Nickname + "</a></span>"
+			s += "<div class=\"reply-item\"><span class=\"replier\">" + userinfo.Nickname + "</span>"
 			if v.Typeid == 2 {
 				replyuser := LoadUserinfoByUid(v.Replyuid, db)
-				s += "<span>回复</span><span class=\"c-user\">" + replyuser.Nickname + "</span>"
+				s += " 回复 <span class=\"replier\">" + replyuser.Nickname + "</span>："
+			} else {
+				s += "："
 			}
-			s += "</p></div></div><div class=\"com-con\">" + content + "</div><div class=\"com-bottom\"><p><span class=\"com-time\">" + v.Created + "</span></p></div></li>"
+			s += "<span class=\"reply-con\">" + content + "</span><span class=\"reply-date\">" + v.Created + "</span></div>"
 		}
+		s += "</mip-showmore>"
+		if len(comments) > 3 {
+			s += "<div on=\"tap:showmore" + strconv.Itoa(ans_id) + ".toggle\" data-closetext=\"收起\" class=\"mip-showmore-btn\">查看所有评论…</div>"
+		}
+		s += "</div>"
 	}
 	return s
 }
@@ -160,7 +186,7 @@ func imageHtml(images string) string {
 	s := ""
 	if images != "" {
 		imgArr := strings.Split(images, ",")
-		if len(imgArr) == 0 {
+		if len(imgArr) > 0 {
 			for _, img := range imgArr {
 				s += "<mip-img src=\"" + img + "\" ></mip-img>"
 			}
@@ -279,6 +305,8 @@ func filterContent(content string) string {
 	re, _ := regexp.Compile("\\<[\\S\\s]+?\\>")
 	content = re.ReplaceAllStringFunc(content, strings.ToLower)
 
+	re, _ = regexp.Compile("\\<img (.*?) src=\"(.+?)\".*?\\>")
+	content = re.ReplaceAllString(content, "[img]$2[/img]")
 	//去除STYLE
 	re, _ = regexp.Compile("\\<style[\\S\\s]+?\\</style\\>")
 	content = re.ReplaceAllString(content, "")
@@ -291,6 +319,8 @@ func filterContent(content string) string {
 	re, _ = regexp.Compile("\\<[\\S\\s]+?\\>")
 	content = re.ReplaceAllString(content, "\n")
 
+	re, _ = regexp.Compile("\\[img(.*?)\\](.*?)\\[/img\\]")
+	content = re.ReplaceAllString(content, "<mip-img src='$2' ></mip-img>")
 	//去除连续的换行符
 	re, _ = regexp.Compile("\\s{2,}")
 	content = re.ReplaceAllString(content, "\n")
@@ -308,7 +338,7 @@ func threadByAsk(id int, db *sql.DB, session *mgo.Session) string {
 		if v.Views < 3000 {
 			v.Views = rand.Intn(5000)
 		}
-		content += "<a href=\"" + mipBbsUrl + "thread-" + strconv.Itoa(v.Tid) + "-1-1.html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
+		content += "<li><a href=\"" + mipBbsUrl + "thread-" + strconv.Itoa(v.Tid) + "-1-1.html\"><h3>" + v.Subject + "</h3><span>" + strconv.Itoa(v.Views) + "次浏览</span></a></li>"
 	}
 	return content
 }
@@ -321,7 +351,7 @@ func (e *InfoAsk) askByAsk(id int, pid int, db *sql.DB, session *mgo.Session) st
 	}
 	content := ""
 	for _, v := range asks {
-		content += "<a href=\"" + e.domain + strconv.Itoa(v.Id) + ".html\" class=\"relate-a\"><span class=\"subj\">" + v.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(v.Views) + "浏览</span></a>"
+		content += "<li><a href=\"" + e.domain + strconv.Itoa(v.Id) + ".html\"><h3>" + v.Subject + "</h3><span>" + strconv.Itoa(v.Views) + "次浏览</span></a></li>"
 	}
 	return content
 }
@@ -334,7 +364,7 @@ func dogsByAsk(id int, pid int, db *sql.DB) string {
 	}
 	content := ""
 	for _, v := range dogs {
-		content += "<li><a href=\"http://dog.m.goumin.com/pet/" + strconv.Itoa(v.Speid) + "\" class=\"relate-pet-a\"><mip-img  src=\"http://c1.cdn.goumin.com/cms" + v.Img + "\" alt=\"" + v.Spename + "\" class=\"relate-img\"></mip-img><span class=\"relate-pet-seenum\">" + v.Spename + "</span></a></li>"
+		content += "<li><a href=\"http://dog.m.goumin.com/pet/" + strconv.Itoa(v.Speid) + ".html\"><mip-img  src=\"http://c1.cdn.goumin.com/cms" + v.Img + "\" alt=\"" + v.Spename + "\" class=\"mip-element mip-layout-container mip-img-loaded\"></mip-img><span>" + v.Spename + "</span></a></li>"
 	}
 	return content
 }

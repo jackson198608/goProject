@@ -65,10 +65,13 @@ func LoadQuestionById(id int, db *sql.DB) *Question {
 		} else {
 			row.Gender = "公"
 		}
+	} else {
+		row.Gender = "公"
 	}
 	if age.Valid {
 		row.Age = age.String
 	}
+	row.Images = ""
 	if images != "" {
 		decoder := php_serialize.NewUnSerializer(images)
 		result, err := decoder.Decode()
@@ -80,6 +83,10 @@ func LoadQuestionById(id int, db *sql.DB) *Question {
 		var ids string = ""
 		for _, v := range real_result {
 			id, _ := v.(int)
+			if id == 0 {
+				sid, _ := v.(string)
+				id, _ = strconv.Atoi(sid)
+			}
 			ids += strconv.Itoa(id) + ","
 		}
 		row.Images = getImageUrl(ids, db)
@@ -113,6 +120,7 @@ func getImageUrl(ids string, db *sql.DB) string {
 		rows.Scan(&image)
 		images += askDomain + image + ","
 	}
+	images = strings.Trim(images, ",")
 	return images
 }
 
@@ -381,7 +389,7 @@ func LoadDefaultRelateThreadByAsk(db *sql.DB) string {
 		if row.Views < 3000 {
 			row.Views = rand.Intn(5000)
 		}
-		s += "<li><a href=\"" + mipBbsUrl + "thread-" + strconv.Itoa(row.Tid) + "-1-1.html\" class=\"relate-a ui-link\" target=\"_top\"><span class=\"subj\">" + row.Subject + "</span><span class=\"seenum\">" + strconv.Itoa(row.Views) + "浏览</span></a></li>"
+		s += "<li><a href=\"" + mipBbsUrl + "thread-" + strconv.Itoa(row.Tid) + "-1-1.html\"><h3>" + row.Subject + "</h3><span>" + strconv.Itoa(row.Views) + "次浏览</span></a></li>"
 	}
 	return s
 }
