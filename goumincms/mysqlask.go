@@ -65,8 +65,6 @@ func LoadQuestionById(id int, db *sql.DB) *Question {
 		} else {
 			row.Gender = "公"
 		}
-	} else {
-		row.Gender = "公"
 	}
 	if age.Valid {
 		row.Age = age.String
