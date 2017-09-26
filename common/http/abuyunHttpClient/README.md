@@ -23,3 +23,6 @@ targetUrl := "http://m.goumin.com/"
 var h http.Header
 statusCode, responseHeader, _, err := abuyun.SendRequest(targetUrl, h, true)
 ```
+- targetUrl: the page you want to request
+- h: the customHeadr you want to add
+- swichip or not
