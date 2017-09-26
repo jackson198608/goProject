@@ -4,8 +4,8 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
-	"log"
-	"log/syslog"
+	// "log"
+	// "log/syslog"
 	"time"
 )
 
@@ -40,26 +40,31 @@ type Report struct {
 	Modified time.Time `xorm:"created"`
 }
 
+type UserReport struct {
+	PreUcenterMembers `xorm:"extends"`
+	Report            `xorm:"extends"`
+}
+
 func getUser() {
 	dataSourceName := dbAuth + "@tcp(" + dbDsn + ")/" + dbName + "?charset=utf8mb4"
 	engine, err := xorm.NewEngine("mysql", dataSourceName)
 	if err != nil {
 		fmt.Println(err)
 	}
-	logWriter, err := syslog.New(syslog.LOG_DEBUG, "rest-xorm-example")
-	if err != nil {
-		log.Fatalf("Fail to create xorm system logger: %v\n", err)
-	}
+	// logWriter, err := syslog.New(syslog.LOG_DEBUG, "rest-xorm-example")
+	// if err != nil {
+	// 	log.Fatalf("Fail to create xorm system logger: %v\n", err)
+	// }
 
-	logger := xorm.NewSimpleLogger(logWriter)
-	logger.ShowSQL(true)
-	engine.SetLogger(logger)
-	// engine.ShowSQL(true) //则会在控制台打印出生成的SQL语句；
+	// logger := xorm.NewSimpleLogger(logWriter)
+	// engine.SetLogger(logger)
+	// logger.ShowSQL(true)
+	engine.ShowSQL(true) //则会在控制台打印出生成的SQL语句；
 	// err0 := engine.Sync2(new(PreUcenterMembers))
 	// if err0 != nil {
 	// 	fmt.Println(err0)
 	// }
-	// 返回的结果类型为 []map[string][]byte
+	// // 返回的结果类型为 []map[string][]byte
 	// results, err1 := engine.Query("select * from pre_ucenter_members where uid=881050")
 	// QueryString 返回 []map[string]string
 	// results, err1 := engine.QueryString("select * from pre_ucenter_members where uid=881050")
@@ -117,7 +122,7 @@ func getUser() {
 	// fmt.Println(has2)
 
 	user := new(PreUcenterMembers)
-	rows, err := engine.Where("uid <?", 6).Cols("username", "uid").Desc("uid").Rows(user)
+	rows, err := engine.Where("uid <? and uid>?", 6, 1).And("username=?", "jdjdj").Cols("username", "uid").Desc("uid").Rows(user)
 	if err != nil {
 	}
 	defer rows.Close()
@@ -158,9 +163,9 @@ func getUser() {
 	err8 := engine.Where("uid=?", 1).Cols("email", "username").Find(&user3)
 	fmt.Println(user3, err8)
 
-	report0 := Report{Cid: 2, Type: 3}
-	has11, err11 := engine.Insert(&report0)
-	fmt.Println(err11, has11)
+	// report0 := Report{Cid: 2, Type: 3}
+	// has11, err11 := engine.Insert(&report0)
+	// fmt.Println(err11, has11)
 
 	var report []Report
 	// var uids string = "1,2,3"
@@ -176,6 +181,10 @@ func getUser() {
 	err13 := engine.Limit(10, 0).Find(&report6)
 	fmt.Println(report6, err13)
 
+	for _, v := range report6 {
+		fmt.Println(v.Cid)
+	}
+
 	var report7 []Report
 	err14 := engine.GroupBy("type").Find(&report7)
 	fmt.Println(report7, err14)
@@ -184,7 +193,16 @@ func getUser() {
 	// affected, err15 := engine.Where("id=?", 1).Delete(&report8)
 	// fmt.Println(err15, affected)
 
-	report9 := new(Report)
-	affected16, err16 := engine.Where("id=?", 2).Delete(report9)
-	fmt.Println(affected16, err16)
+	// report9 := new(Report)
+	// affected16, err16 := engine.Where("id=?", 2).Delete(report9)
+	// fmt.Println(affected16, err16)
+
+	var user6 []UserReport
+	// var report8 []Report
+	err15 := engine.Select("pre_ucenter_members.*,report.*").Join("left", "report", "pre_ucenter_members.uid=report.uid").Where("report.uid=?", 1).Find(&user6)
+	fmt.Println(err15)
+	fmt.Println(user6)
+	// for _, v := range user6 {
+	// 	fmt.Println(v.Username)
+	// }
 }
