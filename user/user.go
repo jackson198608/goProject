@@ -38,6 +38,7 @@ type Report struct {
 	Status   int
 	Created  time.Time `xorm:"created"`
 	Modified time.Time `xorm:"created"`
+	Uid      int       `xorm:"index"`
 }
 
 type UserReport struct {
@@ -199,10 +200,11 @@ func getUser() {
 
 	var user6 []UserReport
 	// var report8 []Report
-	err15 := engine.Select("pre_ucenter_members.*,report.*").Join("left", "report", "pre_ucenter_members.uid=report.uid").Where("report.uid=?", 1).Find(&user6)
+	err15 := engine.Table("pre_ucenter_members").Select("pre_ucenter_members.*,report.*").Join("left", "report", "pre_ucenter_members.uid=report.uid").Where("report.uid=?", 1).Find(&user6)
 	fmt.Println(err15)
 	fmt.Println(user6)
-	// for _, v := range user6 {
-	// 	fmt.Println(v.Username)
-	// }
+	for _, v := range user6 {
+		fmt.Println(v.Username)
+		fmt.Println(v.Created)
+	}
 }
