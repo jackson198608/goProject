@@ -23,8 +23,15 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 	}
 
 	tag := p.GetUrlTag()
+	fmt.Println(tag)
 	if tag == "bbslist" {
 		qBbsList(p)
+	}
+	if tag == "malllist" {
+		qMallList(p)
+	}
+	if tag == "asklist" {
+		qAskList(p)
 	}
 	// if tag == "bbsview" {
 	// 	qBbsView(p)

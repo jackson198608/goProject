@@ -58,20 +58,20 @@ func loop(startUrl string, startUrlTag string, threadNum int) {
 }
 
 func getRequestUrlTime(startUrl string, startUrlTag string, threadNum int) {
-	for {
-		logger.Println("[info]start ", startUrl)
-		// req := newRequest(startUrlTag, startUrl)
-		// spider.NewSpider(NewMyPageProcesser(), "StressTest").
-		// 	AddRequest(req).
-		// 	AddPipeline(pipeline.NewPipelineConsole()). // Print result on screen
-		// 	SetThreadnum(uint(threadNum)).              // Crawl request by three Coroutines
-		// 	Run()
-	}
+	// for {
+	logger.Println("[info]start ", startUrl)
+	req := newRequest(startUrlTag, startUrl)
+	spider.NewSpider(NewMyPageProcesser(), "StressTest").
+		AddRequest(req).
+		AddPipeline(pipeline.NewPipelineConsole()). // Print result on screen
+		SetThreadnum(uint(threadNum)).              // Crawl request by three Coroutines
+		Run()
+	// }
 }
 
 func main() {
 
-	if len(os.Args) != 4 {
+	if len(os.Args) != 5 {
 		fmt.Println("useage: startUrl startUrlType logfile threadnum ")
 		os.Exit(1)
 	}
@@ -81,12 +81,12 @@ func main() {
 	threadNum, _ = strconv.Atoi(os.Args[4])
 
 	load()
-	// loop(startUrl, startUrlTag, threadNum)
-	logger.Println("[info]start ", startUrl)
-	req := newRequest(startUrlTag, startUrl)
-	spider.NewSpider(NewMyPageProcesser(), "StressTest").
-		AddRequest(req).
-		AddPipeline(pipeline.NewPipelineConsole()). // Print result on screen
-		SetThreadnum(5).                            // Crawl request by three Coroutines
-		Run()
+	loop(startUrl, startUrlTag, threadNum)
+	// logger.Println("[info]start ", startUrl)
+	// req := newRequest(startUrlTag, startUrl)
+	// spider.NewSpider(NewMyPageProcesser(), "StressTest").
+	// 	AddRequest(req).
+	// 	AddPipeline(pipeline.NewPipelineConsole()). // Print result on screen
+	// 	SetThreadnum(5).                            // Crawl request by three Coroutines
+	// 	Run()
 }
