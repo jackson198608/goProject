@@ -33,6 +33,9 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 	if tag == "asklist" {
 		qAskList(p)
 	}
+	if tag == "masklist" {
+		qMaskList(p)
+	}
 	// if tag == "bbsview" {
 	// 	qBbsView(p)
 	// }

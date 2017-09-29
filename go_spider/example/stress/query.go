@@ -169,6 +169,48 @@ func qAskList(p *page.Page) {
 
 }
 
+func qMaskList(p *page.Page) {
+	query := p.GetHtmlParser()
+	fmt.Println(p.GetRequest().Url)
+	query.Find(".question .list a").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		url, _ := s.Attr("href")
+		start := time.Now()
+		realUrl := "http://m.goumin.com" + url
+		// req := newRequest("bbsview", realUrl)
+		// p.AddTargetRequestWithParams(req)
+		resp, err := http.Get(realUrl)
+		if err != nil {
+			// handle error
+		}
+		//记录结束时间
+		end := time.Since(start)
+		//输出执行时间，单位为毫秒。
+		fmt.Println(realUrl + ",响应时间：") //
+		fmt.Println(end)
+		fmt.Println(resp)
+		return true
+	})
+
+	query.Find(".question .page .down").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		// For each item found, get the band and title
+		url, isExsit := s.Attr("href")
+		if isExsit {
+			realUrl := "http://m.goumin.com" + url
+			logger.Println("[info]find next list page: ", realUrl)
+			realUrlTag := "masklist"
+			start := time.Now()
+			req := newRequest(realUrlTag, realUrl)
+			end := time.Since(start)
+			fmt.Println(realUrl + ",响应时间：") //
+			fmt.Println(end)
+			p.AddTargetRequestWithParams(req)
+		} else {
+			fmt.Println("dfdfd")
+		}
+		return true
+	})
+}
+
 // func qMBbsList(p *page.Page, num int) {
 // 	query := p.GetHtmlParser()
 // }
