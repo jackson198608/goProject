@@ -70,7 +70,7 @@ func LoadQuestionById(id int, db *sql.DB) *Question {
 		row.Age = age.String
 	}
 	row.Images = ""
-	if images != "" {
+	if images != "" && images != "0" {
 		decoder := php_serialize.NewUnSerializer(images)
 		result, err := decoder.Decode()
 		if err != nil {
