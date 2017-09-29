@@ -259,7 +259,7 @@ func LoadRelateAskByAsk(id int, pid int, db *sql.DB, session *mgo.Session) []*Re
 	}
 	if len(ms.RelatedAsk) > 0 {
 		idstring := ""
-		for k, v := range ms.Related {
+		for k, v := range ms.RelatedAsk {
 			if k <= 4 {
 				idstring += strconv.Itoa(v) + ","
 			}
