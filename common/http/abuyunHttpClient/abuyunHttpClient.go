@@ -43,6 +43,9 @@ func (p *AbuyunProxy) makeClient() {
 	p.client = &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
 }
 
+func (p *AbuyunProxy) Close() {
+}
+
 func (p *AbuyunProxy) SendRequest(targetUrl string, customHeader http.Header, switchip bool) (int, *http.Header, string, error) {
 	request, err := http.NewRequest("GET", targetUrl, bytes.NewBuffer([]byte(``)))
 	if err != nil {
