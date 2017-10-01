@@ -1,1 +1,0 @@
-GOOS=linux GOARCH=amd64 go build github.com/jackson198608/goProject/tableSplit/pre_forum_post/main
