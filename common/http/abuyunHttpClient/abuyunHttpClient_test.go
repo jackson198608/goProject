@@ -19,6 +19,7 @@ func TestAbuyun(t *testing.T) {
 
 	if abuyun == nil {
 		t.Error("create abuyun error")
+		return
 	}
 
 	targetUrl := "http://m.goumin.com/"

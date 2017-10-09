@@ -1,9 +1,8 @@
-package readFileEngine
+package fileEngine
 
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -35,7 +34,7 @@ func (f *FileEngine) open() error {
 		return err
 	}
 
-	rd := bufio.NewReader(f)
+	rd := bufio.NewReader(file)
 
 	f.fileFp = file
 	f.fileReader = rd
@@ -53,7 +52,6 @@ func (f *FileEngine) ReadLine() (string, error) {
 		return "", err
 	}
 	line = strings.Replace(line, "\n", "", -1)
-	line = strings.Replace(line, " ", "", -1)
 	line1 := line[0 : len(line)-1]
-	return string(line1)
+	return string(line1), nil
 }

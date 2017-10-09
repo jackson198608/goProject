@@ -46,6 +46,7 @@ func (p *AbuyunProxy) makeClient() {
 func (p *AbuyunProxy) Close() {
 }
 
+// todo: make customHeader to be pointer
 func (p *AbuyunProxy) SendRequest(targetUrl string, customHeader http.Header, switchip bool) (int, *http.Header, string, error) {
 	request, err := http.NewRequest("GET", targetUrl, bytes.NewBuffer([]byte(``)))
 	if err != nil {

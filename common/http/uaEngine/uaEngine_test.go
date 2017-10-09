@@ -5,7 +5,7 @@ import (
 )
 
 func TestUaEngine(t *testing.T) {
-	uaEngine := NewUaEngine("")
+	uaEngine := NewUaEngine()
 	t.Log(uaEngine.GetPcRandomeEngine())
 	t.Log(uaEngine.GetMobileRandomeEngine())
 }

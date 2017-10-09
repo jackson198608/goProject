@@ -21,9 +21,9 @@ type UaEngine struct {
 	currentUa string
 }
 
-func NewUaEngine(currentUa string) *UaEngine {
+func NewUaEngine() *UaEngine {
 	uaEngine := new(UaEngine)
-	uaEngine.currentUa = currentUa
+	uaEngine.currentUa = ""
 	return uaEngine
 }
 
