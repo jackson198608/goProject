@@ -15,32 +15,6 @@ const proxyServer = ""
 const proxyUser = ""
 const proxyPasswd = ""
 
-func (e *InfoNew) CreateHtmlByUrl(id int, pages int, jobType string) {
-	var abuyun *abuyunHttpClient.AbuyunProxy = abuyunHttpClient.NewAbuyunProxy(proxyServer,
-		proxyUser,
-		proxyPasswd)
-
-	logger.Info("begin the test", id)
-
-	if abuyun == nil {
-		logger.Error("create abuyun error")
-		return
-	}
-	for page := 1; page <= pages; page++ {
-		targetUrl := e.getTargetUrl(id, page, jobType)
-		var h http.Header = make(http.Header)
-		h.Set("a", "1")
-		statusCode, responseHeader, body, err := abuyun.SendRequest(targetUrl, h, true)
-		fmt.Println(statusCode)
-		fmt.Println(responseHeader)
-		fmt.Println(body)
-		fmt.Println(err)
-		urlname := e.saveFilename(id, page, jobType)
-		e.saveContentToHtml(urlname, body)
-	}
-
-}
-
 type InfoNew struct {
 	db           *sql.DB
 	id           int
@@ -64,10 +38,39 @@ func NewInfo(logLevel int, id int, db *sql.DB, taskNewArgs []string) *InfoNew {
 	return e
 }
 
+func (e *InfoNew) CreateHtmlByUrl(id int, pages int, jobType string) {
+	var abuyun *abuyunHttpClient.AbuyunProxy = abuyunHttpClient.NewAbuyunProxy(proxyServer,
+		proxyUser,
+		proxyPasswd)
+
+	logger.Info("begin the test", id)
+
+	if abuyun == nil {
+		logger.Error("create abuyun error")
+		return
+	}
+	for page := 0; page <= pages; page++ {
+		targetUrl := e.getTargetUrl(id, page, jobType)
+		var h http.Header = make(http.Header)
+		h.Set("a", "1")
+		statusCode, responseHeader, body, err := abuyun.SendRequest(targetUrl, h, true)
+		fmt.Println(statusCode)
+		fmt.Println(responseHeader)
+		// fmt.Println(body)
+		fmt.Println(err)
+		urlname := e.saveFilename(id, page, jobType)
+		e.saveContentToHtml(urlname, body)
+	}
+
+}
+
 func (e *InfoNew) getTargetUrl(id int, page int, jobType string) string {
 	var url string = ""
 	if jobType == "ask" {
 		url = e.domain + strconv.Itoa(id) + ".html"
+		if page >= 1 {
+			url = e.domain + strconv.Itoa(id) + "-" + strconv.Itoa(page) + ".html"
+		}
 	}
 	if jobType == "threadsave" {
 		url = e.domain + "thread-" + strconv.Itoa(id) + "-" + strconv.Itoa(page) + "-1.html"
@@ -87,10 +90,14 @@ func (e *InfoNew) saveFilename(id int, page int, jobType string) string {
 		dir = strconv.Itoa(n2/100) + "/" + strconv.Itoa(n3/10) + "/" + strconv.Itoa(n4) + "/"
 	}
 	if jobType == "ask" {
-		filename = e.saveDir + dir + strconv.Itoa(id) + ".html"
+		if page >= 1 {
+			filename = dir + strconv.Itoa(id) + "-" + strconv.Itoa(page) + ".html"
+		} else {
+			filename = dir + strconv.Itoa(id) + ".html"
+		}
 	}
 	if jobType == "thread" {
-		filename = e.saveDir + dir + "thread-" + strconv.Itoa(id) + "-" + strconv.Itoa(page) + "-1.html"
+		filename = dir + "thread-" + strconv.Itoa(id) + "-" + strconv.Itoa(page) + "-1.html"
 	}
 	return filename
 }
