@@ -54,9 +54,29 @@ func getThreadTask(page int) []string {
 		var tid int
 		var posttableid int
 		rows.Scan(&tid, &posttableid)
-		totalpages := int(math.Ceil(float64(200) / float64(20))) //page总数
+		postCount := getPostCount(tid, posttableid, db)
+		totalpages := int(math.Ceil(float64(postCount) / float64(20))) //page总数
 		str := strconv.Itoa(tid) + "|" + strconv.Itoa(totalpages)
 		a = append(a, str)
 	}
 	return a
+}
+
+func getPostCount(tid int, posttableid int, db *sql.DB) int {
+	tableName := "pre_forum_post_" + strconv.Itoa(posttableid)
+	if posttableid == 0 {
+		tableName = "pre_forum_post"
+	}
+	rows, err := db.Query("select count(*) from `" + tableName + "` as p inner join `pre_common_member` as m on p.authorid=m.uid where m.groupid!=4 and invisible=0 and tid=" + strconv.Itoa(int(tid)) + " order by dateline")
+	defer rows.Close()
+	if err != nil {
+		logger.Error("[error] check pre_forum_post sql prepare error: ", err)
+		return 0
+	}
+	for rows.Next() {
+		var count int
+		rows.Scan(&count)
+		return count
+	}
+	return 0
 }
