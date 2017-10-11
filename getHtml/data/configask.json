@@ -1,0 +1,1 @@
+{"dbDsn":"192.168.5.193:3307","dbName":"new_dog123","dbAuth":"dog123:dog123","numloops":10,"redisConn":"192.168.86.68:6379","queueName":"createHtmlAsk","saveDir":"/tmp/zhidao/","logFile":"/tmp/create_ask.log","logLevel":1,"tidStart":"1","tidEnd":"640900","domain":"http://zhidao.goumin.com/ask/"}
