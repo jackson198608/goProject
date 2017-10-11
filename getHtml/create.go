@@ -50,6 +50,9 @@ func (e *InfoNew) CreateHtmlByUrl(id int, pages int, jobType string) {
 		return
 	}
 	for page := 0; page <= pages; page++ {
+		if page == 0 {
+			page = 1
+		}
 		targetUrl := e.getTargetUrl(id, page, jobType)
 		var h http.Header = make(http.Header)
 		h.Set("a", "1")
@@ -58,8 +61,13 @@ func (e *InfoNew) CreateHtmlByUrl(id int, pages int, jobType string) {
 		fmt.Println(responseHeader)
 		// fmt.Println(body)
 		fmt.Println(err)
-		urlname := e.saveFilename(id, page, jobType)
-		e.saveContentToHtml(urlname, body)
+		if statusCode == 200 {
+			urlname := e.saveFilename(id, page, jobType)
+			status := e.saveContentToHtml(urlname, body)
+			if status == true {
+				logger.Info("save content to html: ", urlname)
+			}
+		}
 	}
 
 }
@@ -68,11 +76,11 @@ func (e *InfoNew) getTargetUrl(id int, page int, jobType string) string {
 	var url string = ""
 	if jobType == "ask" {
 		url = e.domain + strconv.Itoa(id) + ".html"
-		if page >= 1 {
+		if page > 1 {
 			url = e.domain + strconv.Itoa(id) + "-" + strconv.Itoa(page) + ".html"
 		}
 	}
-	if jobType == "threadsave" {
+	if jobType == "thread" {
 		url = e.domain + "thread-" + strconv.Itoa(id) + "-" + strconv.Itoa(page) + "-1.html"
 	}
 	return url
@@ -90,7 +98,7 @@ func (e *InfoNew) saveFilename(id int, page int, jobType string) string {
 		dir = strconv.Itoa(n2/100) + "/" + strconv.Itoa(n3/10) + "/" + strconv.Itoa(n4) + "/"
 	}
 	if jobType == "ask" {
-		if page >= 1 {
+		if page > 1 {
 			filename = dir + strconv.Itoa(id) + "-" + strconv.Itoa(page) + ".html"
 		} else {
 			filename = dir + strconv.Itoa(id) + ".html"
