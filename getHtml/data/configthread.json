@@ -1,0 +1,1 @@
+{"dbDsn":"192.168.86.193:3307","dbName":"new_dog123","dbAuth":"dog123:dog123","numloops":10,"redisConn":"192.168.86.68:6379","queueName":"threadHtmlUrl","saveDir":"/tmp/thread/","logFile":"/tmp/create_thread.log","logLevel":1,"tidStart":"1","tidEnd":"620759","domain":"http://bbs.goumin.com/"}
