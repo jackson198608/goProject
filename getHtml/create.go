@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
+	redis "gopkg.in/redis.v4"
 	"net/http"
 	"os"
 	"path"
@@ -22,9 +23,10 @@ type InfoNew struct {
 	tidStart string
 	tidEnd   string
 	domain   string
+	client   *redis.Client
 }
 
-func NewInfo(logLevel int, id int, db *sql.DB, taskNewArgs []string) *InfoNew {
+func NewInfo(logLevel int, id int, db *sql.DB, taskNewArgs []string, client *redis.Client) *InfoNew {
 	logger.SetLevel(logger.LEVEL(logLevel))
 	e := new(InfoNew)
 	e.db = db
@@ -33,6 +35,7 @@ func NewInfo(logLevel int, id int, db *sql.DB, taskNewArgs []string) *InfoNew {
 	e.tidStart = taskNewArgs[4]
 	e.tidEnd = taskNewArgs[5]
 	e.domain = taskNewArgs[6]
+	e.client = client
 	return e
 }
 
@@ -55,7 +58,7 @@ func (e *InfoNew) CreateHtmlByUrl(id int, pages int, jobType string) {
 		var h http.Header = make(http.Header)
 		h.Set("a", "1")
 		statusCode, responseHeader, body, err := abuyun.SendRequest(targetUrl, h, true)
-		fmt.Println(statusCode)
+		fmt.Println(statusCode, id)
 		fmt.Println(responseHeader)
 		// fmt.Println(body)
 		fmt.Println(err)
@@ -65,6 +68,11 @@ func (e *InfoNew) CreateHtmlByUrl(id int, pages int, jobType string) {
 			if status == true {
 				logger.Info("save content to html: ", urlname)
 			}
+		} else {
+			fmt.Println("resave id and pages to redis")
+			str := strconv.Itoa(id) + "|" + strconv.Itoa(page)
+			result := (*e.client).LPush(c.queueName, str).Val()
+			fmt.Println("resave redis ", str, result)
 		}
 	}
 
