@@ -1,9 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"os"
-	"strconv"
+	// "strconv"
 )
 
 var c Config = Config{
@@ -29,58 +30,34 @@ func Init(args []string) {
 
 }
 
-// func getHtmlUrls(pm string, jobType string, page int) []string {
-// 	var urls []string
-// 	if jobType == "asksave" {
-// 		ids := getAskList(page)
-// 		domain := "http://ask.goumin.com/ask/"
-// 		if pm == "h5" {
-// 			domain = "http://ask.m.goumin.com/ask/"
-// 		}
-// 		for _, v := range ids {
-// 			url := domain + strconv.Itoa(v) + ".html"
-// 			urls = append(urls, url)
-// 		}
-// 	}
-// 	if jobType == "threadsave" {
-// 		ids := getThreadTask(page)
-// 		domain := "http://bbs.goumin.com/"
-// 		if pm == "h5" {
-// 			domain = "http://m.goumin.com/bbs/"
-// 		}
-// 		for _, v := range ids {
-// 			url := domain + "thread-" + strconv.Itoa(v) + "-1-1.html"
-// 			urls = append(urls, url)
-// 		}
-// 	}
-// 	return urls
-// }
-
 func saveHtmlUrl(jobType string) {
 	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", c.numloops, c.dbAuth, c.dbDsn, c.dbName)
-	page := 1
+	// page := 1
+	startId := 0
+	endId := 1000
+	maxId := getMaxId(jobType)
+	fmt.Println(maxId)
 	for {
 		var ids []string
-		// urls := getHtmlUrls(pm, jobType, page)
 		if jobType == "threadsave" {
-			ids = getThreadTask(page)
+			ids = getThreadTask(startId, endId)
 		}
 		if jobType == "asksave" {
-			ids = getAskList(page)
+			ids = getAskList(startId, endId)
 		}
-		offset := page * offset
-		maxThreadid, _ := strconv.Atoi(c.tidEnd)
-		if offset > maxThreadid {
-			break
-		}
-		if len(ids) == 0 {
-			break
-		}
-		if ids == nil {
-			break
-		}
+		// setMaxid, _ := strconv.Atoi(c.tidEnd)
+		// if startId > setMaxid {
+		// 	break
+		// }
+		// if ids == nil {
+		// 	break
+		// }
 		r.PushTaskData(ids)
-		page++
+		if startId > maxId {
+			break
+		}
+		startId += offset
+		endId += offset
 	}
 }
 
