@@ -16,14 +16,12 @@ const proxyUser = ""
 const proxyPasswd = ""
 
 type InfoNew struct {
-	db           *sql.DB
-	id           int
-	templateType string
-	templatefile string
-	saveDir      string
-	tidStart     string
-	tidEnd       string
-	domain       string
+	db       *sql.DB
+	id       int
+	saveDir  string
+	tidStart string
+	tidEnd   string
+	domain   string
 }
 
 func NewInfo(logLevel int, id int, db *sql.DB, taskNewArgs []string) *InfoNew {
