@@ -1,5 +1,10 @@
 install:
 	go install github.com/jackson198608/goProject/getHtml
-
-test:
-	go test github.com/jackson198608/goProject/getHtml -v
+	cp data/config* /etc/
+	cp ../../../../../bin/getHtml /usr/local/bin/
+runAsk:
+	getHtml asksave /etc/configask.json
+	getHtml ask /etc/configask.json
+runThread:
+	getHtml threadsave /etc/configthread.json
+	getHtml thread /etc/configthread.json
