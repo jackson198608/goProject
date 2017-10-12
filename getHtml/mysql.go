@@ -8,6 +8,7 @@ import (
 	"math"
 	// "reflect"
 	"strconv"
+	"time"
 )
 
 func getMaxId(jobType string) int {
@@ -36,7 +37,7 @@ func getMaxId(jobType string) int {
 	return maxid
 }
 
-func getAskList(startId int, endId int) []string {
+func getAskList(startId int, endId int, cat string) []string {
 	db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 	if err != nil {
 		logger.Error("can not connect to mysql", c.dbDsn, c.dbName, c.dbAuth)
@@ -45,7 +46,13 @@ func getAskList(startId int, endId int) []string {
 	}
 	defer db.Close()
 	// rows, err := db.Query("select id,ans_num from `ask`.`ask_question` where is_hide=1 order by id asc limit " + strconv.Itoa(offset) + " offset " + strconv.Itoa(offset*(page-1)))
-	rows, err := db.Query("select id,ans_num from `ask`.`ask_question` where is_hide=1 and id>" + strconv.Itoa(startId) + " and id<=" + strconv.Itoa(endId) + " order by id asc")
+	var rows *sql.Rows
+	if cat == "update" {
+		date := time.Now().AddDate(0, 0, -7).Format("2006-01-02 00:00:00")
+		rows, err = db.Query("select id,ans_num from `ask`.`ask_question` where is_hide=1 and created>='" + date + "' order by id asc")
+	} else {
+		rows, err = db.Query("select id,ans_num from `ask`.`ask_question` where is_hide=1 and id>" + strconv.Itoa(startId) + " and id<=" + strconv.Itoa(endId) + " order by id asc")
+	}
 	defer rows.Close()
 	if err != nil {
 		logger.Error("check ask_question sql prepare error: ", err)
@@ -63,7 +70,7 @@ func getAskList(startId int, endId int) []string {
 	return a
 }
 
-func getThreadTask(startId int, endId int) []string {
+func getThreadTask(startId int, endId int, cat string) []string {
 	db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 	if err != nil {
 		logger.Error("can not connect to mysql", c.dbDsn, c.dbName, c.dbAuth)
@@ -72,8 +79,15 @@ func getThreadTask(startId int, endId int) []string {
 	}
 	defer db.Close()
 	tableName := "pre_forum_thread"
-	// rows, err := db.Query("select tid,posttableid from `" + tableName + "` where displayorder in(0,1) order by tid asc limit " + strconv.Itoa(offset) + " offset " + strconv.Itoa(offset*(page-1)))
-	rows, err := db.Query("select tid,posttableid from `" + tableName + "` where displayorder in(0,1) and tid>" + strconv.Itoa(startId) + " and tid<=" + strconv.Itoa(endId) + " order by tid asc")
+	var rows *sql.Rows
+	if cat == "update" {
+		dateint := int(time.Now().AddDate(0, 0, -7).Unix())
+		date := strconv.Itoa(dateint)
+		rows, err = db.Query("select tid,posttableid from `" + tableName + "` where displayorder in(0,1) and dateline>=" + date + " order by tid asc")
+	} else {
+		// rows, err := db.Query("select tid,posttableid from `" + tableName + "` where displayorder in(0,1) order by tid asc limit " + strconv.Itoa(offset) + " offset " + strconv.Itoa(offset*(page-1)))
+		rows, err = db.Query("select tid,posttableid from `" + tableName + "` where displayorder in(0,1) and tid>" + strconv.Itoa(startId) + " and tid<=" + strconv.Itoa(endId) + " order by tid asc")
+	}
 	defer rows.Close()
 	if err != nil {
 		logger.Error("check pre_forum_thread sql prepare error: ", err)
