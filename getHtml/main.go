@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"os"
-	// "strconv"
+	"strconv"
 )
 
 var c Config = Config{
@@ -33,8 +33,9 @@ func Init(args []string) {
 func saveHtmlUrl(jobType string) {
 	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", c.numloops, c.dbAuth, c.dbDsn, c.dbName)
 	// page := 1
-	startId := 0
-	endId := 1000
+	intIdStart, _ := strconv.Atoi(c.tidStart)
+	startId := intIdStart
+	endId := startId + 1000
 	maxId := getMaxId(jobType)
 	fmt.Println(maxId)
 	for {
