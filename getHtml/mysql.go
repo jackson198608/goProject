@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	// "fmt"
+	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	_ "github.com/go-sql-driver/mysql"
 	"math"
@@ -49,6 +49,7 @@ func getAskList(startId int, endId int, cat string) []string {
 	var rows *sql.Rows
 	if cat == "update" {
 		date := time.Now().AddDate(0, 0, -7).Format("2006-01-02 00:00:00")
+		fmt.Println(date)
 		rows, err = db.Query("select id,ans_num from `ask`.`ask_question` where is_hide=1 and created>='" + date + "' order by id asc")
 	} else {
 		rows, err = db.Query("select id,ans_num from `ask`.`ask_question` where is_hide=1 and id>" + strconv.Itoa(startId) + " and id<=" + strconv.Itoa(endId) + " order by id asc")
@@ -81,8 +82,13 @@ func getThreadTask(startId int, endId int, cat string) []string {
 	tableName := "pre_forum_thread"
 	var rows *sql.Rows
 	if cat == "update" {
-		dateint := int(time.Now().AddDate(0, 0, -7).Unix())
+		toBeCharge := time.Now().AddDate(0, 0, -7).Format("2006-01-02 00:00:00")
+		timeLayout := "2006-01-02 15:04:05"                             //转化所需模板
+		loc, _ := time.LoadLocation("Local")                            //重要：获取时区
+		theTime, _ := time.ParseInLocation(timeLayout, toBeCharge, loc) //使用模板在对应时区转化为time.time类型
+		dateint := int(theTime.Unix())
 		date := strconv.Itoa(dateint)
+		fmt.Println(date)
 		rows, err = db.Query("select tid,posttableid from `" + tableName + "` where displayorder in(0,1) and dateline>=" + date + " order by tid asc")
 	} else {
 		// rows, err := db.Query("select tid,posttableid from `" + tableName + "` where displayorder in(0,1) order by tid asc limit " + strconv.Itoa(offset) + " offset " + strconv.Itoa(offset*(page-1)))
