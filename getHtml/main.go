@@ -32,7 +32,6 @@ func Init(args []string) {
 
 func saveHtmlUrl(jobType string, cat string) {
 	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", c.numloops, c.dbAuth, c.dbDsn, c.dbName)
-	// page := 1
 	intIdStart, _ := strconv.Atoi(c.tidStart)
 	startId := intIdStart
 	endId := startId + 1000
@@ -46,13 +45,6 @@ func saveHtmlUrl(jobType string, cat string) {
 		if jobType == "asksave" {
 			ids = getAskList(startId, endId, cat)
 		}
-		// setMaxid, _ := strconv.Atoi(c.tidEnd)
-		// if startId > setMaxid {
-		// 	break
-		// }
-		// if ids == nil {
-		// 	break
-		// }
 		r.PushTaskData(ids)
 		if cat == "update" {
 			break
