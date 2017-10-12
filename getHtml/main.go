@@ -30,7 +30,7 @@ func Init(args []string) {
 
 }
 
-func saveHtmlUrl(jobType string) {
+func saveHtmlUrl(jobType string, cat string) {
 	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", c.numloops, c.dbAuth, c.dbDsn, c.dbName)
 	// page := 1
 	intIdStart, _ := strconv.Atoi(c.tidStart)
@@ -41,10 +41,10 @@ func saveHtmlUrl(jobType string) {
 	for {
 		var ids []string
 		if jobType == "threadsave" {
-			ids = getThreadTask(startId, endId)
+			ids = getThreadTask(startId, endId, cat)
 		}
 		if jobType == "asksave" {
-			ids = getAskList(startId, endId)
+			ids = getAskList(startId, endId, cat)
 		}
 		// setMaxid, _ := strconv.Atoi(c.tidEnd)
 		// if startId > setMaxid {
@@ -54,6 +54,9 @@ func saveHtmlUrl(jobType string) {
 		// 	break
 		// }
 		r.PushTaskData(ids)
+		if cat == "update" {
+			break
+		}
 		if startId > maxId {
 			break
 		}
@@ -70,9 +73,13 @@ func createHtmlByUrl(jobType string) {
 func main() {
 	Init(os.Args)
 	jobType := os.Args[1]
+	cat := "all"
 	if len(os.Args) < 3 {
 		logger.Error("args error")
 		return
+	}
+	if len(os.Args) == 4 {
+		cat = os.Args[3]
 	}
 	switch jobType {
 	case "thread": //thread
@@ -83,10 +90,10 @@ func main() {
 		createHtmlByUrl(jobType)
 	case "asksave": //create html url
 		logger.Info("in the html url save ")
-		saveHtmlUrl(jobType)
+		saveHtmlUrl(jobType, cat)
 	case "threadsave": //create html url
 		logger.Info("in the html url save ")
-		saveHtmlUrl(jobType)
+		saveHtmlUrl(jobType, cat)
 	default:
 
 	}

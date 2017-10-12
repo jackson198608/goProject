@@ -8,8 +8,8 @@
 # Run
 
 - run ask
-    getHtml asksave /etc/configask.json
+    getHtml asksave /etc/configask.json all/update  (all: all of data. update:newest 7 days data)
     getHtml ask /etc/configask.json
 - run thread 
-    getHtml threadsave /etc/configthread.json
+    getHtml threadsave /etc/configthread.json all/update  (all: all of data. update:newest 7 days data)
     getHtml thread /etc/configthread.json
