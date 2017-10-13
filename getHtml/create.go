@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 )
 
 const proxyServer = ""
@@ -39,7 +40,7 @@ func NewInfo(logLevel int, id int, db *sql.DB, taskNewArgs []string, client *red
 	return e
 }
 
-func (e *InfoNew) CreateHtmlByUrl(id int, pages int, jobType string) {
+func (e *InfoNew) CreateHtmlByUrl(id int, targetUrl string, jobType string) {
 	var abuyun *abuyunHttpClient.AbuyunProxy = abuyunHttpClient.NewAbuyunProxy(proxyServer,
 		proxyUser,
 		proxyPasswd)
@@ -50,49 +51,29 @@ func (e *InfoNew) CreateHtmlByUrl(id int, pages int, jobType string) {
 		logger.Error("create abuyun error")
 		return
 	}
-	for page := 0; page <= pages; page++ {
-		if page == 0 {
-			page = 1
+	var h http.Header = make(http.Header)
+	h.Set("a", "1")
+	statusCode, responseHeader, body, err := abuyun.SendRequest(targetUrl, h, true)
+	fmt.Println(statusCode, id)
+	fmt.Println(responseHeader)
+	// fmt.Println(body)
+	fmt.Println(err)
+	if statusCode == 200 {
+		urlname := e.newSaveFilename(targetUrl, id)
+		status := e.saveContentToHtml(urlname, body)
+		if status == true {
+			logger.Info("save content to html: ", urlname)
 		}
-		targetUrl := e.getTargetUrl(id, page, jobType)
-		var h http.Header = make(http.Header)
-		h.Set("a", "1")
-		statusCode, responseHeader, body, err := abuyun.SendRequest(targetUrl, h, true)
-		fmt.Println(statusCode, id)
-		fmt.Println(responseHeader)
-		// fmt.Println(body)
-		fmt.Println(err)
-		if statusCode == 200 {
-			urlname := e.saveFilename(id, page, jobType)
-			status := e.saveContentToHtml(urlname, body)
-			if status == true {
-				logger.Info("save content to html: ", urlname)
-			}
-		} else {
-			fmt.Println("resave id and pages to redis")
-			str := strconv.Itoa(id) + "|" + strconv.Itoa(page)
-			result := (*e.client).LPush(c.queueName, str).Val()
-			fmt.Println("resave redis ", str, result)
-		}
+	} else {
+		fmt.Println("resave id and pages to redis")
+		str := targetUrl + "|" + strconv.Itoa(id)
+		result := (*e.client).LPush(c.queueName, str).Val()
+		fmt.Println("resave redis ", str, result)
 	}
 
 }
 
-func (e *InfoNew) getTargetUrl(id int, page int, jobType string) string {
-	var url string = ""
-	if jobType == "ask" {
-		url = e.domain + strconv.Itoa(id) + ".html"
-		if page > 1 {
-			url = e.domain + strconv.Itoa(id) + "-" + strconv.Itoa(page) + ".html"
-		}
-	}
-	if jobType == "thread" {
-		url = e.domain + "thread-" + strconv.Itoa(id) + "-" + strconv.Itoa(page) + "-1.html"
-	}
-	return url
-}
-
-func (e *InfoNew) saveFilename(id int, page int, jobType string) string {
+func (e *InfoNew) newSaveFilename(url string, id int) string {
 	filename := ""
 	dir := ""
 	if id < 1000 {
@@ -103,15 +84,10 @@ func (e *InfoNew) saveFilename(id int, page int, jobType string) string {
 		n2 := (id - n4 - n3) % 1000 //百位数
 		dir = strconv.Itoa(n2/100) + "/" + strconv.Itoa(n3/10) + "/" + strconv.Itoa(n4) + "/"
 	}
-	if jobType == "ask" {
-		if page > 1 {
-			filename = dir + strconv.Itoa(id) + "-" + strconv.Itoa(page) + ".html"
-		} else {
-			filename = dir + strconv.Itoa(id) + ".html"
-		}
-	}
-	if jobType == "thread" {
-		filename = dir + "thread-" + strconv.Itoa(id) + "-" + strconv.Itoa(page) + "-1.html"
+	urlstr := strings.Split(url, "/")
+	strlen := len(urlstr)
+	if strlen >= 1 {
+		filename = dir + urlstr[strlen-1]
 	}
 	return filename
 }
@@ -153,4 +129,33 @@ func checkFileIsExist(filename string) bool {
 		exist = false
 	}
 	return exist
+}
+
+func idToUrl(jobType string, idstr []string) []string {
+	var urls []string
+	for _, v := range idstr {
+		vArr := strings.Split(v, "|")
+		if len(vArr) < 2 {
+			break
+		}
+		id := vArr[0]
+		pages, _ := strconv.Atoi(vArr[1])
+		for page := 0; page <= pages; page++ {
+			if page == 0 {
+				page = 1
+			}
+			var url string = ""
+			if jobType == "asksave" {
+				url = c.domain + id + ".html|" + id
+				if page > 1 {
+					url = c.domain + id + "-" + strconv.Itoa(page) + ".html|" + id
+				}
+			}
+			if jobType == "threadsave" {
+				url = c.domain + "thread-" + id + "-" + strconv.Itoa(page) + "-1.html|" + id
+			}
+			urls = append(urls, url)
+		}
+	}
+	return urls
 }
