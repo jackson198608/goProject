@@ -8,6 +8,9 @@ type Config struct {
 	dbDsn     string
 	dbName    string
 	dbAuth    string
+	sdbDsn    string //5.86
+	sdbName   string //5.86
+	sdbAuth   string //5.86
 	numloops  int
 	redisConn string
 	queueName string
@@ -30,6 +33,9 @@ func loadConfig(args []string) {
 	c.dbDsn = config.GetString("dbDsn")
 	c.dbName = config.GetString("dbName")
 	c.dbAuth = config.GetString("dbAuth")
+	c.sdbDsn = config.GetString("sdbDsn")
+	c.sdbName = config.GetString("sdbName")
+	c.sdbAuth = config.GetString("sdbAuth")
 	c.numloops = config.GetInt("numloops")
 	c.redisConn = config.GetString("redisConn")
 	c.queueName = config.GetString("queueName")

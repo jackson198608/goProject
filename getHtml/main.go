@@ -11,6 +11,9 @@ var c Config = Config{
 	"192.168.86.193:3307",
 	"new_dog123",
 	"dog123:dog123",
+	"192.168.86.193:3307",
+	"process",
+	"dog123:dog123",
 	10,
 	"127.0.0.1:6379",
 	"getHtml",
@@ -32,29 +35,40 @@ func Init(args []string) {
 
 func saveHtmlUrl(jobType string, cat string) {
 	r := NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", c.numloops, c.dbAuth, c.dbDsn, c.dbName)
+	page := 1
 	intIdStart, _ := strconv.Atoi(c.tidStart)
 	startId := intIdStart
 	endId := startId + 1000
 	maxId := getMaxId(jobType)
+	lastdate := ""
+	if cat == "update" {
+		lastdate = getProcessLastDate(jobType)
+	}
 	fmt.Println(maxId)
 	for {
 		var ids []string
 		if jobType == "threadsave" {
-			ids = getThreadTask(startId, endId, cat)
+			ids = getThreadTask(startId, endId, page, cat, lastdate)
 		}
 		if jobType == "asksave" {
-			ids = getAskList(startId, endId, cat)
+			ids = getAskList(startId, endId, page, cat, lastdate)
 		}
-		r.PushTaskData(ids)
+		idstr := idToUrl(jobType, ids)
+		r.PushTaskData(idstr)
 		if cat == "update" {
-			break
+			if len(ids) == 0 {
+				break
+			}
+		} else {
+			if startId > maxId {
+				break
+			}
+			startId += offset
+			endId += offset
 		}
-		if startId > maxId {
-			break
-		}
-		startId += offset
-		endId += offset
+		page++
 	}
+	saveProcessLastdate(jobType)
 }
 
 func createHtmlByUrl(jobType string) {

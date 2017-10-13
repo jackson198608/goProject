@@ -12,7 +12,7 @@ import (
 type Task struct {
 	loggerLevel       int
 	id                int
-	pages             int
+	url               string
 	db                *sql.DB
 	loopNum           int
 	templateType      string
@@ -29,17 +29,17 @@ func NewTask(loggerLevel int, redisStr string, db *sql.DB, taskNewArgs []string,
 	logger.SetLevel(logger.LEVEL(loggerLevel))
 	redisArr := strings.Split(redisStr, "|")
 	var id int
-	var pages int = 1
+	var url string
 	if len(redisArr) == 2 {
-		id, _ = strconv.Atoi(redisArr[0])
-		pages, _ = strconv.Atoi(redisArr[1])
+		id, _ = strconv.Atoi(redisArr[1])
+		url = redisArr[0]
 	}
 	if len(redisArr) == 1 {
 		id, _ = strconv.Atoi(redisStr)
 	}
 	t := new(Task)
 	t.id = id
-	t.pages = pages
+	t.url = url
 	t.db = db
 	t.taskNewArgs = taskNewArgs
 	t.jobType = jobType
@@ -52,8 +52,8 @@ func (t *Task) Do() {
 	m := NewInfo(t.loggerLevel, t.id, t.db, t.taskNewArgs, t.client)
 	if m != nil {
 		if t.id > 0 {
-			logger.Info("export thread to miphtml")
-			m.CreateHtmlByUrl(t.id, t.pages, t.jobType)
+			logger.Info("export thread to threadHtmlUrl")
+			m.CreateHtmlByUrl(t.id, t.url, t.jobType)
 		}
 
 	}
