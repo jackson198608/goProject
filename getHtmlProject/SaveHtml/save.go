@@ -51,6 +51,7 @@ func (e *HtmlInfo) CreateHtmlByUrl() {
 		logger.Error("change ip abuyun error", err)
 		return
 	}
+	fmt.Println(statusCode, e.id)
 	if statusCode == 200 {
 		urlname := e.saveFileName()
 		status := e.saveContentToHtml(urlname, body)

@@ -260,12 +260,11 @@ func (h *HtmlLinkCreater) getLastIdFromTable() {
 
 func (h *HtmlLinkCreater) getPostCount(posttableid int) int {
 	tablename := "pre_forum_post_" + strconv.Itoa(posttableid)
-	var post = make(map[string]string)
-	count, err := h.engine.Table(tablename).Where("invisible=?", 0).Count(&post)
+	var post = new(ActiveRecord.PreForumPostX)
+	count, err := h.engine.Table(tablename).Where("invisible=?", 0).Count(post)
 	if err != nil {
 		return 0
 	}
-	fmt.Println(post)
 	return int(count)
 }
 
@@ -278,8 +277,10 @@ func (h *HtmlLinkCreater) checkProcessExist() int {
 		logger.Error("get ask maxId error", err)
 		return 0
 	}
-	fmt.Println(has)
-	return exec.Id
+	if has == true {
+		return exec.Id
+	}
+	return 0
 }
 
 func (h *HtmlLinkCreater) insertProcessLastdate() {
@@ -311,10 +312,13 @@ func (h *HtmlLinkCreater) SaveProcessLastdate() {
 
 func (h *HtmlLinkCreater) GetProcessLastDate() string {
 	var exec ActiveRecord.ExecuteRecord
-	_, err := h.sengine.Where("process_name=?", processName).And("data_source=?", h.jobType).Cols("lastdate").Desc("id").Get(&exec)
+	has, err := h.sengine.Where("process_name=?", processName).And("data_source=?", h.jobType).Cols("lastdate").Desc("id").Get(&exec)
 	if err != nil {
 		logger.Error("get ask maxId error", err)
 		return ""
 	}
-	return exec.Lastdate
+	if has == true {
+		return exec.Lastdate
+	}
+	return ""
 }
