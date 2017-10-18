@@ -25,9 +25,6 @@ type HtmlInfo struct {
 	url       string
 	queueName string
 	saveDir   string
-	tidStart  string
-	tidEnd    string
-	domain    string
 	client    *redis.Client
 }
 
@@ -38,9 +35,6 @@ func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []s
 	e.url = url
 	e.queueName = queueName
 	e.saveDir = taskNewArgs[3]
-	e.tidStart = taskNewArgs[4]
-	e.tidEnd = taskNewArgs[5]
-	e.domain = taskNewArgs[6]
 	e.client = client
 	return e
 }
