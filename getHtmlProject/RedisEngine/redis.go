@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
+	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
 	"github.com/jackson198608/goProject/getHtmlProject/Task"
 	redis "gopkg.in/redis.v4"
 	"time"
@@ -125,6 +126,7 @@ func (t *Engine) doOneLoop() {
 }
 
 func (t *Engine) croutinePopJobData(c chan int, i int) {
+	abuyun := setAbuyun()
 	for {
 		logger.Info("pop ", t.queueName)
 		redisStr := (*t.client).LPop(t.queueName).Val()
@@ -135,9 +137,22 @@ func (t *Engine) croutinePopJobData(c chan int, i int) {
 			return
 		}
 		logger.Info("got redisStr ", redisStr)
-		task := Task.NewTask(t.logLevel, t.queueName, redisStr, t.taskNewArgs, t.client)
+		task := Task.NewTask(t.logLevel, t.queueName, redisStr, t.taskNewArgs, t.client, abuyun)
 		if task != nil {
 			task.Do()
 		}
 	}
+}
+
+const proxyServer = "http-pro.abuyun.com:9010"
+const proxyUser = "HK71T41EZ21304GP"
+const proxyPasswd = "75FE0C4E23EEA0E7"
+
+// const proxyServer = ""
+// const proxyUser = ""
+// const proxyPasswd = ""
+
+func setAbuyun() *abuyunHttpClient.AbuyunProxy {
+	var abuyun *abuyunHttpClient.AbuyunProxy = abuyunHttpClient.NewAbuyunProxy(proxyServer, proxyUser, proxyPasswd)
+	return abuyun
 }
