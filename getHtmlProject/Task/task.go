@@ -2,6 +2,7 @@ package Task
 
 import (
 	"github.com/donnie4w/go-logger/logger"
+	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
 	"github.com/jackson198608/goProject/getHtmlProject/SaveHtml"
 	redis "gopkg.in/redis.v4"
 	"strconv"
@@ -16,9 +17,10 @@ type Task struct {
 	loopNum     int
 	taskNewArgs []string
 	client      *redis.Client
+	abuyun      *abuyunHttpClient.AbuyunProxy
 }
 
-func NewTask(loggerLevel int, queueName string, redisStr string, taskNewArgs []string, client *redis.Client) *Task {
+func NewTask(loggerLevel int, queueName string, redisStr string, taskNewArgs []string, client *redis.Client, abuyun *abuyunHttpClient.AbuyunProxy) *Task {
 	if loggerLevel < 0 {
 		loggerLevel = 0
 	}
@@ -38,17 +40,17 @@ func NewTask(loggerLevel int, queueName string, redisStr string, taskNewArgs []s
 	t.queueName = queueName
 	t.taskNewArgs = taskNewArgs
 	t.client = client
+	t.abuyun = abuyun
 	return t
 
 }
 
 func (t *Task) Do() {
-	m := SaveHtml.NewHtml(t.loggerLevel, t.queueName, t.id, t.url, t.taskNewArgs, t.client)
+	m := SaveHtml.NewHtml(t.loggerLevel, t.queueName, t.id, t.url, t.taskNewArgs, t.client, t.abuyun)
 	if m != nil {
 		if t.id > 0 {
 			logger.Info("export thread to threadHtmlUrl")
 			m.CreateHtmlByUrl()
 		}
-
 	}
 }
