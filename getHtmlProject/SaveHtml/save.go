@@ -12,23 +12,16 @@ import (
 	"strings"
 )
 
-const proxyServer = "http-pro.abuyun.com:9010"
-const proxyUser = "HK71T41EZ21304GP"
-const proxyPasswd = "75FE0C4E23EEA0E7"
-
-// const proxyServer = ""
-// const proxyUser = ""
-// const proxyPasswd = ""
-
 type HtmlInfo struct {
 	id        int
 	url       string
 	queueName string
 	saveDir   string
 	client    *redis.Client
+	abuyun    *abuyunHttpClient.AbuyunProxy
 }
 
-func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []string, client *redis.Client) *HtmlInfo {
+func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []string, client *redis.Client, abuyun *abuyunHttpClient.AbuyunProxy) *HtmlInfo {
 	logger.SetLevel(logger.LEVEL(logLevel))
 	e := new(HtmlInfo)
 	e.id = id
@@ -36,9 +29,11 @@ func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []s
 	e.queueName = queueName
 	e.saveDir = taskNewArgs[3]
 	e.client = client
+	e.abuyun = abuyun
 	return e
 }
 
+//get content by url
 func (e *HtmlInfo) CreateHtmlByUrl() {
 	statusCode, _, body, err := e.changeIpByAbuyun()
 	if err != nil {
@@ -60,22 +55,19 @@ func (e *HtmlInfo) CreateHtmlByUrl() {
 	}
 }
 
+// change ip by abuyun
 func (e *HtmlInfo) changeIpByAbuyun() (int, *http.Header, string, error) {
-	var abuyun *abuyunHttpClient.AbuyunProxy = abuyunHttpClient.NewAbuyunProxy(proxyServer,
-		proxyUser,
-		proxyPasswd)
-
 	logger.Info("begin the test", e.id)
 
-	if abuyun == nil {
+	if e.abuyun == nil {
 		logger.Error("create abuyun error")
 	}
 	var h http.Header = make(http.Header)
-	h.Set("a", "1")
-	statusCode, responseHeader, body, err := abuyun.SendRequest(e.url, h, true)
+	statusCode, responseHeader, body, err := e.abuyun.SendRequest(e.url, h, true)
 	return statusCode, responseHeader, body, err
 }
 
+// create filename
 func (e *HtmlInfo) saveFileName() string {
 	filename := ""
 	dir := ""
@@ -95,6 +87,7 @@ func (e *HtmlInfo) saveFileName() string {
 	return filename
 }
 
+// save content to html file
 func (e *HtmlInfo) saveContentToHtml(urlname string, content string) bool {
 	var filename = e.saveDir + urlname
 	var f *os.File
