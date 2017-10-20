@@ -9,6 +9,7 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"gouminGitlab/common/orm/mysql/new_dog123"
+	"math"
 	"strings"
 )
 
@@ -99,7 +100,7 @@ func (f *Focus) parseJson() (*jsonColumn, error) {
 	jsonC.TypeId, _ = js.Get("event_type").Int()
 	jsonC.Created, _ = js.Get("time").Int()
 	jsonC.Tid, _ = js.Get("tid").Int()
-	jsonC.Bid, _ = js.Get("bid").Int()
+	jsonC.Bid, _ = js.Get("event_info").Get("bid").Int()
 	jsonC.Infoid, _ = js.Get("event_info").Get("infoid").Int()
 	jsonC.Title, _ = js.Get("event_info").Get("title").String()
 	jsonC.Content, _ = js.Get("event_info").Get("content").String()
@@ -145,10 +146,47 @@ func (f *Focus) getPersionsPageNum() int {
 	return 0
 }
 
+//获取相同犬种的活跃用户数
+func (f *Focus) getBreedPersonsPagNum() int {
+	Bid := f.jsonData.Bid
+	if Bid == 0 {
+		return 0
+	}
+
+	c := f.mongoConn.DB("ActiveUser").C("active_breed_user")
+	countNum, err := c.Find(&bson.M{"breed_id": Bid}).Count()
+	if err != nil {
+		panic(err)
+	}
+	page := math.Ceil(countNum / count)
+	return page
+}
+
 //获取相同犬种的活跃用户
 func (f *Focus) getBreedPersons(page int) []int {
-	var uid []int
-	return uid
+	var uids []int
+	c := f.mongoConn.DB("ActiveUser").C("active_breed_user")
+	err := c.Find(&bson.M{"breed_id": Bid}).
+		Skip((page-1)*count).
+		Limit(count).
+		Distinct("uid", &uids)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(getBreedPersons)
+	return uids
+}
+
+func (f *Focus) getClubPersonPageNum() int {
+	fid := f.jsonData.Fid
+	c := f.mongoConn.DB("ActiveUser").C("active_forum_user")
+	countNum, err := c.Find(&bson.M{"forum_id": fid}).Count()
+	if err != nil {
+		panic(err)
+	}
+	page := math.Ceil(countNum / count)
+
+	return page
 }
 
 //获取相同俱乐部的活跃用户
@@ -156,7 +194,10 @@ func (f *Focus) getClubPersons(page int) []int {
 	var uids []int
 	fid := f.jsonData.Fid
 	c := f.mongoConn.DB("ActiveUser").C("active_forum_user")
-	err := c.Find(&bson.M{"forum_id": fid}).Distinct("uid", &uids)
+	err := c.Find(&bson.M{"forum_id": fid}).
+		Skip((page-1)*count).
+		Limit(count).
+		Distinct("uid", &uids)
 	if err != nil {
 		panic(err)
 	}
@@ -179,11 +220,22 @@ func (f *Focus) getFansPersons(page int) []int {
 	return uids
 }
 
+func (f *Focus) getActivePersonPageNum() int {
+	c := f.mongoConn.DB("ActiveUser").C("active_user")
+	countNum, err := c.Find(nil).Count()
+	if err != nil {
+		panic(err)
+	}
+	page := math.Ceil(countNum / count)
+
+	return page
+}
+
 //获取所有活跃用户
 func (f *Focus) getActivePersons(page int) []int {
 	var uids []int
 	c := f.mongoConn.DB("ActiveUser").C("active_user")
-	err := c.Find(nil).Distinct("uid", &uids)
+	err := c.Find(nil).Skip((page-1)*count).Limit(count).Distinct("uid", &uids)
 	if err != nil {
 		panic(err)
 	}
