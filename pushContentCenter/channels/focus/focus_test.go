@@ -79,3 +79,27 @@ func TestClubPersons(t *testing.T) {
 	f := NewFocus(engine, session, jobStr)
 	f.getClubPersons(1)
 }
+
+func TestBreedPersons(t *testing.T) {
+	dbAuth := "dog123:dog123"
+	dbDsn := "192.168.86.193:3307"
+	dbName := "new_dog123"
+	dataSourceName := dbAuth + "@tcp(" + dbDsn + ")/" + dbName + "?charset=utf8mb4"
+	engine, err := xorm.NewEngine("mysql", dataSourceName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	mongoConn := "192.168.86.192:27017"
+	session, err := mgo.Dial(mongoConn)
+	if err != nil {
+		fmt.Println("[error] connect mongodb err")
+		return
+	}
+
+	jobStr := "{\"uid\":2060500,\"event_type\":2,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":2,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"time\":1508469600}|1|0"
+
+	f := NewFocus(engine, session, jobStr)
+	f.getBreedPersons(1)
+}
