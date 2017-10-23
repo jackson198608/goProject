@@ -6,7 +6,6 @@ import (
 	"github.com/go-xorm/xorm"
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
-	"strings"
 )
 
 const tryTimeLimit = 5
@@ -30,18 +29,13 @@ func NewRedisEngine(queueName string,
 	mongoConnInfo []string,
 	mysqlInfo []string,
 	coroutinNum int,
-	workFun func(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg ...string) error,
+	workFun func(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error,
+	taskArgs ...string,
 ) (*RedisEngine, error) {
 
 	//check param
 	if (queueName == "") || (redisInfo == nil) || (coroutinNum <= 0) || (workFun == nil) {
 		return nil, errors.New("params can not be null")
-	}
-
-	//init conneciton
-	client, err := redisConnect()
-	if err != nil {
-		return nil, err
 	}
 
 	//create struct
@@ -54,15 +48,15 @@ func NewRedisEngine(queueName string,
 	r.redisInfo = redisInfo
 	r.coroutinNum = coroutinNum
 	r.workFun = workFun
-	r.taskArgs = taskarg
+	r.taskArgs = taskArgs
 
 	return r, nil
 
 }
 
 // create redis connection and return it to the caller
-func (r *RedisEngine) redisConnect() (*redis.Client, error) {
-	client := redis.NewClient(r.redisInfo)
+func redisConnect(redisInfo *redis.Options) (*redis.Client, error) {
+	client := redis.NewClient(redisInfo)
 	_, err := client.Ping().Result()
 	if err != nil {
 		return nil, err
@@ -72,12 +66,51 @@ func (r *RedisEngine) redisConnect() (*redis.Client, error) {
 
 // create xorms engines base on mysqlInfo and return it to the caller
 func (r *RedisEngine) mysqlConnect() ([]*xorm.Engine, error) {
+	mysqls := []*xorm.Engine{}
+	for _, mysqlInfo := range r.mysqlInfo {
+		x, err := r.mysqlSingleConnect(mysqlInfo)
+		if err != nil {
+			//close former connection
+			r.closeMysqlConn(mysqls)
+			return nil, err
+		}
+		mysqls = append(mysqls, x)
+	}
 
+	return mysqls, nil
+
+}
+func (r *RedisEngine) mysqlSingleConnect(mysqlInfo string) (*xorm.Engine, error) {
+	engine, err := xorm.NewEngine("mysql", mysqlInfo)
+	if err != nil {
+		return nil, err
+	}
+	return engine, nil
 }
 
 // create mongo session base on mongoConnInfo and return it to the caller
 func (r *RedisEngine) mgoConnect() ([]*mgo.Session, error) {
+	mgos := []*mgo.Session{}
+	for _, mgoInfo := range r.mongoConnInfo {
+		m, err := r.mgoSingleConnect(mgoInfo)
+		if err != nil {
+			//close former connection
+			r.closeMgoConn(mgos)
+			return nil, err
+		}
+		mgos = append(mgos, m)
+	}
+	return mgos, nil
 
+}
+
+func (r *RedisEngine) mgoSingleConnect(mgoInfo string) (*mgo.Session, error) {
+	session, err := mgo.Dial(mgoInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return session, nil
 }
 
 //create several coroutin to do the job and controll the error is job fail
@@ -91,10 +124,10 @@ func (r *RedisEngine) Do() error {
 	return nil
 }
 
-func (r *RedisEngine) checkError(c chan coroutineResult, err error) bool {
+func (r *RedisEngine) checkError(result *coroutineResult, c chan coroutineResult, err error) bool {
 	if err != nil {
 		result.err = err
-		c <- result
+		c <- *result
 		return true
 	}
 
@@ -108,8 +141,8 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 	}
 
 	//init redis client
-	redisConn, err := r.redisConnect()
-	if r.checkError(c, err) {
+	redisConn, err := redisConnect(r.redisInfo)
+	if r.checkError(&result, c, err) {
 		return
 	}
 
@@ -119,13 +152,13 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 	for {
 		//get task
 		raw, err := redisConn.LPop(r.queueName).Result()
-		if r.checkError(c, err) {
+		if r.checkError(&result, c, err) {
 			return
 		}
 
 		//get the raw parese result to decide whethere going to the next step or not
 		realraw, trytimes, err := r.parseRaw(raw)
-		if r.checkError(c, err) {
+		if r.checkError(&result, c, err) {
 			return
 		}
 
@@ -137,14 +170,14 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 
 		//prepare and check the connections for mysql
 		mysqlConns, err := r.mysqlConnect()
-		if r.checkError(c, err) {
+		if r.checkError(&result, c, err) {
 			return
 		}
 		defer r.closeMysqlConn(mysqlConns)
 
 		//prepare and check the connections for mgo
 		mgoConns, err := r.mgoConnect()
-		if r.checkError(c, err) {
+		if r.checkError(&result, c, err) {
 			return
 		}
 
@@ -159,7 +192,7 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 				return
 			} else {
 				err = r.pushFails(realraw, trytimes)
-				if r.checkError(c, err) {
+				if r.checkError(&result, c, err) {
 					return
 				}
 			}
@@ -181,7 +214,7 @@ func (r *RedisEngine) closeMysqlConn(mysqlConns []*xorm.Engine) {
 }
 
 // @todo
-func (r *RedisEngine) closeMgoConn(mgoConns []*xorm.Engine) {
+func (r *RedisEngine) closeMgoConn(mgoConns []*mgo.Session) {
 	if mgoConns == nil {
 		return
 	}
@@ -201,10 +234,10 @@ func (r *RedisEngine) pushFails(realraw string, trytimes int) error {
 
 func (r *RedisEngine) parseRaw(raw string) (string, int, error) {
 	//maybe realraw may have the sep string,so we can not use strings.split
-	raw := []byte(raw)
-	rawLen := len(raw)
+	rawSlice := []byte(raw)
+	rawLen := len(rawSlice)
 	for i := rawLen - 1; i >= 0; i-- {
-		fmt.Println(raw[i])
+		fmt.Println(rawSlice[i])
 	}
-	return "", "", nil
+	return "", 0, nil
 }
