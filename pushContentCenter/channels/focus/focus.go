@@ -46,11 +46,14 @@ func (f *Focus) Do() error {
 
 	}
 
+	return nil
+
 }
 
 //change json colum to object private member
 func (f *Focus) parseJson() error {
 
+	return nil
 }
 
 func (f *Focus) pushPersons(persons []int) error {
@@ -77,7 +80,7 @@ func (f *Focus) pushPerson(person int) error {
 //@todo how to remove duplicate uid from to lists
 func (f *Focus) getPersons(page int) []int {
 
-	return 0
+	return nil
 }
 
 func (f *Focus) getPersionsPageNum() int {

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-xorm/xorm"
-	"github.com/jackson198608/goProject/pushContentCenter/channels/club"
+	//"github.com/jackson198608/goProject/pushContentCenter/channels/club"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/focus"
 	mgo "gopkg.in/mgo.v2"
 	"strings"
@@ -20,15 +20,15 @@ type Task struct {
 
 //job: redisQueue pop string
 //taskarg: mongoHost,mongoDatabase,mongoReplicaSetName
-func NewTask(raw string, mysqlXorm *xorm.Engine, mongoConn *mgo.Session) *Task {
+func NewTask(raw string, mysqlXorm *xorm.Engine, mongoConn *mgo.Session) (*Task, error) {
 	//check prams
 	if (raw == "") || (mysqlXorm == nil) || (mongoConn == nil) {
-		return nil
+		return nil, errors.New("params can not be null")
 	}
 
 	t := new(Task)
 	if t == nil {
-		return nil
+		return nil, errors.New("there is no space to create struct")
 	}
 
 	//pass params
@@ -37,12 +37,12 @@ func NewTask(raw string, mysqlXorm *xorm.Engine, mongoConn *mgo.Session) *Task {
 	t.MongoConn = mongoConn
 
 	//create private member
-	jobStr, jobType, err := t.parseRaw()
+	err := t.parseRaw()
 	if err != nil {
-		return nil
+		return nil, errors.New("raw format error ,can not find jobstr and jobtype " + raw)
 	}
 
-	return t
+	return t, nil
 
 }
 
@@ -71,6 +71,7 @@ func (t *Task) Do() error {
 
 // focus channel's invoke function
 func (t *Task) ChannelFocus() error {
+	fmt.Println("here is the channle focus")
 	c := focus.NewFocus(t.MysqlXorm, t.MongoConn, t.Jobstr)
 	err := c.Do()
 	if err != nil {
@@ -82,6 +83,7 @@ func (t *Task) ChannelFocus() error {
 
 // club channel's invoke function
 func (t *Task) ChannelClub() error {
+	fmt.Println("here is the channle club")
 	return nil
 
 }
@@ -93,9 +95,9 @@ func (t *Task) ChannelClub() error {
 //	       type
 //		   error
 func (t *Task) parseRaw() error {
-	rawArray = strings.Split(t.Raw, "|")
+	rawArray := strings.Split(t.Raw, "|")
 	if len(rawArray) < 2 {
-		return errors.New("job str format error ", t.Raw)
+		return errors.New("job str format error " + t.Raw)
 	}
 
 	t.Jobstr = rawArray[0]

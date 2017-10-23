@@ -1,5 +1,5 @@
 install:
-	go install gouminGitlab/inBstatic/baiduInsert 
+	go install github.com/jackson198608/goProject/pushContentCenter/task 
 
 test:
-	go test gouminGitlab/inBstatic/baiduInsert -v
+	go test github.com/jackson198608/goProject/pushContentCenter/task -v
