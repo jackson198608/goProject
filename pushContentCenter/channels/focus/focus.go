@@ -6,8 +6,13 @@ import (
 	"github.com/bitly/go-simplejson"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/location/allPersons"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/location/breedPersons"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/location/clubPersons"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/location/fansPersons"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"gouminGitlab/common/orm/mongo/FansData"
 	"gouminGitlab/common/orm/mysql/new_dog123"
 	"math"
 	"strconv"
@@ -40,29 +45,9 @@ type jsonColumn struct {
 	Source    int
 }
 
-//@todo make it to mongo
-type EventLogX struct {
-	Id        bson.ObjectId "_id"
-	TypeId    int           "type"
-	Uid       int           "uid"
-	Fuid      int           "fuid" //fans id
-	Created   string        "created"
-	Infoid    int           "infoid"
-	Status    int           "status"
-	Tid       int           "tid"
-	Bid       int           "bid"
-	Content   string        "content"
-	Title     string        "title"
-	Imagenums int           "image_num"
-	Forum     string        "forum"
-	Tag       int           "tag"
-	Qsttype   int           "qst_type"
-	Source    int           "source"
-}
-
 const count = 1000
 
-func NewFocus(mysqlXorm *xorm.Engine, mongoConn *mgo.Session, jobStr string) *Focus {
+func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string) *Focus {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
 		return nil
 	}
@@ -93,69 +78,49 @@ func NewFocus(mysqlXorm *xorm.Engine, mongoConn *mgo.Session, jobStr string) *Fo
 //TypeId = 9 recommend bbs, push all active persons
 //TypeId = 15 recommend video, push all active persons
 func (f *Focus) Do() error {
-	page, page1 := f.getPersionsPageNum()
-	if (f.jsonData.TypeId == 1) || (f.jsonData.TypeId == 8) {
-		//发帖 、问答
-		if (page <= 0) && (page1 <= 0) {
-			return errors.New("you have  no person to push " + f.jobstr)
-		}
-		page = max(page, page1)
-	} else {
-		//视频、小编推荐
-		if page <= 0 {
-			return errors.New("you have  no person to push " + f.jobstr)
-		}
-	}
-
-	var startId int
-	var endId int
 	if f.jsonData.TypeId == 1 {
-		startId = f.getFansPersonFirstId()
-	}
-
-	for i := 1; i <= page; i++ {
-		if (f.jsonData.TypeId == 1) || (f.jsonData.TypeId == 8) {
-			startId = startId + (i-1)*count
-			startId, endId = f.getIdRange(startId)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status, f.jsonData.Uid)
+		err := fp.Do()
+		if err != nil {
+			return err
 		}
-		fmt.Println("startId: " + strconv.Itoa(startId))
-		fmt.Println("endId: " + strconv.Itoa(endId))
-		currentPersionList := f.getPersons(page, startId, endId)
-		fmt.Println(currentPersionList)
-		f.pushPersons(currentPersionList)
+		cp := clubPersons.NewClubPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status, f.jsonData.Fid)
+		err = cp.Do()
+		if err != nil {
+			return err
+		}
+	} else if f.jsonData.TypeId == 6 {
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status, f.jsonData.Uid)
+		err := fp.Do()
+		if err != nil {
+			return err
+		}
+	} else if f.jsonData.TypeId == 8 {
+		bp := breedPersons.NewBreedPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status, f.jsonData.Bid)
+		err := bp.Do()
+		if err != nil {
+			return err
+		}
+	} else if ((f.jsonData.TypeId == 9) || (f.jsonData.TypeId == 15)) && (f.jsonData.Source) == 1 {
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status)
+		err := ap.Do()
+		if err != nil {
+			return err
+		}
+	} else {
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status)
+		err := ap.Do()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
-}
-
-//return max number
-func max(num int, num1 int) int {
-	if num > num1 {
-		return num
-	}
-	return num1
-}
-
-//return id range
-func (f *Focus) getIdRange(startId int) (int, int) {
-	endId := startId + count
-	maxId := f.getFansPersonLastId()
-	if endId > maxId {
-		endId = maxId
-	}
-	return startId, endId
 }
 
 //change json colum to object private member
 func (f *Focus) parseJson() (*jsonColumn, error) {
 	var jsonC jsonColumn
-
-	jobs := strings.Split(f.jobstr, "|")
-	if len(jobs) <= 1 {
-		return &jsonC, errors.New("you have no job")
-	}
-
-	jsonStr := jobs[0]
-	js, err := simplejson.NewJson([]byte(jsonStr))
+	js, err := simplejson.NewJson([]byte(f.jobstr))
 	if err != nil {
 		return &jsonC, err
 	}
@@ -177,288 +142,4 @@ func (f *Focus) parseJson() (*jsonColumn, error) {
 	jsonC.Status, _ = js.Get("status").Int()
 
 	return &jsonC, nil
-}
-
-func (f *Focus) pushPersons(persons []int) error {
-	if persons == nil {
-		return errors.New("you have no person to push " + f.jobstr)
-	}
-
-	for _, person := range persons {
-		err := f.pushPerson(person)
-		if err != nil {
-			f.tryPushPerson(person, 1)
-		}
-	}
-	return nil
-}
-
-func (f *Focus) tryPushPerson(person int, num int) error {
-	if num > 5 {
-		return errors.New("Attempting to push has failed 5 times: " + f.jobstr + "; person is " + strconv.Itoa(person))
-	}
-	err := f.pushPerson(person)
-	if err != nil {
-		f.tryPushPerson(person, num+1)
-	}
-	return nil
-}
-
-func (f *Focus) pushPerson(person int) error {
-	tableNameX := getTableNum(person)
-	c := f.mongoConn.DB("FansData").C(tableNameX)
-	if f.jsonData.Status == 1 {
-		//数据展示
-		m := f.pushData(person)
-		err := c.Insert(&m) //插入数据
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func getTableNum(person int) string {
-	tableNumX := person % 100
-	if tableNumX == 0 {
-		tableNumX = 100
-	}
-	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
-	return tableNameX
-}
-
-func (f *Focus) pushData(person int) *EventLogX {
-	var data EventLogX
-	data = EventLogX{bson.NewObjectId(), f.jsonData.TypeId, f.jsonData.Uid, person, f.jsonData.Created, f.jsonData.Infoid, f.jsonData.Status, f.jsonData.Tid, f.jsonData.Bid, f.jsonData.Content, f.jsonData.Title, f.jsonData.Imagenums, f.jsonData.Forum, f.jsonData.Tag, f.jsonData.Qsttype, f.jsonData.Source}
-	return &data
-}
-
-//@todo how to remove duplicate uid from to lists
-//@todo make every push location to be a single package
-func (f *Focus) getPersons(page int, startId int, endId int) []int {
-	var uid []int
-	typeId := f.jsonData.TypeId
-	if typeId == 1 {
-		//帖子 推所有活跃粉丝 + 相同俱乐部的活跃用户
-		clubUids := f.getClubPersons(page)
-		fansUids := f.getFansPersons(startId, endId)
-		uid = MergePersons(fansUids, clubUids)
-	} else if typeId == 6 {
-		// 视频 推活跃粉丝
-		uid = f.getFansPersons(startId, endId)
-	} else if typeId == 8 {
-		//问答 推所有活跃粉丝 + 相同犬种的活跃用户
-		fansUids := f.getFansPersons(startId, endId)
-		breedUids = f.getBreedPersons(page)
-		uid = MergePersons(fansUids, breedUids)
-	} else if ((typeId == 9) || (typeId == 15)) && (f.jsonData.Source == 1) {
-		//人工小编 推全部活跃用户
-		uid = f.getActivePersons(page)
-	} else {
-		//推全部活跃用户
-		uid = f.getActivePersons(page)
-	}
-	// fmt.Println(uid)
-	return uid
-}
-
-// @todo split logic for single push by each location
-func (f *Focus) getPersionsPageNum() (int, int) {
-	typeId := f.jsonData.TypeId
-	if typeId == 1 {
-		//帖子 推所有活跃粉丝 + 相同俱乐部的活跃用户
-		page := f.getFansPersonPageNum()
-		page1 := f.getClubPersonPageNum()
-		return page1, page
-	} else if typeId == 6 {
-		// 视频 推活跃粉丝
-		page := f.getFansPersonPageNum()
-		return page, 0
-	} else if typeId == 8 {
-		//问答 推所有活跃粉丝 + 相同犬种的活跃用户
-		page := f.getFansPersonPageNum()
-		page1 := f.getBreedPersonsPagNum()
-		return page1, page
-	} else if ((typeId == 9) || (typeId == 15)) && (f.jsonData.Source == 1) {
-		//人工小编 推全部活跃用户
-		page := f.getActivePersonPageNum()
-		return page, 0
-	} else {
-		//推全部活跃用户
-		page := f.getActivePersonPageNum()
-		return page, 0
-	}
-
-	return 0, 0
-}
-
-//合并两个用户数组
-func MergePersons(firstUids []int, secondUids []int) []int {
-	var alluids []int
-	for i := 0; i < len(firstUids); i++ {
-		alluids = append(alluids, firstUids[i])
-	}
-	for c := 0; c < len(secondUids); c++ {
-		alluids = append(alluids, secondUids[c])
-	}
-	return alluids
-}
-
-//获取相同犬种的活跃用户数
-func (f *Focus) getBreedPersonsPagNum() int {
-	Bid := f.jsonData.Bid
-	if Bid == 0 {
-		return 0
-	}
-
-	c := f.mongoConn.DB("ActiveUser").C("active_breed_user")
-	countNum, err := c.Find(&bson.M{"breed_id": Bid}).Count()
-	if err != nil {
-		panic(err)
-	}
-	page := int(math.Ceil(float64(countNum) / float64(count)))
-	return page
-}
-
-//获取相同犬种的活跃用户
-//@todo 使用id范围分页查询
-func (f *Focus) getBreedPersons(page int) []int {
-	var uids []int
-	Bid := f.jsonData.Bid
-	if Bid == 0 {
-		return uids
-	}
-
-	c := f.mongoConn.DB("ActiveUser").C("active_breed_user")
-	err := c.Find(&bson.M{"breed_id": Bid}).
-		Skip((page-1)*count).
-		Limit(count).
-		Distinct("uid", &uids)
-	if err != nil {
-		panic(err)
-	}
-	return uids
-}
-
-// Get the same club user data page number
-func (f *Focus) getClubPersonPageNum() int {
-	fid := f.jsonData.Fid
-	c := f.mongoConn.DB("ActiveUser").C("active_forum_user")
-	countNum, err := c.Find(&bson.M{"forum_id": fid}).Count()
-	if err != nil {
-		panic(err)
-	}
-	page := int(math.Ceil(float64(countNum) / float64(count)))
-
-	return page
-}
-
-//获取相同俱乐部的活跃用户
-//@todo 使用id范围分页查询
-func (f *Focus) getClubPersons(page int) []int {
-	var uids []int
-	fid := f.jsonData.Fid
-	c := f.mongoConn.DB("ActiveUser").C("active_forum_user")
-	err := c.Find(&bson.M{"forum_id": fid}).
-		Skip((page-1)*count).
-		Limit(count).
-		Distinct("uid", &uids)
-	if err != nil {
-		panic(err)
-	}
-	return uids
-}
-
-//获取活跃用户第一个ID
-func (f *Focus) getFansPersonFirstId() int {
-	uid := f.jsonData.Uid
-	var follows []new_dog123.Follow
-	err := f.mysqlXorm.Where("user_id=? and fans_active=1", uid).Asc("id").Limit(1).Find(&follows)
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
-
-	if len(follows) == 0 {
-		return 0
-	}
-
-	id := follows[0].Id - 1
-	return id
-}
-
-//获取活跃用户最后一个ID
-func (f *Focus) getFansPersonLastId() int {
-	uid := f.jsonData.Uid
-	var follows []new_dog123.Follow
-	err := f.mysqlXorm.Where("user_id=? and fans_active=1", uid).Desc("id").Limit(1).Find(&follows)
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
-	if len(follows) == 0 {
-		return 0
-	}
-
-	id := follows[0].Id
-
-	return id
-}
-
-func (f *Focus) getFansPersonPageNum() int {
-	startId := f.getFansPersonFirstId()
-	endId := f.getFansPersonLastId()
-	page := int(math.Ceil(float64(startId-endId) / float64(count)))
-	return page
-}
-
-//获取活跃粉丝用户
-func (f *Focus) getFansPersons(startId int, endId int) []int {
-	var persons []int
-	uid := f.jsonData.Uid
-	var follows []new_dog123.Follow
-	err := f.mysqlXorm.Where("user_id=? and id>=? and id<=? and fans_active=1", uid, startId, endId).Cols("follow_id").Find(&follows)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	for _, v := range follows {
-		persons = append(persons, v.FollowId)
-	}
-	uids := f.getFansActivePersons(persons)
-	return uids
-}
-
-func (f *Focus) getActivePersonPageNum() int {
-	c := f.mongoConn.DB("ActiveUser").C("active_user")
-	countNum, err := c.Find(nil).Count()
-	if err != nil {
-		panic(err)
-	}
-	page := int(math.Ceil(float64(countNum) / float64(count)))
-
-	return page
-}
-
-//@todo make active_user to be hash struct
-func (f *Focus) getFansActivePersons(persons []int) []int {
-	var uids []int
-	c := f.mongoConn.DB("ActiveUser").C("active_user")
-	err := c.Find(&bson.M{"uid": bson.M{"$in": persons}}).Distinct("uid", &uids)
-	if err != nil {
-		panic(err)
-	}
-	return uids
-}
-
-//获取所有活跃用户
-//@todo 使用id范围分页查询
-func (f *Focus) getActivePersons(page int) []int {
-	var uids []int
-	c := f.mongoConn.DB("ActiveUser").C("active_user")
-	err := c.Find(nil).Skip((page-1)*count).Limit(count).Distinct("uid", &uids)
-	if err != nil {
-		panic(err)
-	}
-	return uids
 }
