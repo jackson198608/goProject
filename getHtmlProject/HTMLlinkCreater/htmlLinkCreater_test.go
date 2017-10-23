@@ -1,69 +1,38 @@
 package HTMLlinkCreater
 
-import "fmt"
+import (
+	"fmt"
+	"testing"
+)
 
-var channelTable map[string]string = map[string]string{
-	"ask":    "ask_question",
-	"thread": "pre_forum_thread",
+const logLevel = 1
+const jobType = "asksave"
+const dbAuth = "dog123:dog123"
+const dbDsn = "192.168.86.193:3307"
+const dbName = "new_dog123"
+const sdbAuth = "dog123:dog123"
+const sdbDsn = "192.168.86.193:3307"
+const sdbName = "process"
+
+func TestCreate(t *testing.T) {
+	var h *HtmlLinkCreater = NewHtmlLinkCreater(logLevel, jobType, dbAuth, dbDsn, dbName, sdbAuth, sdbDsn, sdbName)
+	startId := 0
+	endId := 50
+	page := 1
+	cat := "update"
+	lastdate := ""
+	str := h.Create(startId, endId, page, cat, lastdate)
+	fmt.Println(str)
 }
 
-type HtmlLinkCreater struct {
-	channelType   string
-	jobType       int
-	lastIndexTime string
-	tableName     string
-	tableLastId   int64
-	xorm          *xorm
+func TestGetMaxId(t *testing.T) {
+	var h *HtmlLinkCreater = NewHtmlLinkCreater(logLevel, jobType, dbAuth, dbDsn, dbName, sdbAuth, sdbDsn, sdbName)
+	str := h.GetMaxId()
+	fmt.Println(str)
 }
 
-func NewHtmlLinkCreater(channelType string, jobType int, lastIndexTime string) *HtmlLinkCreater {
-	h := new(HtmlLinkCreater)
-	if h == nil {
-		return nil
-	}
-
-	//check param
-
-	//pass prams to object
-
-	//get tableName and lastId
-	h.tableName = h.getTableNameFromChannel()
-
-	//new xorm instance
-
-	return h
-}
-
-func (h *HtmlLinkCreater) Create() error {
-	buidAll()
-	updateAll()
-}
-
-//
-func (h *HtmlLinkCreater) buidAll() error {
-	//for startid:=0,endId:=100; startid>h.tableLastId ;startid=startid+100,endId=endId+100{
-	h.getIdsFromTableByRange()
-	//}
-}
-
-func (h *HtmlLinkCreater) updateAll() error {
-	//for startid:=0,endId:=100; startid>h.tableLastId ;startid=startid+100,endId=endId+100{
-
-	//}
-}
-
-//
-func (h *HtmlLinkCreater) getIdsFromTableByRange(startid int, endId int) []int {
-	h.xorm.where().find(&pre_forum_thread.Pre_fomrum_thread)
-
-}
-
-//get tableName by oject's channelType from common var channelType
-func (h *HtmlLinkCreater) getTableNameFromChannel() {
-
-}
-
-// get last id of table
-func (h *HtmlLinkCreater) getLastIdFromTable() {
-
+func TestGetProcessLastDate(t *testing.T) {
+	var h *HtmlLinkCreater = NewHtmlLinkCreater(logLevel, jobType, dbAuth, dbDsn, dbName, sdbAuth, sdbDsn, sdbName)
+	str := h.GetProcessLastDate()
+	fmt.Println(str)
 }
