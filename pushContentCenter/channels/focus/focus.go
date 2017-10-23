@@ -15,8 +15,8 @@ import (
 )
 
 type Focus struct {
-	mysqlXorm *xorm.Engine
-	mongoConn *mgo.Session
+	mysqlXorm *xorm.Engine //@todo to be []
+	mongoConn *mgo.Session //@todo to be []
 	jobstr    string
 	jsonData  *jsonColumn
 }
@@ -40,6 +40,7 @@ type jsonColumn struct {
 	Source    int
 }
 
+//@todo make it to mongo
 type EventLogX struct {
 	Id        bson.ObjectId "_id"
 	TypeId    int           "type"
@@ -233,6 +234,7 @@ func (f *Focus) pushData(person int) *EventLogX {
 }
 
 //@todo how to remove duplicate uid from to lists
+//@todo make every push location to be a single package
 func (f *Focus) getPersons(page int, startId int, endId int) []int {
 	var uid []int
 	typeId := f.jsonData.TypeId
@@ -260,6 +262,7 @@ func (f *Focus) getPersons(page int, startId int, endId int) []int {
 	return uid
 }
 
+// @todo split logic for single push by each location
 func (f *Focus) getPersionsPageNum() (int, int) {
 	typeId := f.jsonData.TypeId
 	if typeId == 1 {
@@ -437,6 +440,7 @@ func (f *Focus) getActivePersonPageNum() int {
 	return page
 }
 
+//@todo make active_user to be hash struct
 func (f *Focus) getFansActivePersons(persons []int) []int {
 	var uids []int
 	c := f.mongoConn.DB("ActiveUser").C("active_user")

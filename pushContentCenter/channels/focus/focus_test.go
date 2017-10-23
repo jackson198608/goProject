@@ -31,7 +31,7 @@ func testConn() (*xorm.Engine, *mgo.Session) {
 
 func TestParseJson(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
-	jobStr := "{\"uid\":2060500,\"event_type\":2,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":2,\"fid\":36},\"tid\":0,\"status\":1,\"time\":1508469600}|1|0"
+	jobStr := "{\"uid\":2060500,\"event_type\":2,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":2,\"fid\":36},\"tid\":0,\"status\":1,\"time\":1508469600}|1_0"
 	f := NewFocus(mysqlXorm, mongoConn, jobStr)
 	f.parseJson()
 }
