@@ -104,8 +104,44 @@ func TestFansPersonLastId(t *testing.T) {
 func TestGetPersons(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 
-	jobStr := "{\"uid\":881050,\"event_type\":6,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":2,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"time\":1508469600}|1|0"
+	jobStr := "{\"uid\":881050,\"event_type\":9,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":1,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"time\":1508469600}|1|0"
 
 	f := NewFocus(mysqlXorm, mongoConn, jobStr)
-	f.getPersons(0, 1, 999999999)
+	f.getPersons(1, 1, 999999999)
+}
+
+func TestPushData(t *testing.T) {
+	mysqlXorm, mongoConn := testConn()
+
+	jobStr := "{\"uid\":881050,\"event_type\":6,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":2,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"time\":\"2017-10-23 10:54:00\"}|1|0"
+
+	f := NewFocus(mysqlXorm, mongoConn, jobStr)
+	fmt.Println(f.pushData(2060500))
+}
+
+func TestPushPerson(t *testing.T) {
+	mysqlXorm, mongoConn := testConn()
+
+	jobStr := "{\"uid\":881050,\"event_type\":6,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":2,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"time\":\"2017-10-23 10:54:00\"}|1|0"
+
+	f := NewFocus(mysqlXorm, mongoConn, jobStr)
+	fmt.Println(f.pushPerson(2060500))
+}
+
+func TestTryPushPerson(t *testing.T) {
+	mysqlXorm, mongoConn := testConn()
+
+	jobStr := "{\"uid\":881050,\"event_type\":6,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":2,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"time\":\"2017-10-23 10:54:00\"}|1|0"
+
+	f := NewFocus(mysqlXorm, mongoConn, jobStr)
+	fmt.Println(f.tryPushPerson(2060500, 6))
+}
+
+func TestPushPersons(t *testing.T) {
+	mysqlXorm, mongoConn := testConn()
+
+	jobStr := "{\"uid\":881050,\"event_type\":6,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":2,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"time\":\"2017-10-23 10:54:00\"}|1|0"
+	var persons = []int{2060500, 2060400}
+	f := NewFocus(mysqlXorm, mongoConn, jobStr)
+	fmt.Println(f.pushPersons(persons))
 }
