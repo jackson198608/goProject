@@ -86,16 +86,21 @@ func NewFocus(mysqlXorm *xorm.Engine, mongoConn *mgo.Session, jobStr string) *Fo
 
 }
 
+//TypeId = 1 bbs, push fans and club active persons
+//TypeId = 6 video, push fans active persons
+//TypeId = 8 bbs, push fans and breed active persons
+//TypeId = 9 recommend bbs, push all active persons
+//TypeId = 15 recommend video, push all active persons
 func (f *Focus) Do() error {
 	page, page1 := f.getPersionsPageNum()
-	if f.jsonData.TypeId == 1 {
-		//帖子 粉丝和俱乐部
+	if (f.jsonData.TypeId == 1) || (f.jsonData.TypeId == 8) {
+		//发帖 、问答
 		if (page <= 0) && (page1 <= 0) {
 			return errors.New("you have  no person to push " + f.jobstr)
 		}
 		page = max(page, page1)
 	} else {
-		//视频、问答、小编推荐
+		//视频、小编推荐
 		if page <= 0 {
 			return errors.New("you have  no person to push " + f.jobstr)
 		}
@@ -108,18 +113,28 @@ func (f *Focus) Do() error {
 	}
 
 	for i := 1; i <= page; i++ {
-		if f.jsonData.TypeId == 1 {
+		if (f.jsonData.TypeId == 1) || (f.jsonData.TypeId == 8) {
 			startId = startId + (i-1)*count
-			endId = f.getIdRange(startId)
+			startId, endId = f.getIdRange(startId)
 		}
 		fmt.Println("startId: " + strconv.Itoa(startId))
 		fmt.Println("endId: " + strconv.Itoa(endId))
 		currentPersionList := f.getPersons(page, startId, endId)
+		fmt.Println(currentPersionList)
 		f.pushPersons(currentPersionList)
 	}
 	return nil
 }
 
+//return max number
+func max(num int, num1 int) int {
+	if num > num1 {
+		return num
+	}
+	return num1
+}
+
+//return id range
 func (f *Focus) getIdRange(startId int) (int, int) {
 	endId := startId + count
 	maxId := f.getFansPersonLastId()
@@ -230,8 +245,10 @@ func (f *Focus) getPersons(page int, startId int, endId int) []int {
 		// 视频 推活跃粉丝
 		uid = f.getFansPersons(startId, endId)
 	} else if typeId == 8 {
-		//问答 推相同犬种的活跃用户
-		uid = f.getBreedPersons(page)
+		//问答 推所有活跃粉丝 + 相同犬种的活跃用户
+		fansUids := f.getFansPersons(startId, endId)
+		breedUids = f.getBreedPersons(page)
+		uid = MergePersons(fansUids, breedUids)
 	} else if ((typeId == 9) || (typeId == 15)) && (f.jsonData.Source == 1) {
 		//人工小编 推全部活跃用户
 		uid = f.getActivePersons(page)
@@ -255,9 +272,10 @@ func (f *Focus) getPersionsPageNum() (int, int) {
 		page := f.getFansPersonPageNum()
 		return page, 0
 	} else if typeId == 8 {
-		//问答 推相同犬种的活跃用户
-		page := f.getBreedPersonsPagNum()
-		return page, 0
+		//问答 推所有活跃粉丝 + 相同犬种的活跃用户
+		page := f.getFansPersonPageNum()
+		page1 := f.getBreedPersonsPagNum()
+		return page1, page
 	} else if ((typeId == 9) || (typeId == 15)) && (f.jsonData.Source == 1) {
 		//人工小编 推全部活跃用户
 		page := f.getActivePersonPageNum()
@@ -271,14 +289,15 @@ func (f *Focus) getPersionsPageNum() (int, int) {
 	return 0, 0
 }
 
-//合并俱乐部和粉丝数据
-func MergePersons(fansuids []int, clubuids []int) []int {
+//合并两个用户数组
+func MergePersons(firstUids []int, secondUids []int) []int {
 	var alluids []int
-
-	//@todo 发帖用户的所有活跃粉丝
-
-	//@todo 所有加入该帖子俱乐部的活跃用户
-
+	for i := 0; i < len(firstUids); i++ {
+		alluids = append(alluids, firstUids[i])
+	}
+	for c := 0; c < len(secondUids); c++ {
+		alluids = append(alluids, secondUids[c])
+	}
 	return alluids
 }
 
@@ -318,6 +337,7 @@ func (f *Focus) getBreedPersons(page int) []int {
 	return uids
 }
 
+// Get the same club user data page number
 func (f *Focus) getClubPersonPageNum() int {
 	fid := f.jsonData.Fid
 	c := f.mongoConn.DB("ActiveUser").C("active_forum_user")
@@ -360,7 +380,7 @@ func (f *Focus) getFansPersonFirstId() int {
 		return 0
 	}
 
-	id := follows[0].Id
+	id := follows[0].Id - 1
 	return id
 }
 
@@ -391,7 +411,7 @@ func (f *Focus) getFansPersonPageNum() int {
 
 //获取活跃粉丝用户
 func (f *Focus) getFansPersons(startId int, endId int) []int {
-	var uids []int
+	var persons []int
 	uid := f.jsonData.Uid
 	var follows []new_dog123.Follow
 	err := f.mysqlXorm.Where("user_id=? and id>=? and id<=? and fans_active=1", uid, startId, endId).Cols("follow_id").Find(&follows)
@@ -400,8 +420,9 @@ func (f *Focus) getFansPersons(startId int, endId int) []int {
 		return nil
 	}
 	for _, v := range follows {
-		uids = append(uids, v.FollowId)
+		persons = append(persons, v.FollowId)
 	}
+	uids := f.getFansActivePersons(persons)
 	return uids
 }
 
@@ -414,6 +435,16 @@ func (f *Focus) getActivePersonPageNum() int {
 	page := int(math.Ceil(float64(countNum) / float64(count)))
 
 	return page
+}
+
+func (f *Focus) getFansActivePersons(persons []int) []int {
+	var uids []int
+	c := f.mongoConn.DB("ActiveUser").C("active_user")
+	err := c.Find(&bson.M{"uid": bson.M{"$in": persons}}).Distinct("uid", &uids)
+	if err != nil {
+		panic(err)
+	}
+	return uids
 }
 
 //获取所有活跃用户

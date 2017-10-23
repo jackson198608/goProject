@@ -10,7 +10,8 @@ import (
 
 func testConn() (*xorm.Engine, *mgo.Session) {
 	dbAuth := "dog123:dog123"
-	dbDsn := "210.14.154.117:33068"
+	dbDsn := "192.168.86.193:3307"
+	// dbDsn := "210.14.154.117:33068"
 	dbName := "new_dog123"
 	dataSourceName := dbAuth + "@tcp(" + dbDsn + ")/" + dbName + "?charset=utf8mb4"
 	engine, err := xorm.NewEngine("mysql", dataSourceName)
@@ -38,10 +39,10 @@ func TestParseJson(t *testing.T) {
 func TestFansPersons(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 
-	jobStr := "{\"uid\":2060500,\"event_type\":2,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":2,\"fid\":36},\"tid\":0,\"status\":1,\"time\":1508469600}|1|0"
+	jobStr := "{\"uid\":881050,\"event_type\":2,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":2,\"fid\":36},\"tid\":0,\"status\":1,\"time\":1508469600}|1|0"
 
 	f := NewFocus(mysqlXorm, mongoConn, jobStr)
-	f.getFansPersons(1, 10)
+	fmt.Println(f.getFansPersons(1, 10000000))
 }
 
 func TestClubPersons(t *testing.T) {
@@ -134,7 +135,7 @@ func TestTryPushPerson(t *testing.T) {
 	jobStr := "{\"uid\":881050,\"event_type\":6,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":2,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"time\":\"2017-10-23 10:54:00\"}|1|0"
 
 	f := NewFocus(mysqlXorm, mongoConn, jobStr)
-	fmt.Println(f.tryPushPerson(2060500, 6))
+	fmt.Println(f.tryPushPerson(68296, 1))
 }
 
 func TestPushPersons(t *testing.T) {
@@ -144,4 +145,33 @@ func TestPushPersons(t *testing.T) {
 	var persons = []int{2060500, 2060400}
 	f := NewFocus(mysqlXorm, mongoConn, jobStr)
 	fmt.Println(f.pushPersons(persons))
+}
+
+func TestGetFansActivePersons(t *testing.T) {
+	mysqlXorm, mongoConn := testConn()
+
+	jobStr := "{\"uid\":881050,\"event_type\":8,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":2,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"time\":\"2017-10-23 10:54:00\"}|1|0"
+	var persons = []int{2060500, 2060400}
+
+	f := NewFocus(mysqlXorm, mongoConn, jobStr)
+	fmt.Println(f.getFansActivePersons(persons))
+}
+
+func TestMergePersons(t *testing.T) {
+	// mysqlXorm, mongoConn := testConn()
+
+	// jobStr := "{\"uid\":881050,\"event_type\":8,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":2,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"time\":\"2017-10-23 10:54:00\"}|1|0"
+	// f := NewFocus(mysqlXorm, mongoConn, jobStr)
+	var fansuids = []int{2060500, 2060400}
+	var clubuids = []int{2060501, 2060401}
+
+	fmt.Println(MergePersons(fansuids, clubuids))
+}
+
+func TestDo(t *testing.T) {
+	mysqlXorm, mongoConn := testConn()
+
+	jobStr := "{\"uid\":881050,\"event_type\":8,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":2,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"time\":\"2017-10-23 10:54:00\"}|1|0"
+	f := NewFocus(mysqlXorm, mongoConn, jobStr)
+	fmt.Println(f.Do())
 }
