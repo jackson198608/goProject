@@ -8,4 +8,8 @@
 	go get github.com/jackson198608/goProject/pushContentCenter/task 
 
 # Quick Start
-- create task
+- refer to task_test
+
+# todo
+- how to add channel without modify task code
+

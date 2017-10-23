@@ -3,18 +3,16 @@ package redisEngine
 import (
 	"fmt"
 	redis "gopkg.in/redis.v4"
-	"strconv"
 	"testing"
 )
 
-func jobFunc(c chan int, job string, taskarg ...string) error {
-	strconv.Itoa(10)
+func jobFunc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
 
 	fmt.Println("this is jobFunc")
 	return nil
 }
 
-func TestNew(t *testing.T) {
+func newRedis() *RedisEngine {
 	r := new(redis.Options)
 	NewRedisEngine("test", r, 10, jobFunc)
 }
