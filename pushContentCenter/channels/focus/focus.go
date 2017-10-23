@@ -10,6 +10,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"gouminGitlab/common/orm/mysql/new_dog123"
 	"math"
+	"strconv"
 	"strings"
 )
 
@@ -24,7 +25,7 @@ type Focus struct {
 type jsonColumn struct {
 	TypeId    int
 	Uid       int
-	Created   int
+	Created   string
 	Infoid    int
 	Status    int
 	Tid       int
@@ -58,7 +59,7 @@ type EventLogX struct {
 	Source    int           "source"
 }
 
-const count = 100
+const count = 1000
 
 func NewFocus(mysqlXorm *xorm.Engine, mongoConn *mgo.Session, jobStr string) *Focus {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
@@ -77,7 +78,6 @@ func NewFocus(mysqlXorm *xorm.Engine, mongoConn *mgo.Session, jobStr string) *Fo
 	//@todo pass params
 	jsonColumn, err := f.parseJson()
 	if err != nil {
-		fmt.Println(err)
 		return nil
 	}
 	f.jsonData = jsonColumn
@@ -93,20 +93,40 @@ func (f *Focus) Do() error {
 		if (page <= 0) && (page1 <= 0) {
 			return errors.New("you have  no person to push " + f.jobstr)
 		}
-	}
-
-	if page <= 0 {
-		return errors.New("you have  no person to push " + f.jobstr)
+		page = max(page, page1)
+	} else {
+		//视频、问答、小编推荐
+		if page <= 0 {
+			return errors.New("you have  no person to push " + f.jobstr)
+		}
 	}
 
 	var startId int
 	var endId int
+	if f.jsonData.TypeId == 1 {
+		startId = f.getFansPersonFirstId()
+	}
+
 	for i := 1; i <= page; i++ {
+		if f.jsonData.TypeId == 1 {
+			startId = startId + (i-1)*count
+			endId = f.getIdRange(startId)
+		}
+		fmt.Println("startId: " + strconv.Itoa(startId))
+		fmt.Println("endId: " + strconv.Itoa(endId))
 		currentPersionList := f.getPersons(page, startId, endId)
 		f.pushPersons(currentPersionList)
-
 	}
 	return nil
+}
+
+func (f *Focus) getIdRange(startId int) (int, int) {
+	endId := startId + count
+	maxId := f.getFansPersonLastId()
+	if endId > maxId {
+		endId = maxId
+	}
+	return startId, endId
 }
 
 //change json colum to object private member
@@ -126,7 +146,7 @@ func (f *Focus) parseJson() (*jsonColumn, error) {
 
 	jsonC.Uid, _ = js.Get("uid").Int()
 	jsonC.TypeId, _ = js.Get("event_type").Int()
-	jsonC.Created, _ = js.Get("time").Int()
+	jsonC.Created, _ = js.Get("time").String()
 	jsonC.Tid, _ = js.Get("tid").Int()
 	jsonC.Bid, _ = js.Get("event_info").Get("bid").Int()
 	jsonC.Infoid, _ = js.Get("event_info").Get("infoid").Int()
@@ -151,20 +171,49 @@ func (f *Focus) pushPersons(persons []int) error {
 	for _, person := range persons {
 		err := f.pushPerson(person)
 		if err != nil {
-			//@todo if err times < 5 ,just print log
-			//      if err times > 5 ,return err
+			f.tryPushPerson(person, 1)
 		}
 	}
 	return nil
 }
 
-func (f *Focus) pushPerson(person int) error {
-
+func (f *Focus) tryPushPerson(person int, num int) error {
+	if num > 5 {
+		return errors.New("Attempting to push has failed 5 times: " + f.jobstr + "; person is " + strconv.Itoa(person))
+	}
+	err := f.pushPerson(person)
+	if err != nil {
+		f.tryPushPerson(person, num+1)
+	}
 	return nil
 }
 
-func (f *Focus) pushData(fuid int) *EventLogX {
+func (f *Focus) pushPerson(person int) error {
+	tableNameX := getTableNum(person)
+	c := f.mongoConn.DB("FansData").C(tableNameX)
+	if f.jsonData.Status == 1 {
+		//数据展示
+		m := f.pushData(person)
+		err := c.Insert(&m) //插入数据
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getTableNum(person int) string {
+	tableNumX := person % 100
+	if tableNumX == 0 {
+		tableNumX = 100
+	}
+	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
+	return tableNameX
+}
+
+func (f *Focus) pushData(person int) *EventLogX {
 	var data EventLogX
+	data = EventLogX{bson.NewObjectId(), f.jsonData.TypeId, f.jsonData.Uid, person, f.jsonData.Created, f.jsonData.Infoid, f.jsonData.Status, f.jsonData.Tid, f.jsonData.Bid, f.jsonData.Content, f.jsonData.Title, f.jsonData.Imagenums, f.jsonData.Forum, f.jsonData.Tag, f.jsonData.Qsttype, f.jsonData.Source}
 	return &data
 }
 
@@ -190,7 +239,7 @@ func (f *Focus) getPersons(page int, startId int, endId int) []int {
 		//推全部活跃用户
 		uid = f.getActivePersons(page)
 	}
-	fmt.Println(uid)
+	// fmt.Println(uid)
 	return uid
 }
 
@@ -198,17 +247,25 @@ func (f *Focus) getPersionsPageNum() (int, int) {
 	typeId := f.jsonData.TypeId
 	if typeId == 1 {
 		//帖子 推所有活跃粉丝 + 相同俱乐部的活跃用户
-
+		page := f.getFansPersonPageNum()
+		page1 := f.getClubPersonPageNum()
+		return page1, page
 	} else if typeId == 6 {
 		// 视频 推活跃粉丝
-
+		page := f.getFansPersonPageNum()
+		return page, 0
 	} else if typeId == 8 {
 		//问答 推相同犬种的活跃用户
-
+		page := f.getBreedPersonsPagNum()
+		return page, 0
 	} else if ((typeId == 9) || (typeId == 15)) && (f.jsonData.Source == 1) {
 		//人工小编 推全部活跃用户
+		page := f.getActivePersonPageNum()
+		return page, 0
 	} else {
 		//推全部活跃用户
+		page := f.getActivePersonPageNum()
+		return page, 0
 	}
 
 	return 0, 0
@@ -323,6 +380,13 @@ func (f *Focus) getFansPersonLastId() int {
 	id := follows[0].Id
 
 	return id
+}
+
+func (f *Focus) getFansPersonPageNum() int {
+	startId := f.getFansPersonFirstId()
+	endId := f.getFansPersonLastId()
+	page := int(math.Ceil(float64(startId-endId) / float64(count)))
+	return page
 }
 
 //获取活跃粉丝用户
