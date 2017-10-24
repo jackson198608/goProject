@@ -20,7 +20,7 @@ type ClubPersons struct {
 	fid       int
 }
 
-const count = 2 //1000
+const count = 1000
 
 func NewClubPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn) *ClubPersons {
 	if (mongoConn == nil) || (jsonData == nil) {

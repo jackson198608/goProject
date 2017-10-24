@@ -11,20 +11,22 @@ import (
 	"gouminGitlab/common/orm/mongo/FansData"
 	"gouminGitlab/common/orm/mysql/new_dog123"
 	"math"
+	// "reflect"
 	"strconv"
 	// "strings"
 )
 
 type FansPersons struct {
-	mysqlXorm []*xorm.Engine //@todo to be []
-	mongoConn []*mgo.Session //@todo to be []
-	jsonData  *job.FocusJsonColumn
-	uid       int
+	mysqlXorm      []*xorm.Engine //@todo to be []
+	mongoConn      []*mgo.Session //@todo to be []
+	jsonData       *job.FocusJsonColumn
+	activeUserData *map[int]bool
+	uid            int
 }
 
 const count = 1000
 
-func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn) *FansPersons {
+func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool) *FansPersons {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
@@ -38,6 +40,7 @@ func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
 	f.uid = f.jsonData.Uid
+	f.activeUserData = activeUserData
 
 	return f
 }
@@ -45,15 +48,20 @@ func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData
 func (f *FansPersons) Do() error {
 	initialId := f.getPersonFirstId()
 	page := f.getPersonPageNum()
-
 	for i := 1; i <= page; i++ {
-		initialId += count
+		if i != 1 {
+			initialId += count
+		}
 		startId, endId := f.getIdRange(initialId)
+		// fmt.Println(startId)
+		// fmt.Println(endId)
 		currentPersionList := f.getPersons(startId, endId)
 		// fmt.Println(currentPersionList)
-		err := f.pushPersons(currentPersionList)
-		if err != nil {
-			return err
+		if len(currentPersionList) > 0 {
+			err := f.pushPersons(currentPersionList)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -188,13 +196,16 @@ func (f *FansPersons) getPersons(startId int, endId int) []int {
 	return uids
 }
 
-//@todo make active_user to be hash struct
+//get active user by hashmap
 func (f *FansPersons) getFansActivePersons(persons []int) []int {
 	var uids []int
-	c := f.mongoConn[0].DB("ActiveUser").C("active_user")
-	err := c.Find(&bson.M{"uid": bson.M{"$in": persons}}).Distinct("uid", &uids)
-	if err != nil {
-		panic(err)
+	active_user := *f.activeUserData
+	for i := 0; i < len(persons); i++ {
+		//check key is exists
+		_, ok := active_user[persons[i]]
+		if ok {
+			uids = append(uids, persons[i])
+		}
 	}
 	return uids
 }
