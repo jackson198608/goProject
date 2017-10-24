@@ -1,9 +1,9 @@
 # introduction
-- this package is design for the situation when you want to insert data to baidu 
+- This package is designed to push data to club list.
 
 # Installation
 
-	go get github.com/jackson198608/goProject/baiduStat/baiduAction 
+	go get github.com/jackson198608/goProject/pushContentCenter/channels/club
 
 # Quick Start
 

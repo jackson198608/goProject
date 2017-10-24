@@ -1,5 +1,5 @@
 # introduction
-- this package is design for the situation when you want to insert data to baidu 
+- This package is designed to push data to users.
 
 # Installation
 

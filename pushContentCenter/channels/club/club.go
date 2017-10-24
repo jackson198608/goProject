@@ -2,12 +2,13 @@ package club
 
 import (
 	"errors"
-	"fmt"
+	// "fmt"
 	"github.com/bitly/go-simplejson"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"gouminGitlab/common/orm/mongo/ClubData"
 	"gouminGitlab/common/orm/mysql/new_dog123"
 	// "reflect"
 	"strconv"
@@ -38,27 +39,8 @@ type jsonColumn struct {
 	Lastpost     int
 	Lastposter   string
 	Displayorder int
+	Action       int
 }
-
-type ClubX struct {
-	Id           bson.ObjectId "_id"
-	Type         int           "type"
-	TypeId       int           "typeid" //俱乐部主题ID
-	Infoid       int           "infoid"
-	Uid          int           "uid"
-	Created      int           "created"
-	Status       int           "status"
-	Content      string        "message"
-	Title        string        "subject"
-	Imagenums    int           "image_num"
-	Displayorder int           "displayorder"
-	Lastpost     int           "lastpost"
-	Lastposter   string        "lastposter"
-	Disgest      int           "disgest"
-	Qsttype      int           "qst_type"
-}
-
-const count = 100
 
 func NewClub(mysqlXorm *xorm.Engine, mongoConn *mgo.Session, jobStr string) *Club {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
@@ -114,14 +96,7 @@ func (c *Club) Do() error {
 //change json colum to object private member
 func (c *Club) parseJson() (*jsonColumn, error) {
 	var jsonC jsonColumn
-
-	jobs := strings.Split(c.jobstr, "|")
-	if len(jobs) <= 1 {
-		return &jsonC, errors.New("you have no job")
-	}
-
-	jsonStr := jobs[0]
-	js, err := simplejson.NewJson([]byte(jsonStr))
+	js, err := simplejson.NewJson([]byte(c.jobstr))
 	if err != nil {
 		return &jsonC, err
 	}
@@ -141,6 +116,7 @@ func (c *Club) parseJson() (*jsonColumn, error) {
 	jsonC.Displayorder, _ = js.Get("displayorder").Int()
 	jsonC.Disgest, _ = js.Get("disgest").Int()
 	jsonC.Qsttype, _ = js.Get("qst_type").Int()
+	jsonC.Action, _ = js.Get("action").Int()
 
 	return &jsonC, nil
 }
@@ -162,10 +138,25 @@ func (c *Club) pushClubs(clubs []int) error {
 func (c *Club) pushClub(club int) error {
 	tableNameX := "forum_content_" + strconv.Itoa(club)
 	mc := c.mongoConn.DB("ClubData").C(tableNameX)
-	if c.jsonData.Status == 1 {
-		//数据展示
-		data := c.pushData(club)
-		err := mc.Insert(&data) //插入数据
+	if c.jsonData.Action == 0 {
+		// fmt.Println("insert" + strconv.Itoa(club))
+
+		err := c.insertClub(mc)
+		if err != nil {
+			return err
+		}
+	} else if c.jsonData.Action == 1 {
+		//修改数据
+		// fmt.Println("update" + strconv.Itoa(club))
+		err := c.updateClub(mc)
+		if err != nil {
+			return err
+		}
+	} else if c.jsonData.Action == -1 {
+		//删除数据
+		// fmt.Println("remove" + strconv.Itoa(club))
+
+		err := c.removeClub(mc)
 		if err != nil {
 			return err
 		}
@@ -184,9 +175,24 @@ func (c *Club) tryPushClub(club int, num int) error {
 	return nil
 }
 
-func (c *Club) pushData(club int) *ClubX {
-	var data ClubX
-	data = ClubX{bson.NewObjectId(),
+//@todo how to remove duplicate uid from to lists
+func (c *Club) getClubs() []int {
+	var cluds []int
+	var forums []new_dog123.PreForumForum
+	err := c.mysqlXorm.Where("status=1 and fup!=0").Cols("fid").Find(&forums)
+	if err != nil {
+		return nil
+	}
+	for _, v := range forums {
+		cluds = append(cluds, v.Fid)
+	}
+	return cluds
+}
+
+func (c *Club) insertClub(mc *mgo.Collection) error {
+	//新增数据
+	var data ClubData.ClubX
+	data = ClubData.ClubX{bson.NewObjectId(),
 		c.jsonData.Type,
 		c.jsonData.TypeId,
 		c.jsonData.Infoid,
@@ -201,19 +207,25 @@ func (c *Club) pushData(club int) *ClubX {
 		c.jsonData.Lastposter,
 		c.jsonData.Disgest,
 		c.jsonData.Qsttype}
-	return &data
+	err := mc.Insert(&data) //插入数据
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-//@todo how to remove duplicate uid from to lists
-func (c *Club) getClubs() []int {
-	var cluds []int
-	var forums []new_dog123.PreForumForum
-	err := c.mysqlXorm.Where("status=1 and fup!=0").Cols("fid").Find(&forums)
+func (c *Club) updateClub(mc *mgo.Collection) error {
+	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "uid": c.jsonData.Uid, "created": c.jsonData.Created, "infoid": c.jsonData.Infoid}, bson.M{"$set": bson.M{"status": c.jsonData.Status, "disgest": c.jsonData.Disgest, "displayorder": c.jsonData.Displayorder}})
 	if err != nil {
-		return nil
+		return err
 	}
-	for _, v := range forums {
-		cluds = append(cluds, v.Fid)
+	return nil
+}
+
+func (c *Club) removeClub(mc *mgo.Collection) error {
+	_, err := mc.RemoveAll(bson.M{"type": c.jsonData.Type, "uid": c.jsonData.Uid, "created": c.jsonData.Created, "infoid": c.jsonData.Infoid})
+	if err != nil {
+		return err
 	}
-	return cluds
+	return nil
 }

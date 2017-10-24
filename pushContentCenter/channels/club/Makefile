@@ -1,5 +1,5 @@
 install:
-	go install gouminGitlab/inBstatic/baiduInsert 
+	go install github.com/jackson198608/goProject/pushContentCenter/channels/club 
 
 test:
-	go test gouminGitlab/inBstatic/baiduInsert -v
+	go test github.com/jackson198608/goProject/pushContentCenter/channels/club -v
