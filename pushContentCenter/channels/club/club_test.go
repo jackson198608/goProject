@@ -35,13 +35,6 @@ func TestGetClubs(t *testing.T) {
 	fmt.Println(c.getClubs())
 }
 
-func TestPushData(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jobStr := "{\"uid\":2060500,\"type\":1,\"typeid\":2,\"subject\":\"subject\",\"message\":\"message\",\"image_num\":\"image_num\",\"lastpost\":2,\"fid\":36,\"lastposter\":\"0ssss\",\"status\":1,\"displayorder\":1,\"disgest\":1,\"qst_type\":0,\"created\":1508469600}|1|0"
-	c := NewClub(mysqlXorm, mongoConn, jobStr)
-	fmt.Println(c.pushData(34))
-}
-
 func TestTryPushClub(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jobStr := "{\"uid\":2060500,\"type\":1,\"typeid\":2,\"subject\":\"subject\",\"message\":\"message\",\"image_num\":\"image_num\",\"lastpost\":2,\"fid\":36,\"lastposter\":\"0ssss\",\"status\":1,\"displayorder\":1,\"disgest\":1,\"qst_type\":0,\"created\":1508469600}|1|0"
@@ -68,7 +61,7 @@ func TestPushClubs(t *testing.T) {
 
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
-	jobStr := "{\"uid\":2060501,\"type\":1,\"infoid\":1234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\"message\",\"image_num\":\"image_num\",\"lastpost\":2,\"fid\":\"36\",\"lastposter\":\"0ssss\",\"status\":1,\"displayorder\":1,\"disgest\":1,\"qst_type\":0,\"created\":1508469600}|1|0"
+	jobStr := "{\"uid\":2060501,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\" push to 36 message\",\"image_num\":\"image_num\",\"lastpost\":2,\"fid\":\"37,38,77\",\"lastposter\":\"0ssss\",\"status\":1,\"displayorder\":1,\"disgest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":-1}"
 	c := NewClub(mysqlXorm, mongoConn, jobStr)
 
 	fmt.Println(c.Do())
