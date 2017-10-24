@@ -1,4 +1,4 @@
-package fansPersons
+package allPersons
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	// "gopkg.in/mgo.v2/bson"
 	// "gouminGitlab/common/orm/mongo/FansData"
-
 	// "reflect"
 	"testing"
 )
@@ -48,15 +47,15 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Tid = 0
 	jsonData.Bid = 36
 	jsonData.Infoid = 234567
-	jsonData.Title = "粉丝推送title"
-	jsonData.Content = "粉丝推送正文正文"
+	jsonData.Title = "所有活跃用户推送title"
+	jsonData.Content = "所有活跃用户推送正文正文"
 	jsonData.Forum = "36club"
 	jsonData.Imagenums = 0
 	jsonData.Tag = 0
 	jsonData.Qsttype = 0
 	jsonData.Fid = 0
 	jsonData.Source = 2
-	jsonData.Status = -1
+	jsonData.Status = 1
 	jsonData.Action = -1
 	return &jsonData
 }
@@ -64,24 +63,21 @@ func jsonData() *job.FocusJsonColumn {
 func TestGetPersons(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.getPersons(1, 100000000))
+	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
+	fmt.Println(f.getPersons(2))
 }
 
 func TestTryPushPerson(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData)
+	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
 	fmt.Println(f.tryPushPerson(881050, 6))
 }
 
 func TestPushPerson(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData)
+	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
 	fmt.Println(f.pushPerson(881050))
 }
 
@@ -90,22 +86,20 @@ func TestPushPersons(t *testing.T) {
 	jsonData := jsonData()
 	var persons = []int{2060500, 2060400}
 
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData)
+	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
 	fmt.Println(f.pushPersons(persons))
 }
 
 func TestGetPersonPageNum(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData)
+	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
 	fmt.Println(f.getPersonPageNum())
 }
 
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData)
+	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
 	fmt.Println(f.Do())
 }
