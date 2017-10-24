@@ -8,6 +8,7 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/allPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/breedPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/clubPersons"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/location/commonData"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/fansPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
@@ -43,8 +44,15 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 	}
 	f.jsonData = jsonColumn
 
+	Init(f.mongoConn[0])
 	return f
+}
 
+var m map[int]bool
+
+func Init(mc *mgo.Session) {
+	m = make(map[int]bool)
+	m = commonData.LoadDataToHashmap(mc)
 }
 
 //TypeId = 1 bbs, push fans and club active persons
@@ -55,7 +63,7 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 func (f *Focus) Do() error {
 	if f.jsonData.TypeId == 1 {
 		f.jsonData.Source = 3
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
 		err := fp.Do()
 		if err != nil {
 			return err
@@ -68,14 +76,14 @@ func (f *Focus) Do() error {
 			return err
 		}
 	} else if f.jsonData.TypeId == 6 {
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
 		err := fp.Do()
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.TypeId == 8 {
 		f.jsonData.Source = 3
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
 		err := fp.Do()
 		if err != nil {
 			return err
