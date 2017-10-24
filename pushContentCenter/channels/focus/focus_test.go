@@ -44,7 +44,7 @@ func TestParseJson(t *testing.T) {
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 
-	jobStr := "{\"uid\":881050,\"event_type\":9,\"event_info\":{\"title\":\"subject\",\"focus content\":\" focus  message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":1,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"action\":1,\"time\":\"2017-10-23 10:54:00\"}"
+	jobStr := "{\"uid\":881050,\"event_type\":1,\"event_info\":{\"title\":\"subject\",\"focus content\":\" focus  message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":1,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"action\":0,\"time\":\"2017-10-23 10:54:00\"}"
 	f := NewFocus(mysqlXorm, mongoConn, jobStr)
 	fmt.Println(f.Do())
 }

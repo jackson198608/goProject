@@ -22,7 +22,7 @@ type AllPersons struct {
 	jsonData  *job.FocusJsonColumn
 }
 
-const count = 2 //1000
+const count = 1000
 
 func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn) *AllPersons {
 	if (mongoConn == nil) || (jsonData == nil) {
