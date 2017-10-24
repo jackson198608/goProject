@@ -21,13 +21,17 @@ func newtask() (*Task, error) {
 		return nil, err
 	}
 
+	engines := []xorm.Engine{engine}
+
 	//get mongo session
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		return nil, err
 	}
 
-	t, err := NewTask("raw|club", engine, session)
+	sessions := []mgo.Session{session}
+
+	t, err := NewTask("raw|club", engines, sessions)
 	return t, err
 
 }

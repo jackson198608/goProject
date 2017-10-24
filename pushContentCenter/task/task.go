@@ -11,16 +11,16 @@ import (
 )
 
 type Task struct {
-	Raw       string       //the data get from redis queue
-	MysqlXorm *xorm.Engine //mysql single instance
-	MongoConn *mgo.Session //mongo single instance
-	Jobstr    string       //private member parse from raw
-	JobType   string       //private membe parse from raw jobType: focus|club
+	Raw       string         //the data get from redis queue
+	MysqlXorm []*xorm.Engine //mysql single instance
+	MongoConn []*mgo.Session //mongo single instance
+	Jobstr    string         //private member parse from raw
+	JobType   string         //private membe parse from raw jobType: focus|club
 }
 
 //job: redisQueue pop string
 //taskarg: mongoHost,mongoDatabase,mongoReplicaSetName
-func NewTask(raw string, mysqlXorm *xorm.Engine, mongoConn *mgo.Session) (*Task, error) {
+func NewTask(raw string, mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session) (*Task, error) {
 	//check prams
 	if (raw == "") || (mysqlXorm == nil) || (mongoConn == nil) {
 		return nil, errors.New("params can not be null")
