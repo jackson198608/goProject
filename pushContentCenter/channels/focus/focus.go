@@ -1,8 +1,7 @@
 package focus
 
 import (
-	"errors"
-	"fmt"
+	// "fmt"
 	"github.com/bitly/go-simplejson"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
@@ -10,39 +9,15 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/breedPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/clubPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/fansPersons"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-	"gouminGitlab/common/orm/mongo/FansData"
-	"gouminGitlab/common/orm/mysql/new_dog123"
-	"math"
-	"strconv"
-	"strings"
 )
 
 type Focus struct {
-	mysqlXorm *xorm.Engine //@todo to be []
-	mongoConn *mgo.Session //@todo to be []
+	mysqlXorm []*xorm.Engine
+	mongoConn []*mgo.Session
 	jobstr    string
-	jsonData  *jsonColumn
-}
-
-//json column
-type jsonColumn struct {
-	TypeId    int
-	Uid       int
-	Created   string
-	Infoid    int
-	Status    int
-	Tid       int
-	Bid       int
-	Fid       int
-	Content   string
-	Title     string
-	Imagenums int
-	Forum     string
-	Tag       int
-	Qsttype   int
-	Source    int
+	jsonData  *job.FocusJsonColumn
 }
 
 const count = 1000
@@ -79,36 +54,47 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 //TypeId = 15 recommend video, push all active persons
 func (f *Focus) Do() error {
 	if f.jsonData.TypeId == 1 {
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status, f.jsonData.Uid)
+		f.jsonData.Source = 3
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
 		err := fp.Do()
 		if err != nil {
 			return err
 		}
-		cp := clubPersons.NewClubPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status, f.jsonData.Fid)
+
+		f.jsonData.Source = 2
+		cp := clubPersons.NewClubPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
 		err = cp.Do()
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.TypeId == 6 {
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status, f.jsonData.Uid)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
 		err := fp.Do()
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.TypeId == 8 {
-		bp := breedPersons.NewBreedPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status, f.jsonData.Bid)
-		err := bp.Do()
+		f.jsonData.Source = 3
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
+		err := fp.Do()
+		if err != nil {
+			return err
+		}
+
+		f.jsonData.Source = 2
+		bp := breedPersons.NewBreedPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
+		err = bp.Do()
 		if err != nil {
 			return err
 		}
 	} else if ((f.jsonData.TypeId == 9) || (f.jsonData.TypeId == 15)) && (f.jsonData.Source) == 1 {
-		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status)
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
 		err := ap.Do()
 		if err != nil {
 			return err
 		}
 	} else {
-		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.formatData(), f.jsonData.Status)
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
 		err := ap.Do()
 		if err != nil {
 			return err
@@ -118,8 +104,8 @@ func (f *Focus) Do() error {
 }
 
 //change json colum to object private member
-func (f *Focus) parseJson() (*jsonColumn, error) {
-	var jsonC jsonColumn
+func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
+	var jsonC job.FocusJsonColumn
 	js, err := simplejson.NewJson([]byte(f.jobstr))
 	if err != nil {
 		return &jsonC, err
@@ -138,8 +124,9 @@ func (f *Focus) parseJson() (*jsonColumn, error) {
 	jsonC.Tag, _ = js.Get("event_info").Get("tag").Int()
 	jsonC.Qsttype, _ = js.Get("event_info").Get("qst_type").Int()
 	jsonC.Fid, _ = js.Get("event_info").Get("fid").Int()
-	jsonC.Source, _ = js.Get("source").Int()
+	jsonC.Source, _ = js.Get("event_info").Get("source").Int()
 	jsonC.Status, _ = js.Get("status").Int()
+	jsonC.Action, _ = js.Get("action").Int() //行为 -1 删除 0 插入 1 修改
 
 	return &jsonC, nil
 }

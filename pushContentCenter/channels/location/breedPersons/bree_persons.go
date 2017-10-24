@@ -1,31 +1,29 @@
 package breedPersons
 
 import (
-	"error"
-	"fmt"
-	_ "github.com/go-sql-driver/mysql"
+	"errors"
+	// "fmt"
 	"github.com/go-xorm/xorm"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"gouminGitlab/common/orm/mongo/ActiveUser"
 	"gouminGitlab/common/orm/mongo/FansData"
-	"gouminGitlab/common/orm/mysql/new_dog123"
 	"math"
 	"strconv"
-	"strings"
 )
 
 type BreedPersons struct {
-	mysqlXorm []*xorm.Engine //@todo to be []
-	mongoConn []*mgo.Session //@todo to be []
-	jobData   *FansData.EventLog
-	status    int
+	mysqlXorm []*xorm.Engine
+	mongoConn []*mgo.Session
+	jsonData  *job.FocusJsonColumn
 	bid       int
 }
 
 const count = 1000
 
-func NewBreedPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobData *FansData.EventLog, status int, bid int) *BreedPersons {
-	if (mysqlXorm == nil) || (mongoConn == nil) || (jobData == nil) {
+func NewBreedPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn) *BreedPersons {
+	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
 
@@ -36,9 +34,8 @@ func NewBreedPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobData
 
 	f.mysqlXorm = mysqlXorm
 	f.mongoConn = mongoConn
-	f.jobData = jobData
-	f.status = status
-	f.bid = bid
+	f.jsonData = jsonData
+	f.bid = f.jsonData.Bid
 
 	return f
 }
@@ -48,6 +45,7 @@ func (f *BreedPersons) Do() error {
 
 	for i := 1; i <= page; i++ {
 		currentPersionList := f.getPersons(i)
+		// fmt.Println(currentPersionList)
 		err := f.pushPersons(currentPersionList)
 		if err != nil {
 			return err
@@ -58,7 +56,7 @@ func (f *BreedPersons) Do() error {
 
 func (f *BreedPersons) pushPersons(persons []int) error {
 	if persons == nil {
-		return errors.New("you have no person to push " + f.jobstr)
+		return errors.New("push to breed active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
 
 	for _, person := range persons {
@@ -72,7 +70,7 @@ func (f *BreedPersons) pushPersons(persons []int) error {
 
 func (f *BreedPersons) tryPushPerson(person int, num int) error {
 	if num > 5 {
-		return errors.New("Attempting to push has failed 5 times: " + f.jobstr + "; person is " + strconv.Itoa(person))
+		return errors.New("push to breed active user : Attempting to push has failed 5 times; infoid is " + strconv.Itoa(f.jsonData.Infoid) + "; person is " + strconv.Itoa(person))
 	}
 	err := f.pushPerson(person)
 	if err != nil {
@@ -83,13 +81,58 @@ func (f *BreedPersons) tryPushPerson(person int, num int) error {
 
 func (f *BreedPersons) pushPerson(person int) error {
 	tableNameX := getTableNum(person)
-	c := f.mongoConn.DB("FansData").C(tableNameX)
-	if f.status == 1 {
-		//数据展示
-		err := c.Insert(&f.jobData) //插入数据
+	c := f.mongoConn[0].DB("FansData").C(tableNameX)
+
+	if f.jsonData.Action == 0 {
+		// fmt.Println("insert" + strconv.Itoa(person))
+
+		err := f.insertPerson(c, person)
 		if err != nil {
 			return err
 		}
+	} else if f.jsonData.Action == 1 {
+		// } else if (f.jsonData.Action == 1) && (f.checkDataIsExist(person)) {
+		//修改数据
+		// fmt.Println("update" + strconv.Itoa(person))
+		err := f.updatePerson(c, person)
+		if err != nil {
+			return err
+		}
+		// } else if (f.jsonData.Action == -1) && (f.checkDataIsExist(person)) {
+	} else if f.jsonData.Action == -1 {
+		//删除数据
+		// fmt.Println("remove" + strconv.Itoa(person))
+
+		err := f.removePerson(c, person)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (f *BreedPersons) insertPerson(c *mgo.Collection, person int) error {
+	//新增数据
+	var data FansData.EventLog
+	data = FansData.EventLog{bson.NewObjectId(),
+		f.jsonData.TypeId,
+		f.jsonData.Uid,
+		person,
+		f.jsonData.Created,
+		f.jsonData.Infoid,
+		f.jsonData.Status,
+		f.jsonData.Tid,
+		f.jsonData.Bid,
+		f.jsonData.Content,
+		f.jsonData.Title,
+		f.jsonData.Imagenums,
+		f.jsonData.Forum,
+		f.jsonData.Tag,
+		f.jsonData.Qsttype,
+		f.jsonData.Source}
+	err := c.Insert(&data) //插入数据
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -103,17 +146,17 @@ func getTableNum(person int) string {
 	return tableNameX
 }
 
-// Get the same club user data page number
 func (f *BreedPersons) getPersonPageNum() int {
-	Bid := f.jsonData.Bid
+	Bid := f.bid
 	if Bid == 0 {
 		return 0
 	}
 
-	c := f.mongoConn.DB("ActiveUser").C("active_breed_user")
+	c := f.mongoConn[0].DB("ActiveUser").C("active_breed_user")
 	countNum, err := c.Find(&bson.M{"breed_id": Bid}).Count()
 	if err != nil {
 		panic(err)
+		return 0
 	}
 	page := int(math.Ceil(float64(countNum) / float64(count)))
 	return page
@@ -123,18 +166,58 @@ func (f *BreedPersons) getPersonPageNum() int {
 //@todo 使用id范围分页查询
 func (f *BreedPersons) getPersons(page int) []int {
 	var uids []int
-	Bid := f.jsonData.Bid
+	Bid := f.bid
 	if Bid == 0 {
 		return uids
 	}
+	var result []ActiveUser.ActiveBreedUser
 
-	c := f.mongoConn.DB("ActiveUser").C("active_breed_user")
+	c := f.mongoConn[0].DB("ActiveUser").C("active_breed_user")
 	err := c.Find(&bson.M{"breed_id": Bid}).
-		Skip((page-1)*count).
+		Select(bson.M{"uid": 1}).
+		Skip((page - 1) * count).
 		Limit(count).
-		Distinct("uid", &uids)
+		All(&result)
 	if err != nil {
 		panic(err)
+		return uids
+	}
+	for _, v := range result {
+		uids = append(uids, v.Uid)
 	}
 	return uids
+}
+
+//检查mongo中是否存在该条数据
+func (f *BreedPersons) checkDataIsExist(person int) bool {
+	var ms []FansData.EventLog
+	tableNameX := getTableNum(person)
+	c := f.mongoConn[0].DB("FansData").C(tableNameX)
+	err1 := c.Find(&bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "created": f.jsonData.Created, "infoid": f.jsonData.Infoid, "tid": f.jsonData.Tid}).All(&ms)
+
+	if err1 != nil {
+		return false
+	}
+	if len(ms) == 0 {
+		return false
+	}
+	return true
+}
+
+func (f *BreedPersons) updatePerson(c *mgo.Collection, person int) error {
+	//修改数据
+	_, err := c.UpdateAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "created": f.jsonData.Created, "infoid": f.jsonData.Infoid}, bson.M{"$set": bson.M{"status": f.jsonData.Status}})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (f *BreedPersons) removePerson(c *mgo.Collection, person int) error {
+	//删除数据
+	_, err := c.RemoveAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "created": f.jsonData.Created, "infoid": f.jsonData.Infoid, "tid": f.jsonData.Tid})
+	if err != nil {
+		return err
+	}
+	return nil
 }
