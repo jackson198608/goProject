@@ -8,7 +8,6 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/allPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/breedPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/clubPersons"
-	"github.com/jackson198608/goProject/pushContentCenter/channels/location/commonData"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/fansPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
@@ -44,15 +43,14 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 	}
 	f.jsonData = jsonColumn
 
-	Init(f.mongoConn[0])
 	return f
 }
 
 var m map[int]bool
 
-func Init(mc *mgo.Session) {
+func init() {
 	m = make(map[int]bool)
-	m = commonData.LoadDataToHashmap(mc)
+	m = loadActiveUserToMap()
 }
 
 //TypeId = 1 bbs, push fans and club active persons
@@ -137,4 +135,27 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.Action, _ = js.Get("action").Int() //行为 -1 删除 0 插入 1 修改
 
 	return &jsonC, nil
+}
+
+func loadActiveUserToMap() map[int]bool {
+	var m map[int]bool
+	m = make(map[int]bool)
+
+	mongoConn := "192.168.86.192:27017"
+	session, err := mgo.Dial(mongoConn)
+	if err != nil {
+		return m
+	}
+
+	var uids []int
+	c := session.DB("ActiveUser").C("active_user")
+	err = c.Find(nil).Distinct("uid", &uids)
+	if err != nil {
+		// panic(err)
+		return m
+	}
+	for i := 0; i < len(uids); i++ {
+		m[uids[i]] = true
+	}
+	return m
 }

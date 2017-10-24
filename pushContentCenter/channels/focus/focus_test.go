@@ -48,3 +48,7 @@ func TestDo(t *testing.T) {
 	f := NewFocus(mysqlXorm, mongoConn, jobStr)
 	fmt.Println(f.Do())
 }
+
+func TestLoadActiveUserToMap(t *testing.T) {
+	loadActiveUserToMap()
+}
