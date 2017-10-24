@@ -6,9 +6,12 @@ import (
 	"github.com/go-xorm/xorm"
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
+	"strconv"
+	"time"
 )
 
 const tryTimeLimit = 5
+const sleepTime = 5
 
 type coroutineResult struct {
 	err error
@@ -114,14 +117,25 @@ func (r *RedisEngine) mgoSingleConnect(mgoInfo string) (*mgo.Session, error) {
 }
 
 //create several coroutin to do the job and controll the error is job fail
+//@todo make error to be []error
 func (r *RedisEngine) Do() error {
 	c := make(chan coroutineResult, r.coroutinNum)
 
-	for i := 0; i < r.coroutinNum; i++ {
+	tempResult := coroutineResult{err: nil}
+	lastResult := coroutineResult{err: nil}
 
+	for i := 0; i < r.coroutinNum; i++ {
+		r.coroutinFunc(c, i)
 	}
 
-	return nil
+	for i := 0; i < r.coroutinNum; i++ {
+		tempResult = <-c
+		if tempResult.err != nil {
+			lastResult.err = tempResult.err
+		}
+	}
+
+	return lastResult.err
 }
 
 func (r *RedisEngine) checkError(result *coroutineResult, c chan coroutineResult, err error) bool {
@@ -152,33 +166,35 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 	for {
 		//get task
 		raw, err := redisConn.LPop(r.queueName).Result()
-		if r.checkError(&result, c, err) {
-			return
+		if err != nil {
+			//there is no more job,sleep a while
+			time.Sleep(sleepTime * time.Second)
+			continue
 		}
 
 		//get the raw parese result to decide whethere going to the next step or not
 		realraw, trytimes, err := r.parseRaw(raw)
 		if r.checkError(&result, c, err) {
-			return
+			break
 		}
 
 		if trytimes > tryTimeLimit {
 			result.err = errors.New("task over trytimes limit")
 			c <- result
-			return
+			break
 		}
 
 		//prepare and check the connections for mysql
 		mysqlConns, err := r.mysqlConnect()
 		if r.checkError(&result, c, err) {
-			return
+			break
 		}
 		defer r.closeMysqlConn(mysqlConns)
 
 		//prepare and check the connections for mgo
 		mgoConns, err := r.mgoConnect()
 		if r.checkError(&result, c, err) {
-			return
+			break
 		}
 
 		defer r.closeMgoConn(mgoConns)
@@ -189,16 +205,22 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 			if trytimes == tryTimeLimit {
 				result.err = err
 				c <- result
-				return
+				break
 			} else {
-				err = r.pushFails(realraw, trytimes)
+				err = r.pushFails(redisConn, realraw, trytimes)
 				if r.checkError(&result, c, err) {
-					return
+					break
 				}
 			}
 		}
 
 	} //end of for loop
+
+	if result.err != nil {
+		fmt.Println("[error] coroutine exit with error: ", result.err)
+	}
+
+	return
 
 }
 
@@ -228,16 +250,28 @@ func (r *RedisEngine) closeMgoConn(mgoConns []*mgo.Session) {
 
 //if trytimes < tryTimeLimit ,just push it back to redis
 //if push fail ,it will return error
-func (r *RedisEngine) pushFails(realraw string, trytimes int) error {
+func (r *RedisEngine) pushFails(redisConn *redis.Client, realraw string, tryTimes int) error {
+	//@todo check params
+	backRaw := realraw + "_" + strconv.Itoa(tryTimes+1)
+	redisConn.LPush(r.queueName, backRaw)
 	return nil
 }
 
+// tryTimes only suport 0-9 ,if >9 ,the function should be overwritted
 func (r *RedisEngine) parseRaw(raw string) (string, int, error) {
 	//maybe realraw may have the sep string,so we can not use strings.split
 	rawSlice := []byte(raw)
 	rawLen := len(rawSlice)
-	for i := rawLen - 1; i >= 0; i-- {
-		fmt.Println(rawSlice[i])
+	if (rawSlice[rawLen-2] == '_') && (rawLen > 2) {
+		tryTimesStr := string(rawSlice[rawLen-1])
+		tryTimesInt, err := strconv.Atoi(tryTimesStr)
+		if err != nil {
+			return raw, 0, nil
+		} else {
+			return string(rawSlice[0 : rawLen-2]), tryTimesInt, nil
+		}
+	} else {
+		return raw, 0, nil
 	}
-	return "", 0, nil
+
 }
