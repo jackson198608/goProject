@@ -84,8 +84,12 @@ func (t *Task) ChannelFocus() error {
 // club channel's invoke function
 func (t *Task) ChannelClub() error {
 	fmt.Println("here is the channle club")
+	c := club.NewClub(t.MysqlXorm, t.MongoConn, t.Jobstr)
+	err := c.Do()
+	if err != nil {
+		return err
+	}
 	return nil
-
 }
 
 // this function parase raw to judge jobstr and job type

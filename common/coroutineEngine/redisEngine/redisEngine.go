@@ -35,7 +35,6 @@ func NewRedisEngine(queueName string,
 	workFun func(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error,
 	taskArgs ...string,
 ) (*RedisEngine, error) {
-
 	//check param
 	if (queueName == "") || (redisInfo == nil) || (mysqlConns == nil) || (mgoConns == nil) || (coroutinNum <= 0) || (workFun == nil) {
 		return nil, errors.New("params can not be null")
@@ -191,6 +190,7 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 		if r.checkError(&result, c, err) {
 			break
 		}
+
 		defer r.closeMysqlConn(mysqlConns)
 
 		//prepare and check the connections for mgo
