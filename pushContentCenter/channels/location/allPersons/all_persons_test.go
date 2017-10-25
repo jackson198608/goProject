@@ -56,50 +56,59 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Fid = 0
 	jsonData.Source = 2
 	jsonData.Status = 1
-	jsonData.Action = -1
+	jsonData.Action = 0
 	return &jsonData
 }
 
-func TestGetPersons(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.getPersons(2))
+var m map[int]bool
+
+func init() {
+	m = make(map[int]bool)
+
+	mongoConn := "192.168.86.192:27017"
+	session, err := mgo.Dial(mongoConn)
+	if err != nil {
+		// return m
+	}
+
+	var uids []int
+	c := session.DB("ActiveUser").C("active_user")
+	err = c.Find(nil).Distinct("uid", &uids)
+	if err != nil {
+		// panic(err)
+		// return m
+	}
+	for i := 0; i < len(uids); i++ {
+		m[uids[i]] = true
+	}
 }
 
-func TestTryPushPerson(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.tryPushPerson(881050, 6))
-}
+// func TestGetPersons(t *testing.T) {
+// 	mysqlXorm, mongoConn := testConn()
+// 	jsonData := jsonData()
+// 	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
+// 	fmt.Println(f.getPersons(2))
+// }
 
 func TestPushPerson(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
+	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
 	fmt.Println(f.pushPerson(881050))
 }
 
-func TestPushPersons(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-	var persons = []int{2060500, 2060400}
+// func TestPushPersons(t *testing.T) {
+// 	mysqlXorm, mongoConn := testConn()
+// 	jsonData := jsonData()
+// 	var persons = []int{2060500, 2060400}
 
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.pushPersons(persons))
-}
-
-func TestGetPersonPageNum(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.getPersonPageNum())
-}
+// 	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
+// 	fmt.Println(f.pushPersons(persons))
+// }
 
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData)
+	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
 	fmt.Println(f.Do())
 }

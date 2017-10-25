@@ -4,7 +4,6 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
-	"github.com/jackson198608/goProject/pushContentCenter/channels/location/commonData"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
 	// "gopkg.in/mgo.v2/bson"
@@ -37,15 +36,14 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	engineAry = append(engineAry, engine)
 	var sessionAry []*mgo.Session
 	sessionAry = append(sessionAry, session)
-
-	Init(session)
+	Init()
 	return engineAry, sessionAry
 	// return engine, session
 }
 
 func jsonData() *job.FocusJsonColumn {
 	var jsonData job.FocusJsonColumn
-	jsonData.Uid = 2060500
+	jsonData.Uid = 881050
 	jsonData.TypeId = 1
 	jsonData.Created = "2017-10-23 22:54"
 	jsonData.Tid = 0
@@ -60,17 +58,31 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Fid = 0
 	jsonData.Source = 2
 	jsonData.Status = -1
-	jsonData.Action = -1
+	jsonData.Action = 0
 	return &jsonData
 }
 
 var m map[int]bool
 
-func Init(mc *mgo.Session) bool {
-
+func Init() {
 	m = make(map[int]bool)
-	m = commonData.LoadDataToHashmap(mc)
-	return true
+
+	mongoConn := "192.168.86.192:27017"
+	session, err := mgo.Dial(mongoConn)
+	if err != nil {
+		// return m
+	}
+
+	var uids []int
+	c := session.DB("ActiveUser").C("active_user")
+	err = c.Find(nil).Distinct("uid", &uids)
+	if err != nil {
+		// panic(err)
+		// return m
+	}
+	for i := 0; i < len(uids); i++ {
+		m[uids[i]] = true
+	}
 }
 
 func TestGetPersons(t *testing.T) {
@@ -78,15 +90,7 @@ func TestGetPersons(t *testing.T) {
 	jsonData := jsonData()
 
 	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, &m)
-	fmt.Println(f.getPersons(1, 100000000))
-}
-
-func TestTryPushPerson(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, &m)
-	fmt.Println(f.tryPushPerson(881050, 6))
+	fmt.Println(f.getPersons(1))
 }
 
 func TestPushPerson(t *testing.T) {
@@ -97,36 +101,10 @@ func TestPushPerson(t *testing.T) {
 	fmt.Println(f.pushPerson(881050))
 }
 
-func TestPushPersons(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-	var persons = []int{2060500, 2060400}
-
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, &m)
-	fmt.Println(f.pushPersons(persons))
-}
-
-func TestGetPersonPageNum(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, &m)
-	fmt.Println(f.getPersonPageNum())
-}
-
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
 
 	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, &m)
 	fmt.Println(f.Do())
-}
-
-func TestGetFansActivePersons(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-	var persons = []int{2060500, 2060400}
-
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, &m)
-	fmt.Println(f.getFansActivePersons(persons))
 }

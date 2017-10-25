@@ -9,7 +9,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"gouminGitlab/common/orm/mongo/ActiveUser"
 	"gouminGitlab/common/orm/mongo/FansData"
-	"math"
 	"strconv"
 )
 
@@ -41,41 +40,43 @@ func NewClubPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData
 }
 
 func (f *ClubPersons) Do() error {
-	page := f.getPersonPageNum()
-	for i := 1; i <= page; i++ {
-		currentPersionList := f.getPersons(i)
-		// fmt.Println(currentPersionList)
-		err := f.pushPersons(currentPersionList)
+	var startId bson.ObjectId
+	startId = bson.ObjectId("000000000000")
+	for {
+		currentPersionList := f.getPersons(startId)
+		endId, err := f.pushPersons(currentPersionList)
 		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (f *ClubPersons) pushPersons(persons []int) error {
-	if persons == nil {
-		return errors.New("push to club active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
-	}
-
-	for _, person := range persons {
-		err := f.pushPerson(person)
-		if err != nil {
-			f.tryPushPerson(person, 1)
+		startId = endId
+		if len(*currentPersionList) < count {
+			break
 		}
 	}
 	return nil
 }
 
-func (f *ClubPersons) tryPushPerson(person int, num int) error {
-	if num > 5 {
-		return errors.New("push to club active user : Attempting to push has failed 5 times; infoid is " + strconv.Itoa(f.jsonData.Infoid) + "; person is " + strconv.Itoa(person))
+func (f *ClubPersons) pushPersons(ActiveUser *[]ActiveUser.ActiveForumUser) (bson.ObjectId, error) {
+	if ActiveUser == nil {
+		return bson.NewObjectId(), errors.New("push to club active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
-	err := f.pushPerson(person)
-	if err != nil {
-		f.tryPushPerson(person, num+1)
+
+	var endId bson.ObjectId
+	persons := *ActiveUser
+	for _, person := range persons {
+		// fmt.Println(person.Uid)
+		err := f.pushPerson(person.Uid)
+		if err != nil {
+			for i := 0; i < 5; i++ {
+				err := f.pushPerson(person.Uid)
+				if err == nil {
+					break
+				}
+			}
+		}
+		endId = person.Id
 	}
-	return nil
+	return endId, nil
 }
 
 func (f *ClubPersons) pushPerson(person int) error {
@@ -87,7 +88,6 @@ func (f *ClubPersons) pushPerson(person int) error {
 		if err != nil {
 			return err
 		}
-		// } else if (f.jsonData.Action == 1) && (f.checkDataIsExist(person)) {
 	} else if f.jsonData.Action == 1 {
 		//修改数据
 		// fmt.Println("update" + strconv.Itoa(person))
@@ -95,7 +95,6 @@ func (f *ClubPersons) pushPerson(person int) error {
 		if err != nil {
 			return err
 		}
-		// } else if (f.jsonData.Action == -1) && (f.checkDataIsExist(person)) {
 	} else if f.jsonData.Action == -1 {
 		//删除数据
 		// fmt.Println("remove" + strconv.Itoa(person))
@@ -116,54 +115,19 @@ func getTableNum(person int) string {
 	return tableNameX
 }
 
-// Get the same club user data page number
-func (f *ClubPersons) getPersonPageNum() int {
-	c := f.mongoConn[0].DB("ActiveUser").C("active_forum_user")
-	countNum, err := c.Find(&bson.M{"forum_id": f.fid}).Count()
-	if err != nil {
-		panic(err)
-	}
-	page := int(math.Ceil(float64(countNum) / float64(count)))
-
-	return page
-}
-
 //获取相同俱乐部的活跃用户
-//@todo 使用id范围分页查询
-func (f *ClubPersons) getPersons(page int) []int {
-	var uids []int
+func (f *ClubPersons) getPersons(startId bson.ObjectId) *[]ActiveUser.ActiveForumUser {
 	var result []ActiveUser.ActiveForumUser
 
 	c := f.mongoConn[0].DB("ActiveUser").C("active_forum_user")
-	err := c.Find(&bson.M{"forum_id": f.fid}).
-		Select(bson.M{"uid": 1}).
-		Skip((page - 1) * count).
+	err := c.Find(&bson.M{"forum_id": f.jsonData.Fid, "_id": bson.M{"$gt": startId}}).
 		Limit(count).
 		All(&result)
 	if err != nil {
-		panic(err)
-		return uids
+		// panic(err)
+		return &result
 	}
-	for _, v := range result {
-		uids = append(uids, v.Uid)
-	}
-	return uids
-}
-
-//检查mongo中是否存在该条数据
-func (f *ClubPersons) checkDataIsExist(person int) bool {
-	var ms []FansData.EventLog
-	tableNameX := getTableNum(person)
-	c := f.mongoConn[0].DB("FansData").C(tableNameX)
-	err1 := c.Find(&bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "created": f.jsonData.Created, "infoid": f.jsonData.Infoid, "tid": f.jsonData.Tid}).All(&ms)
-
-	if err1 != nil {
-		return false
-	}
-	if len(ms) == 0 {
-		return false
-	}
-	return true
+	return &result
 }
 
 func (f *ClubPersons) insertPerson(c *mgo.Collection, person int) error {

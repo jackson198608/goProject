@@ -6,7 +6,7 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
-	// "gopkg.in/mgo.v2/bson"
+	"gopkg.in/mgo.v2/bson"
 	// "gouminGitlab/common/orm/mongo/FansData"
 	// "reflect"
 	"testing"
@@ -64,14 +64,10 @@ func TestGetPersons(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
 	f := NewBreedPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.getPersons(2))
-}
-
-func TestTryPushPerson(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-	f := NewBreedPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.tryPushPerson(881050, 6))
+	var startId bson.ObjectId
+	startId = bson.ObjectId("000000000000")
+	fmt.Println(startId)
+	fmt.Println(f.getPersons(startId))
 }
 
 func TestPushPerson(t *testing.T) {
@@ -79,21 +75,6 @@ func TestPushPerson(t *testing.T) {
 	jsonData := jsonData()
 	f := NewBreedPersons(mysqlXorm, mongoConn, jsonData)
 	fmt.Println(f.pushPerson(881050))
-}
-
-func TestPushPersons(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	var persons = []int{2060500, 2060400}
-	jsonData := jsonData()
-	f := NewBreedPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.pushPersons(persons))
-}
-
-func TestGetPersonPageNum(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-	f := NewBreedPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.getPersonPageNum())
 }
 
 func TestDo(t *testing.T) {
