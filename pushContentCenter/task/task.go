@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-xorm/xorm"
-	//"github.com/jackson198608/goProject/pushContentCenter/channels/club"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/club"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/focus"
 	mgo "gopkg.in/mgo.v2"
 	"strings"

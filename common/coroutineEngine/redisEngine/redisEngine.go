@@ -37,7 +37,7 @@ func NewRedisEngine(queueName string,
 ) (*RedisEngine, error) {
 
 	//check param
-	if (queueName == "") || (redisInfo == nil) || (coroutinNum <= 0) || (workFun == nil) {
+	if (queueName == "") || (redisInfo == nil) || (mysqlConns == nil) || (mgoConns == nil) || (coroutinNum <= 0) || (workFun == nil) {
 		return nil, errors.New("params can not be null")
 	}
 
@@ -49,6 +49,8 @@ func NewRedisEngine(queueName string,
 
 	r.queueName = queueName
 	r.redisInfo = redisInfo
+	r.mysqlInfo = mysqlConns
+	r.mongoConnInfo = mgoConns
 	r.coroutinNum = coroutinNum
 	r.workFun = workFun
 	r.taskArgs = taskArgs
