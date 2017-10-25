@@ -2,7 +2,7 @@ package fansPersons
 
 import (
 	"errors"
-	"fmt"
+	// "fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
@@ -100,7 +100,7 @@ func (f *FansPersons) pushPerson(person int) error {
 	tableNameX := getTableNum(person)
 	c := f.mongoConn[0].DB("FansData").C(tableNameX)
 	if f.jsonData.Action == 0 {
-		fmt.Println("insert" + strconv.Itoa(person))
+		// fmt.Println("insert" + strconv.Itoa(person))
 		err := f.insertPerson(c, person)
 		if err != nil {
 			return err
@@ -127,8 +127,6 @@ func (f *FansPersons) pushPerson(person int) error {
 func (f *FansPersons) getPersons(startId int) *[]new_dog123.Follow {
 	// var persons []int
 	var follows []new_dog123.Follow
-	// fmt.Println(reflect.TypeOf(f.mysqlXorm))
-	// fmt.Println(f.mysqlXorm)
 	err := f.mysqlXorm[0].Where("user_id=? and id>? and fans_active=1", f.jsonData.Uid, startId).Asc("id").Limit(count).Find(&follows)
 	if err != nil {
 		return nil

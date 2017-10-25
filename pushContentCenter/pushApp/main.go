@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
@@ -49,7 +49,6 @@ func jobFuc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, task
 	if err != nil {
 		logger.Error("[NewTask]", err)
 	}
-	fmt.Println(mysqlConns)
 	err = t.Do()
 	if err != nil {
 		logger.Error("[task Do]", err)

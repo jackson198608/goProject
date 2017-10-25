@@ -2,7 +2,7 @@ package task
 
 import (
 	"errors"
-	"fmt"
+	// "fmt"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/club"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/focus"
@@ -71,7 +71,6 @@ func (t *Task) Do() error {
 
 // focus channel's invoke function
 func (t *Task) ChannelFocus() error {
-	fmt.Println("here is the channle focus")
 	c := focus.NewFocus(t.MysqlXorm, t.MongoConn, t.Jobstr)
 	err := c.Do()
 	if err != nil {
@@ -83,7 +82,6 @@ func (t *Task) ChannelFocus() error {
 
 // club channel's invoke function
 func (t *Task) ChannelClub() error {
-	fmt.Println("here is the channle club")
 	c := club.NewClub(t.MysqlXorm, t.MongoConn, t.Jobstr)
 	err := c.Do()
 	if err != nil {
