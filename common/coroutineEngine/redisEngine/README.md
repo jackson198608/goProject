@@ -91,7 +91,7 @@ caller->redisEngine: invoke Do()
 redisEngine->redisEngineCoroutine:  create ThreadNum's coroutine and wait for result ,get the coroutint return error
 redisEngineCoroutine-> redisEngineCoroutine:  create redis connection by redisinfo,if can not connect return error
 redisEngineCoroutine-> redisEngineCoroutine:  for begin
-redisEngineCoroutine-> redisEngineCoroutine:  pop raw from redis queue
+redisEngineCoroutine-> redisEngineCoroutine:  pop raw from redis queue,if no job ,sleep for 5 seconds
 redisEngineCoroutine-> redisEngineCoroutine:  parse if find realRaw and trytimes
 redisEngineCoroutine-> redisEngineCoroutine:  if trytimes > limit  {break , return error}
 redisEngineCoroutine-> redisEngineCoroutine:  change mysqlConninfo to []*xorm.Engine,if connect error {break ,return error}
