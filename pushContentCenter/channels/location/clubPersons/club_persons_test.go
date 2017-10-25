@@ -6,6 +6,7 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 
 	// "reflect"
 	"testing"
@@ -55,7 +56,7 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Fid = 34
 	jsonData.Source = 2
 	jsonData.Status = -1
-	jsonData.Action = -1
+	jsonData.Action = 0
 	return &jsonData
 }
 
@@ -64,15 +65,9 @@ func TestGetPersons(t *testing.T) {
 	jsonData := jsonData()
 
 	f := NewClubPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.getPersons(2))
-}
-
-func TestTryPushPerson(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-
-	f := NewClubPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.tryPushPerson(881050, 6))
+	var startId bson.ObjectId
+	startId = bson.ObjectId("000000000000")
+	fmt.Println(f.getPersons(startId))
 }
 
 func TestPushPerson(t *testing.T) {
@@ -83,22 +78,14 @@ func TestPushPerson(t *testing.T) {
 	fmt.Println(f.pushPerson(881050))
 }
 
-func TestPushPersons(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-	var persons = []int{2060500, 2060400}
+// func TestPushPersons(t *testing.T) {
+// 	mysqlXorm, mongoConn := testConn()
+// 	jsonData := jsonData()
+// 	var persons = []int{2060500, 2060400}
 
-	f := NewClubPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.pushPersons(persons))
-}
-
-func TestGetPersonPageNum(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-
-	f := NewClubPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.getPersonPageNum())
-}
+// 	f := NewClubPersons(mysqlXorm, mongoConn, jsonData)
+// 	fmt.Println(f.pushPersons(persons))
+// }
 
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
