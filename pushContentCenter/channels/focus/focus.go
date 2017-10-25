@@ -13,6 +13,12 @@ import (
 	mgo "gopkg.in/mgo.v2"
 )
 
+const (
+	mongoConn = "192.168.86.192:27017"
+)
+
+var m map[int]bool
+
 type Focus struct {
 	mysqlXorm []*xorm.Engine
 	mongoConn []*mgo.Session
@@ -20,7 +26,10 @@ type Focus struct {
 	jsonData  *job.FocusJsonColumn
 }
 
-const count = 1000
+func init() {
+	m = make(map[int]bool)
+	m = loadActiveUserToMap()
+}
 
 func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string) *Focus {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
@@ -44,13 +53,6 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 	f.jsonData = jsonColumn
 
 	return f
-}
-
-var m map[int]bool
-
-func init() {
-	m = make(map[int]bool)
-	m = loadActiveUserToMap()
 }
 
 //TypeId = 1 bbs, push fans and club active persons
@@ -94,13 +96,13 @@ func (f *Focus) Do() error {
 			return err
 		}
 	} else if ((f.jsonData.TypeId == 9) || (f.jsonData.TypeId == 15)) && (f.jsonData.Source) == 1 {
-		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
 		err := ap.Do()
 		if err != nil {
 			return err
 		}
 	} else {
-		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
 		err := ap.Do()
 		if err != nil {
 			return err
@@ -141,11 +143,12 @@ func loadActiveUserToMap() map[int]bool {
 	var m map[int]bool
 	m = make(map[int]bool)
 
-	mongoConn := "192.168.86.192:27017"
+	// mongoConn := "192.168.86.192:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		return m
 	}
+	defer session.Close()
 
 	var uids []int
 	c := session.DB("ActiveUser").C("active_user")
