@@ -8,7 +8,6 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/task"
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
-	"reflect"
 )
 
 var c Config = Config{

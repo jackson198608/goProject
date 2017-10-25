@@ -10,7 +10,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"gouminGitlab/common/orm/mongo/FansData"
 	"gouminGitlab/common/orm/mysql/new_dog123"
-	"reflect"
+	// "reflect"
 	"strconv"
 )
 
@@ -23,7 +23,6 @@ type FansPersons struct {
 
 const count = 1000
 
-//分页 改为 startID limit
 func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool) *FansPersons {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
 		return nil

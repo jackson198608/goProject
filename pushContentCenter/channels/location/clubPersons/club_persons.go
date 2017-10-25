@@ -16,7 +16,6 @@ type ClubPersons struct {
 	mysqlXorm []*xorm.Engine
 	mongoConn []*mgo.Session
 	jsonData  *job.FocusJsonColumn
-	fid       int
 }
 
 const count = 1000
@@ -34,7 +33,6 @@ func NewClubPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData
 	f.mysqlXorm = mysqlXorm
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
-	f.fid = f.jsonData.Fid
 
 	return f
 }
