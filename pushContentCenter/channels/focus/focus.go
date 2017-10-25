@@ -1,7 +1,7 @@
 package focus
 
 import (
-	// "fmt"
+	"fmt"
 	"github.com/bitly/go-simplejson"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
@@ -32,6 +32,7 @@ func init() {
 }
 
 func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string) *Focus {
+	fmt.Println("in focus")
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
 		return nil
 	}
@@ -51,7 +52,7 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 		return nil
 	}
 	f.jsonData = jsonColumn
-
+	fmt.Println(f.jsonData)
 	return f
 }
 

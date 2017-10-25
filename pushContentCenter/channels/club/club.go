@@ -16,8 +16,8 @@ import (
 )
 
 type Club struct {
-	mysqlXorm *xorm.Engine
-	mongoConn *mgo.Session
+	mysqlXorm []*xorm.Engine
+	mongoConn []*mgo.Session
 	jobstr    string
 	jsonData  *jsonColumn
 }
@@ -42,7 +42,7 @@ type jsonColumn struct {
 	Action       int
 }
 
-func NewClub(mysqlXorm *xorm.Engine, mongoConn *mgo.Session, jobStr string) *Club {
+func NewClub(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string) *Club {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
 		return nil
 	}
@@ -84,7 +84,6 @@ func (c *Club) Do() error {
 			currentClubList = append(currentClubList, clubid)
 		}
 	}
-	// fmt.Println(currentClubList)
 	err := c.pushClubs(currentClubList)
 
 	if err != nil {
@@ -129,7 +128,12 @@ func (c *Club) pushClubs(clubs []int) error {
 	for _, club := range clubs {
 		err := c.pushClub(club)
 		if err != nil {
-			c.tryPushClub(club, 1)
+			for i := 0; i < 5; i++ {
+				err := c.pushClub(club)
+				if err == nil {
+					break
+				}
+			}
 		}
 	}
 	return nil
@@ -137,7 +141,7 @@ func (c *Club) pushClubs(clubs []int) error {
 
 func (c *Club) pushClub(club int) error {
 	tableNameX := "forum_content_" + strconv.Itoa(club)
-	mc := c.mongoConn.DB("ClubData").C(tableNameX)
+	mc := c.mongoConn[0].DB("ClubData").C(tableNameX)
 	if c.jsonData.Action == 0 {
 		// fmt.Println("insert" + strconv.Itoa(club))
 
@@ -164,22 +168,11 @@ func (c *Club) pushClub(club int) error {
 	return nil
 }
 
-func (c *Club) tryPushClub(club int, num int) error {
-	if num > 5 {
-		return errors.New("Attempting to push has failed 5 times: " + c.jobstr + "; club is " + strconv.Itoa(club))
-	}
-	err := c.pushClub(club)
-	if err != nil {
-		c.tryPushClub(club, num+1)
-	}
-	return nil
-}
-
 //@todo how to remove duplicate uid from to lists
 func (c *Club) getClubs() []int {
 	var cluds []int
 	var forums []new_dog123.PreForumForum
-	err := c.mysqlXorm.Where("status=1 and fup!=0").Cols("fid").Find(&forums)
+	err := c.mysqlXorm[0].Where("status=1 and fup!=0").Cols("fid").Find(&forums)
 	if err != nil {
 		return nil
 	}
