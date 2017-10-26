@@ -46,7 +46,9 @@ func (f *FansPersons) Do() error {
 	for {
 		//获取粉丝用户
 		currentPersionList := f.getPersons(startId)
-		// fmt.Println(currentPersionList)
+		if currentPersionList == nil {
+			return nil
+		}
 		endId, err := f.pushPersons(currentPersionList)
 		startId = endId
 		if err != nil {
