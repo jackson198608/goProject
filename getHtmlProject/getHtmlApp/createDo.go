@@ -1,9 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"github.com/donnie4w/go-logger/logger"
+	"github.com/go-xorm/xorm"
+	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
+	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
 	"github.com/jackson198608/goProject/getHtmlProject/HTMLlinkCreater"
-	"github.com/jackson198608/goProject/getHtmlProject/RedisEngine"
+	"github.com/jackson198608/goProject/getHtmlProject/Redis"
+	"github.com/jackson198608/goProject/getHtmlProject/Task"
+	mgo "gopkg.in/mgo.v2"
+	redis "gopkg.in/redis.v4"
 	"strconv"
 	"strings"
 )
@@ -37,8 +45,38 @@ func idToUrl(jobType string, idstr []string) []string {
 	return urls
 }
 
+const proxyServer = "http-pro.abuyun.com:9010"
+const proxyUser = "HK71T41EZ21304GP"
+const proxyPasswd = "75FE0C4E23EEA0E7"
+
+// const proxyServer = ""
+// const proxyUser = ""
+// const proxyPasswd = ""
+
+func setAbuyun() *abuyunHttpClient.AbuyunProxy {
+	var abuyun *abuyunHttpClient.AbuyunProxy = abuyunHttpClient.NewAbuyunProxy(proxyServer, proxyUser, proxyPasswd)
+	return abuyun
+}
+
+func connect() (*redis.Client, error) {
+	client := redis.NewClient(&redis.Options{
+		Addr:     c.redisConn,
+		Password: "", // no password set
+		DB:       0,  //e.db use default DB
+	})
+	_, err := client.Ping().Result()
+	if err != nil {
+		return nil, errors.New("[Error] redis connect error")
+	}
+	return client, nil
+}
+
 func saveHtmlUrl(jobType string, cat string) {
-	r := RedisEngine.NewEngine(c.logLevel, c.queueName, c.redisConn, "", c.numloops, c.dbAuth, c.dbDsn, c.dbName)
+	client, err := connect()
+	if err != nil {
+		logger.Error("[Redis connect error]", err)
+		return
+	}
 	h := HTMLlinkCreater.NewHtmlLinkCreater(c.logLevel, jobType, c.dbAuth, c.dbDsn, c.dbName, c.sdbAuth, c.sdbDsn, c.sdbName)
 	page := 1
 	intIdStart, _ := strconv.Atoi(c.tidStart)
@@ -54,7 +92,7 @@ func saveHtmlUrl(jobType string, cat string) {
 		var ids []string
 		ids = h.Create(startId, endId, page, cat, lastdate)
 		idstr := idToUrl(jobType, ids)
-		r.PushTaskData(idstr)
+		Redis.PushTaskData(client, c.queueName, idstr)
 		if cat == "update" {
 			if len(ids) == 0 {
 				break
@@ -72,6 +110,38 @@ func saveHtmlUrl(jobType string, cat string) {
 }
 
 func createHtmlByUrl(jobType string) {
-	r := RedisEngine.NewEngine(c.logLevel, c.queueName, c.redisConn, jobType, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.saveDir, c.tidStart, c.tidEnd, c.domain)
-	r.Loop()
+	r := getDoRedisEngine()
+	err := r.Do()
+	if err != nil {
+		logger.Error("[redisEngine Do] ", err)
+	}
+}
+
+func jobFunc(redisStr string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
+	abuyun := setAbuyun()
+	t, err := Task.NewTask(c.logLevel, c.queueName, redisStr, taskarg, abuyun)
+	if err != nil {
+		logger.Error("[NewTask]", err)
+	}
+	err = t.Do()
+	if err != nil {
+		logger.Error("[task Do]", err)
+	}
+	return err
+}
+
+func getDoRedisEngine() *redisEngine.RedisEngine {
+	var mongoConnInfo []string
+	mongoConnInfo = append(mongoConnInfo, "")
+	var mysqlInfo []string
+	mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
+
+	redisInfo := redis.Options{
+		Addr: c.redisConn,
+	}
+	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.numloops, jobFunc, c.saveDir)
+	if err != nil {
+		logger.Error("[NewRedisEngine] ", err)
+	}
+	return r
 }
