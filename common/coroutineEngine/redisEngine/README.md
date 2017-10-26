@@ -8,9 +8,8 @@
 # 3. Quick Start
 
 ## 3.1 Create redisEngine 
-- engine needs to Know: queueName ,redisInfo, xormEngines,mongoConnections,threadNum,callbackJobFun
-- workFunc will be invoked in coroutine which created inside the engine
-- @todo change demo code to the real
+- engine needs to Know: queueName ,redisInfo, xormEngines,mongoConnections,threadNum,JobFun
+- JobFun will be invoked in coroutine which created inside the engine
 
 ```Go
 func newtask() (*RedisEngine, error) {
@@ -47,18 +46,18 @@ func jobFunc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, tas
 - the queue should be list type in redis
 
 #### 3.1.1.2 redisInfo
-- this info tell redisEngine which redisServer should it pop the list
-- this is just info not the real connection	
+- tell redisEngine the connect info of redis 
+- note that: just info not the real connection	
 
 #### 3.1.1.3 xormEngines
-- this is the slice  []string 
-- which element represent each conn info for mysql's db
-- which element shoud be the format like : dbAuth + "@tcp(" + dbDsn + ")/" + dbName + "?charset=utf8mb4"
+- type : the slice  []string 
+- each element represent each conn info for mysql's db
+- each element shoud be the format like : dbAuth + "@tcp(" + dbDsn + ")/" + dbName + "?charset=utf8mb4"
 
 #### 3.1.1.4 mongos
-- this is the slice []string
-- which element represent each conn info for mongo server
-- which element shoud be the format like "127.0.0.1:27017" or "192.168.1.1:27017,192.168.1.2:27017,192.168.1.3:27017" for replica set
+- type: the slice []string
+- each element represent each conn info for mongo server
+- each element shoud be the format like "127.0.0.1:27017" or "192.168.1.1:27017,192.168.1.2:27017,192.168.1.3:27017" for replica set
 
 #### 3.1.1.5 thread Num
 - just tell engine how many thread you want to create to call the jobFunc
@@ -69,7 +68,7 @@ func jobFunc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, tas
 
 #### 3.1.1.7 jobFunc
 - the format like: func(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error 
-- job string: this is engine pop from queueName from redis Server 
+- job string:  pop one from queueName of redis Server 
 - []*xorm.Engine:   engine just convert xormEngines params to []*xorm.Engine ,change every string element to xorm.Engine element and pass to jobFunc with the same order
 - []*mgo.Session:   engine just convert mongos params to []*mgo.Session ,change every string element to mgo.Session element and pass to jobFunc with the same order
 - taskarg []string: which passed by taskArgs... string
@@ -77,7 +76,7 @@ func jobFunc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, tas
 ## 3.2 do the job
 
 ```Go
-	r.Do()
+	err:=r.Do()
 ```
 
 ### 3.2.1 job logic
