@@ -42,6 +42,9 @@ func (f *ClubPersons) Do() error {
 	startId = bson.ObjectId("000000000000")
 	for {
 		currentPersionList := f.getPersons(startId)
+		if currentPersionList == nil {
+			return nil
+		}
 		endId, err := f.pushPersons(currentPersionList)
 		if err != nil {
 			return err
