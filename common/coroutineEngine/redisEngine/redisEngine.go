@@ -86,6 +86,7 @@ func (r *RedisEngine) mysqlConnect() ([]*xorm.Engine, error) {
 
 }
 func (r *RedisEngine) mysqlSingleConnect(mysqlInfo string) (*xorm.Engine, error) {
+	fmt.Println("[info]mysql connection: ", mysqlInfo)
 	engine, err := xorm.NewEngine("mysql", mysqlInfo)
 	if err != nil {
 		return nil, err
