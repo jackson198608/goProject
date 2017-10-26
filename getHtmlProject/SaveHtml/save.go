@@ -1,10 +1,10 @@
 package SaveHtml
 
 import (
+	"errors"
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
-	redis "gopkg.in/redis.v4"
 	"net/http"
 	"os"
 	"path"
@@ -17,28 +17,26 @@ type HtmlInfo struct {
 	url       string
 	queueName string
 	saveDir   string
-	client    *redis.Client
 	abuyun    *abuyunHttpClient.AbuyunProxy
 }
 
-func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []string, client *redis.Client, abuyun *abuyunHttpClient.AbuyunProxy) *HtmlInfo {
+func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []string, abuyun *abuyunHttpClient.AbuyunProxy) *HtmlInfo {
 	logger.SetLevel(logger.LEVEL(logLevel))
 	e := new(HtmlInfo)
 	e.id = id
 	e.url = url
 	e.queueName = queueName
-	e.saveDir = taskNewArgs[3]
-	e.client = client
+	e.saveDir = taskNewArgs[0] // 0:saveDir
 	e.abuyun = abuyun
 	return e
 }
 
 //get content by url
-func (e *HtmlInfo) CreateHtmlByUrl() {
+func (e *HtmlInfo) CreateHtmlByUrl() error {
 	statusCode, _, body, err := e.changeIpByAbuyun()
 	if err != nil {
 		logger.Error("change ip abuyun error", err)
-		return
+		return errors.New("change ip abuyun error")
 	}
 	fmt.Println(statusCode, e.id)
 	if statusCode == 200 {
@@ -46,12 +44,11 @@ func (e *HtmlInfo) CreateHtmlByUrl() {
 		status := e.saveContentToHtml(urlname, body)
 		if status == true {
 			logger.Info("save content to html: ", urlname)
+			// return nil
 		}
+		return errors.New("save content html error")
 	} else {
-		str := e.url + "|" + strconv.Itoa(e.id)
-		result := (*e.client).LPush(e.queueName, str).Val()
-		fmt.Println("resave redis ", str, result)
-		logger.Info("resave redis: ", str, result)
+		return errors.New("get html error")
 	}
 }
 
