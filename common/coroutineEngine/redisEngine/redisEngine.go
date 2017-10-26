@@ -3,6 +3,7 @@ package redisEngine
 import (
 	"errors"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
@@ -163,6 +164,22 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 
 	defer redisConn.Close()
 
+	//prepare and check the connections for mysql
+	mysqlConns, err := r.mysqlConnect()
+	if r.checkError(&result, c, err) {
+		return
+	}
+
+	defer r.closeMysqlConn(mysqlConns)
+
+	//prepare and check the connections for mgo
+	mgoConns, err := r.mgoConnect()
+	if r.checkError(&result, c, err) {
+		return
+	}
+
+	defer r.closeMgoConn(mgoConns)
+
 	//get task data from redis,and invoke the callback fun
 	for {
 		//get task
@@ -184,22 +201,6 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 			c <- result
 			break
 		}
-
-		//prepare and check the connections for mysql
-		mysqlConns, err := r.mysqlConnect()
-		if r.checkError(&result, c, err) {
-			break
-		}
-
-		defer r.closeMysqlConn(mysqlConns)
-
-		//prepare and check the connections for mgo
-		mgoConns, err := r.mgoConnect()
-		if r.checkError(&result, c, err) {
-			break
-		}
-
-		defer r.closeMgoConn(mgoConns)
 
 		//if goint to here ,call the invoke
 		err = r.workFun(realraw, mysqlConns, mgoConns, r.taskArgs)

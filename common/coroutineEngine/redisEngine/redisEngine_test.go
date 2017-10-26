@@ -3,6 +3,7 @@ package redisEngine
 import (
 	"errors"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/common/tools"
 	mgo "gopkg.in/mgo.v2"
@@ -27,7 +28,7 @@ func newtask() (*RedisEngine, error) {
 	//get mongo session
 	mgos := []string{mongoConn}
 
-	r, err := NewRedisEngine("test", &redisInfo, conns, mgos, 3, jobFunc)
+	r, err := NewRedisEngine("test", &redisInfo, mgos, conns, 3, jobFunc)
 	if err != nil {
 		return nil, err
 	}
