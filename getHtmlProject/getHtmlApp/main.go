@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"os"
 )
@@ -18,7 +19,7 @@ var c Config = Config{
 	"/data/thread/",
 	"/tmp/create_thread.log",
 	1,
-	"300", "500", "http://m.goumin.com/bbs/"}
+	"300", "500", "http://m.goumin.com/bbs/", "zhidao.goumin.com"}
 
 var offset = 1000
 
@@ -33,6 +34,7 @@ func Init(args []string) {
 
 func main() {
 	Init(os.Args)
+	fmt.Println(len(os.Args))
 	jobType := os.Args[1]
 	cat := "all"
 	if len(os.Args) < 3 {

@@ -18,6 +18,7 @@ type HtmlInfo struct {
 	queueName string
 	saveDir   string
 	abuyun    *abuyunHttpClient.AbuyunProxy
+	host      string
 }
 
 func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []string, abuyun *abuyunHttpClient.AbuyunProxy) *HtmlInfo {
@@ -27,6 +28,7 @@ func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []s
 	e.url = url
 	e.queueName = queueName
 	e.saveDir = taskNewArgs[0] // 0:saveDir
+	e.host = taskNewArgs[1]    //1:host
 	e.abuyun = abuyun
 	return e
 }
@@ -60,6 +62,7 @@ func (e *HtmlInfo) changeIpByAbuyun() (int, *http.Header, string, error) {
 		logger.Error("create abuyun error")
 	}
 	var h http.Header = make(http.Header)
+	h.Set("Host", e.host)
 	statusCode, responseHeader, body, err := e.abuyun.SendRequest(e.url, h, true)
 	return statusCode, responseHeader, body, err
 }
