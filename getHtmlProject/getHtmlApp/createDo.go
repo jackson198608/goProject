@@ -31,9 +31,9 @@ func idToUrl(jobType string, idstr []string) []string {
 			}
 			var url string = ""
 			if jobType == "asksave" {
-				url = c.domain + id + ".html|" + id
+				url = c.domain + id + ".html?twig|" + id
 				if page > 1 {
-					url = c.domain + id + "-" + strconv.Itoa(page) + ".html|" + id
+					url = c.domain + id + "-" + strconv.Itoa(page) + ".html?twig|" + id
 				}
 			}
 			if jobType == "threadsave" {
