@@ -79,7 +79,8 @@ func (e *HtmlInfo) saveFileName() string {
 	urlstr := strings.Split(e.url, "/")
 	strlen := len(urlstr)
 	if strlen >= 1 {
-		filename = dir + urlstr[strlen-1]
+		urlstrReal := strings.Split(urlstr[strlen-1], "?")
+		filename = dir + urlstrReal[0]
 	}
 	return filename
 }
