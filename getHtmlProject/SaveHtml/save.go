@@ -44,7 +44,7 @@ func (e *HtmlInfo) CreateHtmlByUrl() error {
 		status := e.saveContentToHtml(urlname, body)
 		if status == true {
 			logger.Info("save content to html: ", urlname)
-			// return nil
+			return nil
 		}
 		return errors.New("save content html error")
 	} else {
