@@ -20,6 +20,7 @@ type Config struct {
 	tidStart  string
 	tidEnd    string
 	domain    string
+	host      string
 }
 
 func loadConfig(args []string) {
@@ -45,4 +46,5 @@ func loadConfig(args []string) {
 	c.tidStart = config.GetString("tidStart")
 	c.tidEnd = config.GetString("tidEnd")
 	c.domain = config.GetString("domain")
+	c.host = config.GetString("host")
 }
