@@ -135,7 +135,6 @@ func jobFunc(redisStr string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session
 
 func getDoRedisEngine() *redisEngine.RedisEngine {
 	var mongoConnInfo []string
-	mongoConnInfo = append(mongoConnInfo, "")
 	var mysqlInfo []string
 	mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 
