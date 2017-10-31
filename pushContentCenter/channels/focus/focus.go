@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	mongoConn = "192.168.86.192:27017"
+	mongoConn = "192.168.5.22:27017,192.168.5.26:27017,192.168.5.200:27017"
+	//mongoConn = "192.168.86.192:27017" //@todo change online dsn
 )
 
 var m map[int]bool

@@ -15,6 +15,7 @@ type Config struct {
 }
 
 func loadConfig() {
+	//@todo change online path
 	config := jconfig.LoadConfig("/etc/pushContentCenterConfig.json")
 	// config := jconfig.LoadConfig("/tmp/pushContentCenterConfig.json")
 	c.dbDsn = config.GetString("dbDsn")

@@ -24,21 +24,31 @@ type Club struct {
 
 //json column
 type jsonColumn struct {
-	TypeId       int
-	Uid          int
 	Fid          string //push to the club, if fid is 0, to all clubs
-	Created      int
 	Infoid       int
-	Status       int
+	Uid          int
 	Type         int
-	Content      string
+	TypeId       int
 	Title        string
+	Content      string
 	Imagenums    int
-	Disgest      int
-	Qsttype      int
+	Created      int
 	Lastpost     int
 	Lastposter   string
+	Status       int
 	Displayorder int
+	Digest       int
+	Qsttype      int
+	ThreadStatus int
+	Cover        int
+	Closed       int
+	Highlight    int
+	Sortid       int
+	Recommends   int
+	Special      int
+	Replies      int
+	Isgroup      int
+	Price        int
 	Action       int
 }
 
@@ -100,21 +110,31 @@ func (c *Club) parseJson() (*jsonColumn, error) {
 		return &jsonC, err
 	}
 
-	jsonC.Uid, _ = js.Get("uid").Int()
 	jsonC.Fid, _ = js.Get("fid").String()
+	jsonC.Infoid, _ = js.Get("infoid").Int()
+	jsonC.Uid, _ = js.Get("uid").Int()
 	jsonC.Type, _ = js.Get("type").Int()
 	jsonC.TypeId, _ = js.Get("typeid").Int()
-	jsonC.Created, _ = js.Get("created").Int()
-	jsonC.Infoid, _ = js.Get("infoid").Int()
 	jsonC.Title, _ = js.Get("subject").String()
 	jsonC.Content, _ = js.Get("message").String()
 	jsonC.Imagenums, _ = js.Get("image_num").Int()
+	jsonC.Created, _ = js.Get("created").Int()
 	jsonC.Lastpost, _ = js.Get("lastpost").Int()
 	jsonC.Lastposter, _ = js.Get("lastposter").String()
 	jsonC.Status, _ = js.Get("status").Int()
 	jsonC.Displayorder, _ = js.Get("displayorder").Int()
-	jsonC.Disgest, _ = js.Get("disgest").Int()
+	jsonC.Digest, _ = js.Get("digest").Int()
 	jsonC.Qsttype, _ = js.Get("qst_type").Int()
+	jsonC.ThreadStatus, _ = js.Get("thread_status").Int()
+	jsonC.Cover, _ = js.Get("cover").Int()
+	jsonC.Closed, _ = js.Get("closed").Int()
+	jsonC.Highlight, _ = js.Get("highlight").Int()
+	jsonC.Sortid, _ = js.Get("sortid").Int()
+	jsonC.Recommends, _ = js.Get("recommend").Int()
+	jsonC.Special, _ = js.Get("special").Int()
+	jsonC.Replies, _ = js.Get("replies").Int()
+	jsonC.Isgroup, _ = js.Get("isgroup").Int()
+	jsonC.Price, _ = js.Get("price").Int()
 	jsonC.Action, _ = js.Get("action").Int()
 
 	return &jsonC, nil
@@ -150,9 +170,16 @@ func (c *Club) pushClub(club int) error {
 			return err
 		}
 	} else if c.jsonData.Action == 1 {
-		//修改数据
+		//修改数据状态
 		// fmt.Println("update" + strconv.Itoa(club))
 		err := c.updateClub(mc)
+		if err != nil {
+			return err
+		}
+	} else if c.jsonData.Action == 2 {
+		//修改数据回复信息
+		// fmt.Println("update reply" + strconv.Itoa(club))
+		err := c.updateClubReply(mc)
 		if err != nil {
 			return err
 		}
@@ -186,20 +213,30 @@ func (c *Club) insertClub(mc *mgo.Collection) error {
 	//新增数据
 	var data ClubData.ClubX
 	data = ClubData.ClubX{bson.NewObjectId(),
-		c.jsonData.Type,
-		c.jsonData.TypeId,
 		c.jsonData.Infoid,
 		c.jsonData.Uid,
-		c.jsonData.Created,
-		c.jsonData.Status,
-		c.jsonData.Content,
+		c.jsonData.Type,
+		c.jsonData.TypeId,
 		c.jsonData.Title,
+		c.jsonData.Content,
 		c.jsonData.Imagenums,
-		c.jsonData.Displayorder,
+		c.jsonData.Created,
 		c.jsonData.Lastpost,
 		c.jsonData.Lastposter,
-		c.jsonData.Disgest,
-		c.jsonData.Qsttype}
+		c.jsonData.Status,
+		c.jsonData.Displayorder,
+		c.jsonData.Digest,
+		c.jsonData.Qsttype,
+		c.jsonData.ThreadStatus,
+		c.jsonData.Cover,
+		c.jsonData.Closed,
+		c.jsonData.Highlight,
+		c.jsonData.Sortid,
+		c.jsonData.Recommends,
+		c.jsonData.Special,
+		c.jsonData.Replies,
+		c.jsonData.Isgroup,
+		c.jsonData.Price}
 	err := mc.Insert(&data) //插入数据
 	if err != nil {
 		return err
@@ -207,8 +244,32 @@ func (c *Club) insertClub(mc *mgo.Collection) error {
 	return nil
 }
 
+//update thread status
 func (c *Club) updateClub(mc *mgo.Collection) error {
-	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "uid": c.jsonData.Uid, "created": c.jsonData.Created, "infoid": c.jsonData.Infoid}, bson.M{"$set": bson.M{"status": c.jsonData.Status, "disgest": c.jsonData.Disgest, "displayorder": c.jsonData.Displayorder}})
+	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "uid": c.jsonData.Uid, "infoid": c.jsonData.Infoid},
+		bson.M{"$set": bson.M{"status": c.jsonData.Status,
+			"digest":        c.jsonData.Digest,
+			"displayorder":  c.jsonData.Displayorder,
+			"qst_type":      c.jsonData.Qsttype,
+			"cover":         c.jsonData.Cover,
+			"closed":        c.jsonData.Closed,
+			"highlight":     c.jsonData.Highlight,
+			"sortid":        c.jsonData.Sortid,
+			"isgroup":       c.jsonData.Isgroup,
+			"price":         c.jsonData.Price,
+			"thread_status": c.jsonData.ThreadStatus}})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//update post reply info
+func (c *Club) updateClubReply(mc *mgo.Collection) error {
+	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "uid": c.jsonData.Uid, "infoid": c.jsonData.Infoid},
+		bson.M{"$set": bson.M{"lastpost": c.jsonData.Lastpost,
+			"lastposter": c.jsonData.Lastposter,
+			"replies":    c.jsonData.Replies}})
 	if err != nil {
 		return err
 	}
@@ -216,7 +277,7 @@ func (c *Club) updateClub(mc *mgo.Collection) error {
 }
 
 func (c *Club) removeClub(mc *mgo.Collection) error {
-	_, err := mc.RemoveAll(bson.M{"type": c.jsonData.Type, "uid": c.jsonData.Uid, "created": c.jsonData.Created, "infoid": c.jsonData.Infoid})
+	_, err := mc.RemoveAll(bson.M{"type": c.jsonData.Type, "uid": c.jsonData.Uid, "infoid": c.jsonData.Infoid})
 	if err != nil {
 		return err
 	}
