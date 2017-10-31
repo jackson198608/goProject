@@ -36,6 +36,25 @@ func newtask() (*RedisEngine, error) {
 
 }
 
+func newtaskWithEmptyInfo() (*RedisEngine, error) {
+
+	redisInfo := redis.Options{
+		Addr: "127.0.0.1:6379",
+	}
+	//getXormEngine
+	conns := []string{}
+
+	//get mongo session
+	mgos := []string{}
+
+	r, err := NewRedisEngine("test", &redisInfo, mgos, conns, 3, jobFunc)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+
+}
+
 func jobFunc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
 
 	fmt.Println("this is jobFunc", job)
@@ -54,6 +73,21 @@ func TestDo(t *testing.T) {
 	r, err := newtask()
 	if err != nil {
 		t.Log("create task error")
+	}
+
+	err = r.Do()
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+}
+
+func TestDoWithEmptyParams(t *testing.T) {
+	r, err := newtaskWithEmptyInfo()
+	if err != nil {
+		t.Log("create task error")
+		t.Fail()
 	}
 
 	err = r.Do()
