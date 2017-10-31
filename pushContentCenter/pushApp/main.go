@@ -46,7 +46,7 @@ func main() {
 }
 
 func jobFuc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
-	if (mysqlConns != nil) || (mgoConns != nil) {
+	if (mysqlConns == nil) || (mgoConns == nil) {
 		return errors.New("mysql or mongo conn error")
 	}
 	t, err := task.NewTask(job, mysqlConns, mgoConns)

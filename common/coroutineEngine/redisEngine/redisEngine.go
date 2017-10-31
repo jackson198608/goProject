@@ -109,7 +109,6 @@ func (r *RedisEngine) mgoConnect() ([]*mgo.Session, error) {
 	// if you need mongo connection for job func ,make sure info you have is correct
 	mgos := []*mgo.Session{}
 	for _, mgoInfo := range r.mongoConnInfo {
-		fmt.Println("in mgoConnect for singel", mgoInfo)
 		m, err := r.mgoSingleConnect(mgoInfo)
 		if err != nil {
 			//close former connection
@@ -178,7 +177,6 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 	defer redisConn.Close()
 
 	//prepare and check the connections for mysql
-	fmt.Println("begin mysql", r.mysqlInfo)
 	mysqlConns, err := r.mysqlConnect()
 	if r.checkError(&result, c, err) {
 		return
@@ -187,15 +185,12 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 	defer r.closeMysqlConn(mysqlConns)
 
 	//prepare and check the connections for mgo
-	fmt.Println("begin mongo", r.mongoConnInfo)
 	mgoConns, err := r.mgoConnect()
 	if r.checkError(&result, c, err) {
 		return
 	}
 
 	defer r.closeMgoConn(mgoConns)
-
-	fmt.Println("begin for")
 
 	//get task data from redis,and invoke the callback fun
 	for {
@@ -227,6 +222,7 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 				c <- result
 				break
 			} else {
+				fmt.Println("[error]jobFunc get error ,but still can be retry", err)
 				err = r.pushFails(redisConn, realraw, trytimes)
 				if r.checkError(&result, c, err) {
 					break
