@@ -37,7 +37,7 @@ func NewRedisEngine(queueName string,
 	taskArgs ...string,
 ) (*RedisEngine, error) {
 	//check param
-	if (queueName == "") || (redisInfo == nil) || (mongoConnInfo == nil) || (mysqlInfo == nil) || (coroutinNum <= 0) || (workFun == nil) {
+	if (queueName == "") || (redisInfo == nil) || (coroutinNum <= 0) || (workFun == nil) {
 		return nil, errors.New("params can not be null")
 	}
 
@@ -71,6 +71,13 @@ func redisConnect(redisInfo *redis.Options) (*redis.Client, error) {
 
 // create xorms engines base on mysqlInfo and return it to the caller
 func (r *RedisEngine) mysqlConnect() ([]*xorm.Engine, error) {
+
+	//if you do not need mysql for job func
+	if r.mysqlInfo == nil {
+		return nil, nil
+	}
+
+	// if you need make it for you, and info must be correct
 	mysqls := []*xorm.Engine{}
 	for _, mysqlInfo := range r.mysqlInfo {
 		x, err := r.mysqlSingleConnect(mysqlInfo)
@@ -94,8 +101,15 @@ func (r *RedisEngine) mysqlSingleConnect(mysqlInfo string) (*xorm.Engine, error)
 
 // create mongo session base on mongoConnInfo and return it to the caller
 func (r *RedisEngine) mgoConnect() ([]*mgo.Session, error) {
+	//if you do not need mongo for job func ,just return
+	if r.mongoConnInfo == nil {
+		return nil, nil
+	}
+
+	// if you need mongo connection for job func ,make sure info you have is correct
 	mgos := []*mgo.Session{}
 	for _, mgoInfo := range r.mongoConnInfo {
+		fmt.Println("in mgoConnect for singel", mgoInfo)
 		m, err := r.mgoSingleConnect(mgoInfo)
 		if err != nil {
 			//close former connection
@@ -164,6 +178,7 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 	defer redisConn.Close()
 
 	//prepare and check the connections for mysql
+	fmt.Println("begin mysql", r.mysqlInfo)
 	mysqlConns, err := r.mysqlConnect()
 	if r.checkError(&result, c, err) {
 		return
@@ -172,12 +187,15 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 	defer r.closeMysqlConn(mysqlConns)
 
 	//prepare and check the connections for mgo
+	fmt.Println("begin mongo", r.mongoConnInfo)
 	mgoConns, err := r.mgoConnect()
 	if r.checkError(&result, c, err) {
 		return
 	}
 
 	defer r.closeMgoConn(mgoConns)
+
+	fmt.Println("begin for")
 
 	//get task data from redis,and invoke the callback fun
 	for {
