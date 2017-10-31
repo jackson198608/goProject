@@ -49,6 +49,7 @@ type jsonColumn struct {
 	Replies      int
 	Isgroup      int
 	Price        int
+	Heats        int
 	Action       int
 }
 
@@ -135,6 +136,7 @@ func (c *Club) parseJson() (*jsonColumn, error) {
 	jsonC.Replies, _ = js.Get("replies").Int()
 	jsonC.Isgroup, _ = js.Get("isgroup").Int()
 	jsonC.Price, _ = js.Get("price").Int()
+	jsonC.Heats, _ = js.Get("heats").Int()
 	jsonC.Action, _ = js.Get("action").Int()
 
 	return &jsonC, nil
@@ -186,7 +188,6 @@ func (c *Club) pushClub(club int) error {
 	} else if c.jsonData.Action == -1 {
 		//删除数据
 		// fmt.Println("remove" + strconv.Itoa(club))
-
 		err := c.removeClub(mc)
 		if err != nil {
 			return err
@@ -236,7 +237,8 @@ func (c *Club) insertClub(mc *mgo.Collection) error {
 		c.jsonData.Special,
 		c.jsonData.Replies,
 		c.jsonData.Isgroup,
-		c.jsonData.Price}
+		c.jsonData.Price,
+		c.jsonData.Heats}
 	err := mc.Insert(&data) //插入数据
 	if err != nil {
 		return err
@@ -269,7 +271,8 @@ func (c *Club) updateClubReply(mc *mgo.Collection) error {
 	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "uid": c.jsonData.Uid, "infoid": c.jsonData.Infoid},
 		bson.M{"$set": bson.M{"lastpost": c.jsonData.Lastpost,
 			"lastposter": c.jsonData.Lastposter,
-			"replies":    c.jsonData.Replies}})
+			"replies":    c.jsonData.Replies,
+			"heats":      c.jsonData.Heats}})
 	if err != nil {
 		return err
 	}

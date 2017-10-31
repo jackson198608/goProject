@@ -1,7 +1,7 @@
 package club
 
 import (
-	// "fmt"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	mgo "gopkg.in/mgo.v2"
@@ -60,7 +60,7 @@ func TestPushClubs(t *testing.T) {
 
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
-	jobStr := "{\"uid\":2060501,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\" push to 36 message\",\"image_num\":\"image_num\",\"lastpost\":881050,\"fid\":\"37,38,77\",\"lastposter\":\"123asad\",\"status\":1,\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":1,\"replies\":1,\"price\":1,\"isgroup\":1,\"special\":0,\"recommends\":3,\"sortid\":12,\"highlight\":1,\"closed\":1,\"cover\":2,\"thread_status\":256}"
+	jobStr := "{\"uid\":2060501,\"heats\":1,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\" push to 36 message\",\"image_num\":\"image_num\",\"lastpost\":881051,\"fid\":\"37,38,77\",\"lastposter\":\"123asad2323\",\"status\":1,\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":2,\"replies\":1,\"price\":1,\"isgroup\":1,\"special\":0,\"recommends\":3,\"sortid\":12,\"highlight\":1,\"closed\":1,\"cover\":2,\"thread_status\":256}"
 	c := NewClub(mysqlXorm, mongoConn, jobStr)
 	fmt.Println(c.Do())
 }
