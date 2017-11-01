@@ -139,7 +139,7 @@ func (r *RedisEngine) Do() error {
 	lastResult := coroutineResult{err: nil}
 
 	for i := 0; i < r.coroutinNum; i++ {
-		r.coroutinFunc(c, i)
+		go r.coroutinFunc(c, i)
 	}
 
 	for i := 0; i < r.coroutinNum; i++ {
