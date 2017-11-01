@@ -48,7 +48,7 @@ func (t *Task) Do() error {
 	m := SaveHtml.NewHtml(t.loggerLevel, t.queueName, t.id, t.url, t.taskNewArgs, t.abuyun)
 	if m != nil {
 		if t.id > 0 {
-			logger.Info("export thread to threadHtmlUrl")
+			logger.Info("export data to", t.queueName)
 			err := m.CreateHtmlByUrl()
 			if err != nil {
 				return errors.New("save content error")
