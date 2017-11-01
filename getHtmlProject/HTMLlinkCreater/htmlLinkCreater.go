@@ -121,7 +121,7 @@ func (h *HtmlLinkCreater) getAskTask(startId int, endId int) []string {
 		return nil
 	}
 	for _, v := range asks {
-		s := getIdAndPages(v.Id, v.AnsNum, 5)
+		s := getIdAndPages(v.Id, v.AnsNum, 20)
 		ids = append(ids, s)
 	}
 	return ids
@@ -169,7 +169,7 @@ func (h *HtmlLinkCreater) getUpdateAskData(page int, lastdate string) []string {
 		return nil
 	}
 	for _, v := range asks {
-		s := getIdAndPages(v.Id, v.AnsNum, 5)
+		s := getIdAndPages(v.Id, v.AnsNum, 20)
 		ids = append(ids, s)
 	}
 	return ids

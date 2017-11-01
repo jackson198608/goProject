@@ -2,7 +2,6 @@ package RedisEngine
 
 import (
 	"errors"
-	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
 	"github.com/jackson198608/goProject/getHtmlProject/Task"
@@ -130,7 +129,6 @@ func (t *Engine) croutinePopJobData(c chan int, i int) {
 	for {
 		logger.Info("pop ", t.queueName)
 		redisStr := (*t.client).LPop(t.queueName).Val()
-		fmt.Println(redisStr)
 		if redisStr == "" {
 			logger.Info("got nothing ", t.queueName)
 			c <- 1

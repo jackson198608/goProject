@@ -19,6 +19,7 @@ type HtmlInfo struct {
 	saveDir   string
 	client    *redis.Client
 	abuyun    *abuyunHttpClient.AbuyunProxy
+	host      string
 }
 
 func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []string, client *redis.Client, abuyun *abuyunHttpClient.AbuyunProxy) *HtmlInfo {
@@ -27,7 +28,8 @@ func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []s
 	e.id = id
 	e.url = url
 	e.queueName = queueName
-	e.saveDir = taskNewArgs[3]
+	e.saveDir = taskNewArgs[0]
+	e.host = taskNewArgs[1]
 	e.client = client
 	e.abuyun = abuyun
 	return e
@@ -63,6 +65,7 @@ func (e *HtmlInfo) changeIpByAbuyun() (int, *http.Header, string, error) {
 		logger.Error("create abuyun error")
 	}
 	var h http.Header = make(http.Header)
+	h.Set("Host", e.host)
 	statusCode, responseHeader, body, err := e.abuyun.SendRequest(e.url, h, true)
 	return statusCode, responseHeader, body, err
 }
@@ -82,7 +85,8 @@ func (e *HtmlInfo) saveFileName() string {
 	urlstr := strings.Split(e.url, "/")
 	strlen := len(urlstr)
 	if strlen >= 1 {
-		filename = dir + urlstr[strlen-1]
+		urlstrReal := strings.Split(urlstr[strlen-1], "?")
+		filename = dir + urlstrReal[0]
 	}
 	return filename
 }
