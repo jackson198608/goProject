@@ -51,6 +51,7 @@ func (t *Task) Do() error {
 			logger.Info("export data to", t.queueName)
 			err := m.CreateHtmlByUrl()
 			if err != nil {
+				logger.Info(err)
 				return errors.New("save content error")
 			}
 		}
