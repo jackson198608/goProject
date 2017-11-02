@@ -168,6 +168,7 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 		err: nil,
 	}
 
+	//@todo  connection fail need to be retry
 	//init redis client
 	redisConn, err := redisConnect(r.redisInfo)
 	if r.checkError(&result, c, err) {
@@ -204,29 +205,25 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 
 		//get the raw parese result to decide whethere going to the next step or not
 		realraw, trytimes, err := r.parseRaw(raw)
-		if r.checkError(&result, c, err) {
-			break
+		if err != nil {
+			fmt.Println("[error] parseRaw error ,goint to next and drop the current one: ", err, raw)
+			continue
 		}
 
-		if trytimes > tryTimeLimit {
-			result.err = errors.New("task over trytimes limit")
-			c <- result
-			break
+		if trytimes >= tryTimeLimit {
+			fmt.Println("[error] retry overseed ,drop it and continue", raw)
+			continue
 		}
 
 		//if goint to here ,call the invoke
 		err = r.workFun(realraw, mysqlConns, mgoConns, r.taskArgs)
 		if err != nil {
-			if trytimes == tryTimeLimit {
-				result.err = err
-				c <- result
-				break
-			} else {
-				fmt.Println("[error]jobFunc get error ,but still can be retry", err)
+			fmt.Println("[error]jobFunc get error ,but still can be retry", err)
+			err = r.pushFails(redisConn, realraw, trytimes)
+			if err != nil {
+				fmt.Println("[error]pushFails error ,drop it", err)
 				err = r.pushFails(redisConn, realraw, trytimes)
-				if r.checkError(&result, c, err) {
-					break
-				}
+				continue
 			}
 		}
 
