@@ -37,7 +37,7 @@ func idToUrl(jobType string, idstr []string) []string {
 				}
 			}
 			if jobType == "threadsave" {
-				url = c.domain + "thread-" + id + "-" + strconv.Itoa(page) + "-1.html|" + id
+				url = c.domain + "thread-" + id + "-" + strconv.Itoa(page) + "-1.html?twig|" + id
 			}
 			urls = append(urls, url)
 		}
