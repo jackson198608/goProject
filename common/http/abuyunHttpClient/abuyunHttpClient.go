@@ -61,6 +61,9 @@ func (p *AbuyunProxy) SendRequest(targetUrl string, customHeader http.Header, sw
 		for k, v := range customHeader {
 			//@todo v can be a list to add on header
 			request.Header.Set(k, v[0])
+			if k == "Host" {
+				request.Host = v[0]
+			}
 		}
 	}
 
