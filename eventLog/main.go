@@ -22,6 +22,7 @@ var c Config = Config{
 	"/tmp/moveEdddvent.log", 0, "3", "2014-01-01", "1", "192.168.86.68:27017,192.168.86.68:27017,192.168.86.68:27017", "Event", 10, 1, "200", "1", "100", "1000"}
 
 var followQueue = "followData"
+var limit = 1000
 
 // var pushLimit = 30
 
@@ -71,8 +72,8 @@ func pushAllFollowUserToRedis() {
 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.redisStart, c.redisEnd)
 	page := 0
 	for {
-		ids := getFollowTask(page)
-		offset := page * c.numloops
+		ids := getFollowTask(page, limit)
+		offset := page * limit
 		if offset > c.followLastId {
 			break
 		}
@@ -91,8 +92,8 @@ func getFansUserToRedis() {
 	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.dateLimit, c.redisStart, c.redisEnd)
 	page := 0
 	for {
-		ids := getFansTask(page)
-		offset := page * c.numloops
+		ids := getFansTask(page, limit)
+		offset := page * limit
 		if offset > c.followLastId {
 			break
 		}

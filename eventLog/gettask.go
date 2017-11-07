@@ -5,6 +5,8 @@ import (
 	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
 	_ "github.com/go-sql-driver/mysql"
+	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"strconv"
 )
 
@@ -60,7 +62,44 @@ func getTask(page int) []int64 {
 	return ids
 }
 
-func getFollowTask(page int) []string {
+func connectMongo() *mgo.Session {
+	session, err := mgo.Dial(c.mongoConn)
+	if err != nil {
+		logger.Error("[error] connect mongodb err")
+		return nil
+	}
+	// defer session.Close()
+	// mongoConnArr := strings.Split(c.mongoConn, ",")
+	// if len(mongoConnArr) < 3 {
+	// 	logger.Error("[error] mongo config error")
+	// 	return
+	// }
+	// Host := []string{
+	// 	mongoConnArr[0],
+	// 	mongoConnArr[1],
+	// 	mongoConnArr[2],
+	// }
+	// const (
+	// 	Database       = "FansData"
+	// 	ReplicaSetName = "goumin"
+	// )
+
+	// session, err := mgo.DialWithInfo(&mgo.DialInfo{
+	// 	Addrs:          Host,
+	// 	Database:       Database,
+	// 	ReplicaSetName: ReplicaSetName,
+	// })
+
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer session.Close()
+
+	// session.SetMode(mgo.SecondaryPreferred, false)
+	return session
+}
+
+func getFollowTask(page int, limit int) []string {
 	db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 	if err != nil {
 		logger.Error("can not connect to mysql", c.dbDsn, c.dbName, c.dbAuth)
@@ -68,12 +107,13 @@ func getFollowTask(page int) []string {
 		return nil
 	}
 	defer db.Close()
+	session := connectMongo()
 
-	offset := page * c.numloops
+	offset := page * limit
 	//获取正常显示和隐藏的数据
-	sql := "select distinct(user_id) from follow order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+	sql := "select distinct(user_id) from follow order by id asc limit " + strconv.Itoa(limit) + " offset " + strconv.Itoa(offset)
 	// sql := "select distinct(user_id) from follow where id <= " + strconv.Itoa(c.followLastId) + " and id >= " + strconv.Itoa(c.followFirstId) + " order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
-	// sql := "select distinct(user_id) from follow where user_id in(1,881050,881052,1138687,49567,1138689,1140002,1140013,1140001,1140009,1139968,1139934,1139976) and id < " + strconv.Itoa(c.followLastId) + " and id >= " + strconv.Itoa(c.followFirstId) + " order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
+	// sql := "select distinct(user_id) from follow where user_id in(1138682) and id >= " + strconv.Itoa(c.followFirstId) + " order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
 	logger.Info(sql)
 	rows, err := db.Query(sql)
 
@@ -82,7 +122,7 @@ func getFollowTask(page int) []string {
 		return nil
 	}
 
-	uids := make([]string, 0, c.numloops)
+	uids := make([]string, 0, limit)
 
 	for rows.Next() {
 		var user_id int
@@ -95,13 +135,14 @@ func getFollowTask(page int) []string {
 		var fans int
 		fan := db.QueryRow("SELECT count(*) as counts FROM `follow` where user_id=" + strconv.Itoa(user_id))
 		fan.Scan(&fans)
-		var eventNums = 0
+		// var eventNums = 0
 		// if fans < c.fansLimit {
-		eventNum := db.QueryRow("SELECT count(*) as counts FROM `event_log` where status=1 and uid=" + strconv.Itoa(user_id) + " and created >='" + c.dateLimit + "'")
-		eventNum.Scan(&eventNums)
+		// eventNum := db.QueryRow("SELECT count(*) as counts FROM `event_log` where status=1 and uid=" + strconv.Itoa(user_id) + " and created >='" + c.dateLimit + "'")
+		// eventNum.Scan(&eventNums)
+		eventNums := getEventLogCount(user_id, c.dateLimit, session)
 		// }
 		follow := strconv.Itoa(user_id) + "|" + strconv.Itoa(fans) + "|" + strconv.Itoa(eventNums)
-		logger.Info("follow.data", strconv.Itoa(user_id))
+		// logger.Info("follow.data", strconv.Itoa(user_id))
 		uids = append(uids, follow)
 	}
 	if err := rows.Err(); err != nil {
@@ -113,7 +154,16 @@ func getFollowTask(page int) []string {
 	return uids
 }
 
-func getFansTask(page int) []int64 {
+func getEventLogCount(uid int, datelimit string, session *mgo.Session) int {
+	tableName := "event_log" //动态表
+	c := session.DB("EventLog").C(tableName)
+	//1：帖子，2：回复，3：关注，4：评论，5：日志萌图，6：视频，7：商城圈，8：问答
+	typeIds := [7]int{1, 2, 3, 4, 5, 6, 7} //我关注人的推送信息
+	count, _ := c.Find(&bson.M{"uid": uid, "type": bson.M{"$in": typeIds}, "created": bson.M{"$gt": datelimit}}).Count()
+	return count
+}
+
+func getFansTask(page int, limit int) []int64 {
 	db, err := sql.Open("mysql", c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 	if err != nil {
 		logger.Error("can not connect to mysql", c.dbDsn, c.dbName, c.dbAuth)
@@ -121,10 +171,9 @@ func getFansTask(page int) []int64 {
 		return nil
 	}
 	defer db.Close()
-	numloops := 100
-	offset := page * numloops
+	offset := page * limit
 	//获取正常显示和隐藏的数据
-	sql := "select distinct(follow_id) from follow order by id asc limit " + strconv.Itoa(numloops) + " offset " + strconv.Itoa(offset)
+	sql := "select distinct(follow_id) from follow order by id asc limit " + strconv.Itoa(limit) + " offset " + strconv.Itoa(offset)
 	// sql := "select distinct(user_id) from follow where id <= " + strconv.Itoa(c.followLastId) + " and id >= " + strconv.Itoa(c.followFirstId) + " order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
 	// sql := "select distinct(user_id) from follow where user_id in(1,881050,881052,1138687,49567,1138689,1140002,1140013,1140001,1140009,1139968,1139934,1139976) and id < " + strconv.Itoa(c.followLastId) + " and id >= " + strconv.Itoa(c.followFirstId) + " order by id asc limit " + strconv.Itoa(c.numloops) + " offset " + strconv.Itoa(offset)
 	logger.Info(sql)
@@ -135,7 +184,7 @@ func getFansTask(page int) []int64 {
 		return nil
 	}
 
-	uids := make([]int64, 0, numloops)
+	uids := make([]int64, 0, limit)
 
 	for rows.Next() {
 		var follow_id int64
