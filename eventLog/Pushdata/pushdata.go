@@ -434,9 +434,9 @@ func (e *EventLogNew) PushEventToFansTask(fans string, user_id int, count string
 			break
 		}
 		fansData := mysql.GetFansData(user_id, e.db)
-		fmt.Println(len(fansData))
+		// fmt.Println(len(fansData))
 		for _, event := range datas {
-			fmt.Println(event)
+			// fmt.Println(event)
 			e.saveFansEventLog(fansData, event)
 		}
 		page++
