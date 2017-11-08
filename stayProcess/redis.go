@@ -93,40 +93,40 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 		logger.Error("[error] connect db err")
 	}
 	defer db.Close()
-	mongoConn := t.taskNewArgs[3]
-	session, err := mgo.Dial(mongoConn)
-	if err != nil {
-		logger.Error("[error] connect mongodb err")
-		return
-	}
-	defer session.Close()
-	// mongoConnArr := strings.Split(t.taskNewArgs[3], ",")
-	// if len(mongoConnArr) < 3 {
-	// 	logger.Error("[error] mongo config error")
+	// mongoConn := t.taskNewArgs[3]
+	// session, err := mgo.Dial(mongoConn)
+	// if err != nil {
+	// 	logger.Error("[error] connect mongodb err")
 	// 	return
 	// }
-	// Host := []string{
-	// 	mongoConnArr[0],
-	// 	mongoConnArr[1],
-	// 	mongoConnArr[2],
-	// }
-	// const (
-	// 	Database       = "FansData"
-	// 	ReplicaSetName = "goumin"
-	// )
-
-	// session, err := mgo.DialWithInfo(&mgo.DialInfo{
-	// 	Addrs:          Host,
-	// 	Database:       Database,
-	// 	ReplicaSetName: ReplicaSetName,
-	// })
-
-	// if err != nil {
-	// 	panic(err)
-	// }
 	// defer session.Close()
+	mongoConnArr := strings.Split(t.taskNewArgs[3], ",")
+	if len(mongoConnArr) < 3 {
+		logger.Error("[error] mongo config error")
+		return
+	}
+	Host := []string{
+		mongoConnArr[0],
+		mongoConnArr[1],
+		mongoConnArr[2],
+	}
+	const (
+		Database       = "FansData"
+		ReplicaSetName = "goumin"
+	)
 
-	// session.SetMode(mgo.SecondaryPreferred, false)
+	session, err := mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:          Host,
+		Database:       Database,
+		ReplicaSetName: ReplicaSetName,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	session.SetMode(mgo.SecondaryPreferred, false)
 
 	for {
 		logger.Info("pop ", t.queueName)

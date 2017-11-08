@@ -388,7 +388,7 @@ func checkMongoFansDataIsExist(c *mgo.Collection, event *EventLogLast, fuid int)
 func (e *EventLogNew) PushEventToFansTask(fans string, user_id int, count string, numLoop int, fansLimit string, eventLimit string, pushLimit string, dateLimit string) {
 	page := 0
 	for {
-		limit := 13
+		limit := 500
 		countNum, _ := strconv.Atoi(count)
 		fansNum, _ := strconv.Atoi(fans)
 		fansLimitNum, _ := strconv.Atoi(fansLimit)
@@ -494,11 +494,11 @@ func (e *EventLogNew) saveFansEventLog(fans []*mysql.Follow, event *EventLogLast
 			// IdX := createFansAutoIncrementId(session, strconv.Itoa(tableNum1))
 			// m := EventLogX{bson.NewObjectId(), IdX, event.typeId, event.uid, ar.follow_id, event.created, event.infoid, event.status, event.tid}
 			m := EventLogX{bson.NewObjectId(), event.TypeId, event.Uid, ar.Follow_id, event.Created, event.Infoid, event.Status, event.Tid, 0, "", "", 0, "", "", 0, 0, 0, 0}
-			// err := x.Insert(&m) //插入数据
+			err := x.Insert(&m) //插入数据
 			logger.Info(m)
-			// if err != nil {
-			// 	logger.Info("mongodb insert fans data", err, x)
-			// }
+			if err != nil {
+				logger.Info("mongodb insert fans data", err, x)
+			}
 		}
 	}
 }

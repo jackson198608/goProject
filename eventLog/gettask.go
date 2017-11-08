@@ -8,6 +8,7 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"strconv"
+	"strings"
 )
 
 func getTask(page int) []int64 {
@@ -63,39 +64,39 @@ func getTask(page int) []int64 {
 }
 
 func connectMongo() *mgo.Session {
-	session, err := mgo.Dial(c.mongoConn)
-	if err != nil {
-		logger.Error("[error] connect mongodb err")
+	// session, err := mgo.Dial(c.mongoConn)
+	// if err != nil {
+	// 	logger.Error("[error] connect mongodb err")
+	// 	return nil
+	// }
+	// defer session.Close()
+	mongoConnArr := strings.Split(c.mongoConn, ",")
+	if len(mongoConnArr) < 3 {
+		logger.Error("[error] mongo config error")
 		return nil
 	}
-	// defer session.Close()
-	// mongoConnArr := strings.Split(c.mongoConn, ",")
-	// if len(mongoConnArr) < 3 {
-	// 	logger.Error("[error] mongo config error")
-	// 	return
-	// }
-	// Host := []string{
-	// 	mongoConnArr[0],
-	// 	mongoConnArr[1],
-	// 	mongoConnArr[2],
-	// }
-	// const (
-	// 	Database       = "FansData"
-	// 	ReplicaSetName = "goumin"
-	// )
+	Host := []string{
+		mongoConnArr[0],
+		mongoConnArr[1],
+		mongoConnArr[2],
+	}
+	const (
+		Database       = "FansData"
+		ReplicaSetName = "goumin"
+	)
 
-	// session, err := mgo.DialWithInfo(&mgo.DialInfo{
-	// 	Addrs:          Host,
-	// 	Database:       Database,
-	// 	ReplicaSetName: ReplicaSetName,
-	// })
+	session, err := mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:          Host,
+		Database:       Database,
+		ReplicaSetName: ReplicaSetName,
+	})
 
-	// if err != nil {
-	// 	panic(err)
-	// }
+	if err != nil {
+		panic(err)
+	}
 	// defer session.Close()
 
-	// session.SetMode(mgo.SecondaryPreferred, false)
+	session.SetMode(mgo.SecondaryPreferred, false)
 	return session
 }
 
@@ -140,10 +141,14 @@ func getFollowTask(page int, limit int) []string {
 		// eventNum := db.QueryRow("SELECT count(*) as counts FROM `event_log` where status=1 and uid=" + strconv.Itoa(user_id) + " and created >='" + c.dateLimit + "'")
 		// eventNum.Scan(&eventNums)
 		eventNums := getEventLogCount(user_id, c.dateLimit, session)
-		// }
 		follow := strconv.Itoa(user_id) + "|" + strconv.Itoa(fans) + "|" + strconv.Itoa(eventNums)
-		// logger.Info("follow.data", strconv.Itoa(user_id))
-		uids = append(uids, follow)
+		if len(uids) == 0 {
+			uids = append(uids, follow)
+		}
+		if eventNums > 0 {
+			// logger.Info("follow.data", strconv.Itoa(user_id))
+			uids = append(uids, follow)
+		}
 	}
 	if err := rows.Err(); err != nil {
 		logger.Error("check sql get rows error", err)
@@ -159,7 +164,7 @@ func getEventLogCount(uid int, datelimit string, session *mgo.Session) int {
 	c := session.DB("EventLog").C(tableName)
 	//1：帖子，2：回复，3：关注，4：评论，5：日志萌图，6：视频，7：商城圈，8：问答
 	typeIds := [7]int{1, 2, 3, 4, 5, 6, 7} //我关注人的推送信息
-	count, _ := c.Find(&bson.M{"uid": uid, "type": bson.M{"$in": typeIds}, "created": bson.M{"$gt": datelimit}}).Count()
+	count, _ := c.Find(&bson.M{"uid": uid, "type": bson.M{"$in": typeIds}, "status": 1, "created": bson.M{"$gt": datelimit}}).Count()
 	return count
 }
 
