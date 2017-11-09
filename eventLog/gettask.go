@@ -69,7 +69,6 @@ func connectMongo() *mgo.Session {
 	// 	logger.Error("[error] connect mongodb err")
 	// 	return nil
 	// }
-	// defer session.Close()
 	mongoConnArr := strings.Split(c.mongoConn, ",")
 	if len(mongoConnArr) < 3 {
 		logger.Error("[error] mongo config error")
@@ -94,9 +93,8 @@ func connectMongo() *mgo.Session {
 	if err != nil {
 		panic(err)
 	}
-	// defer session.Close()
 
-	session.SetMode(mgo.SecondaryPreferred, false)
+	session.SetMode(mgo.PrimaryPreferred, false)
 	return session
 }
 
@@ -109,7 +107,7 @@ func getFollowTask(page int, limit int) []string {
 	}
 	defer db.Close()
 	session := connectMongo()
-
+	defer session.Close()
 	offset := page * limit
 	//获取正常显示和隐藏的数据
 	sql := "select distinct(user_id) from follow order by id asc limit " + strconv.Itoa(limit) + " offset " + strconv.Itoa(offset)
