@@ -19,7 +19,7 @@ var c Config = Config{
 	1,
 	"127.0.0.1:6379",
 	"moveEvent",
-	"/tmp/moveEdddvent.log", 0, "3", "2014-01-01", "1", "192.168.86.68:27017,192.168.86.68:27017,192.168.86.68:27017", "Event", 10, 1, "200", "1", "100", "1000"}
+	"/tmp/moveEdddvent.log", 0, "3", "2014-01-01", "1", "192.168.86.68:27017,192.168.86.68:27017,192.168.86.68:27017", "Event", 10, 1, "200", "1", "100", "1000", "10"}
 
 var followQueue = "followData"
 var limit = 1000
@@ -119,7 +119,7 @@ func push() {
 }
 
 func removeData() {
-	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.dateLimit, c.redisStart, c.redisEnd, c.fansLimit, c.eventLimit, c.pushLimit)
+	r := stayProcess.NewRedisEngine(c.logLevel, c.queueName, c.redisConn, "", 0, c.numloops, c.dbAuth, c.dbDsn, c.dbName, c.mongoConn, c.dateLimit, c.redisStart, c.redisEnd, c.fansLimit, c.eventLimit, c.pushLimit, c.sleeptime)
 	r.RemoveFansData()
 }
 

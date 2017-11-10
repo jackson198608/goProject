@@ -26,6 +26,7 @@ type Config struct {
 	redisStart    string
 	redisEnd      string
 	pushLimit     string
+	sleeptime     string
 }
 
 func loadConfig() {
@@ -52,4 +53,5 @@ func loadConfig() {
 	c.redisStart = config.GetString("redisStart")
 	c.redisEnd = config.GetString("redisEnd")
 	c.pushLimit = config.GetString("pushLimit")
+	c.sleeptime = config.GetString("sleeptime")
 }

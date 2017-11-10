@@ -13,6 +13,7 @@ import (
 	// "os"
 	// "reflect"
 	"strconv"
+	"time"
 )
 
 type EventLogX struct {
@@ -518,7 +519,7 @@ func checkFansDataIsExist(c *mgo.Collection, event *EventLogLast, fuid int) bool
 	return true
 }
 
-func (e *EventLogNew) RemoveEventToFansTask(fans_uid int, numloop int, eventLimit string) {
+func (e *EventLogNew) RemoveEventToFansTask(fans_uid int, numloop int, eventLimit string, sleeptime string) {
 	session := e.session
 	tableNumX := fans_uid % 100
 	if tableNumX == 0 {
@@ -539,6 +540,9 @@ func (e *EventLogNew) RemoveEventToFansTask(fans_uid int, numloop int, eventLimi
 		for _, v := range ms {
 			c.Remove(&bson.M{"type": v.TypeId, "uid": v.Uid, "fuid": fans_uid, "infoid": v.Infoid, "created": v.Created})
 			logger.Info("mongodb already remove fans event_log data", v)
+			slptime, _ := strconv.Atoi(sleeptime)
+			time.Sleep(time.Duration(slptime) * time.Millisecond)
+
 		}
 	}
 }

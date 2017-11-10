@@ -363,34 +363,40 @@ func (t *RedisEngine) croutinePopJobFollowData(x chan int, i int) {
 		logger.Error("[error] connect db err")
 	}
 	defer db.Close()
-	mongoConn := t.taskNewArgs[3]
-	session, err := mgo.Dial(mongoConn)
-	if err != nil {
-		logger.Error("[error] connect mongodb err")
-		return
-	}
-	defer session.Close()
-
-	// mongoConnArr := strings.Split(t.taskNewArgs[3], ",")
-	// if len(mongoConnArr) < 3 {
-	// 	logger.Error("[error] mongo config error")
+	// mongoConn := t.taskNewArgs[3]
+	// session, err := mgo.Dial(mongoConn)
+	// if err != nil {
+	// 	logger.Error("[error] connect mongodb err")
 	// 	return
 	// }
-	// Host := []string{
-	// 	mongoConnArr[0],
-	// 	mongoConnArr[1],
-	// 	mongoConnArr[2],
-	// }
-	// const (
-	// 	Database       = "FansData"
-	// 	ReplicaSetName = "goumin"
-	// )
+	// defer session.Close()
 
-	// session, err := mgo.DialWithInfo(&mgo.DialInfo{
-	// 	Addrs:          Host,
-	// 	Database:       Database,
-	// 	ReplicaSetName: ReplicaSetName,
-	// })
+	mongoConnArr := strings.Split(t.taskNewArgs[3], ",")
+	if len(mongoConnArr) < 3 {
+		logger.Error("[error] mongo config error")
+		return
+	}
+	Host := []string{
+		mongoConnArr[0],
+		mongoConnArr[1],
+		mongoConnArr[2],
+	}
+	const (
+		Database       = "FansData"
+		ReplicaSetName = "goumin"
+	)
+
+	session, err := mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:          Host,
+		Database:       Database,
+		ReplicaSetName: ReplicaSetName,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+	session.SetMode(mgo.SecondaryPreferred, false)
 
 	for {
 		//doing until got nothing]
@@ -451,6 +457,8 @@ func (t *RedisEngine) croutinePopJobRemoveFansData(x chan int, i int) {
 		panic(err)
 	}
 	defer session.Close()
+	session.SetMode(mgo.SecondaryPreferred, false)
+
 	for {
 		//doing until got nothing]
 		followQueue := "followData"
@@ -463,8 +471,8 @@ func (t *RedisEngine) croutinePopJobRemoveFansData(x chan int, i int) {
 
 		task := task.NewTask(t.logLevel, redisStr, db, session)
 		if task != nil {
-			//t.taskNewArgs[8]: eventLimit动态限制数量
-			task.Doremove(t.numForOneLoop, t.taskNewArgs[8])
+			//t.taskNewArgs[8]: eventLimit动态限制数量 sleeptime
+			task.Doremove(t.numForOneLoop, t.taskNewArgs[8], t.taskNewArgs[10])
 		}
 
 	}
