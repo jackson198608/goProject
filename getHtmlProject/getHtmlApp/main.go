@@ -19,7 +19,7 @@ var c Config = Config{
 	"/data/thread/",
 	"/tmp/create_thread.log",
 	1,
-	"300", "500", "http://m.goumin.com/bbs/", "zhidao.goumin.com"}
+	"300", "500", "http://m.goumin.com/bbs/", "zhidao.goumin.com", "0"}
 
 var offset = 1000
 

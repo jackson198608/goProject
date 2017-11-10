@@ -118,7 +118,10 @@ func createHtmlByUrl(jobType string) {
 }
 
 func jobFunc(redisStr string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
-	abuyun := setAbuyun()
+	var abuyun *abuyunHttpClient.AbuyunProxy
+	if taskarg[2] == "1" {
+		abuyun = setAbuyun()
+	}
 	t, err := Task.NewTask(c.logLevel, c.queueName, redisStr, taskarg, abuyun)
 	if err != nil {
 		logger.Error("[NewTask]", err)
@@ -138,7 +141,7 @@ func getDoRedisEngine() *redisEngine.RedisEngine {
 	redisInfo := redis.Options{
 		Addr: c.redisConn,
 	}
-	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.numloops, jobFunc, c.saveDir, c.host)
+	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.numloops, jobFunc, c.saveDir, c.host, c.is_abuyun)
 	if err != nil {
 		logger.Error("[NewRedisEngine] ", err)
 	}

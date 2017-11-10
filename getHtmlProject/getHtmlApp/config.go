@@ -21,6 +21,7 @@ type Config struct {
 	tidEnd    string
 	domain    string
 	host      string
+	is_abuyun string
 }
 
 func loadConfig(args []string) {
@@ -47,4 +48,5 @@ func loadConfig(args []string) {
 	c.tidEnd = config.GetString("tidEnd")
 	c.domain = config.GetString("domain")
 	c.host = config.GetString("host")
+	c.is_abuyun = config.GetString("is_abuyun")
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -19,6 +20,7 @@ type HtmlInfo struct {
 	saveDir   string
 	abuyun    *abuyunHttpClient.AbuyunProxy
 	host      string
+	is_abuyun string
 }
 
 func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []string, abuyun *abuyunHttpClient.AbuyunProxy) *HtmlInfo {
@@ -27,15 +29,23 @@ func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []s
 	e.id = id
 	e.url = url
 	e.queueName = queueName
-	e.saveDir = taskNewArgs[0] // 0:saveDir
-	e.host = taskNewArgs[1]    //1:host
+	e.saveDir = taskNewArgs[0]   // 0:saveDir
+	e.host = taskNewArgs[1]      //1:host
+	e.is_abuyun = taskNewArgs[2] //是否使用阿布云 0:不使用,1:使用
 	e.abuyun = abuyun
 	return e
 }
 
 //get content by url
 func (e *HtmlInfo) CreateHtmlByUrl() error {
-	statusCode, _, body, err := e.changeIpByAbuyun()
+	statusCode := 0
+	body := ""
+	var err error
+	if e.is_abuyun == "0" {
+		statusCode, body, err = e.configHost() //不使用阿布云
+	} else {
+		statusCode, _, body, err = e.changeIpByAbuyun() //使用阿布云
+	}
 	if err != nil {
 		logger.Error("change ip abuyun error", err)
 		return errors.New("change ip abuyun error")
@@ -52,6 +62,27 @@ func (e *HtmlInfo) CreateHtmlByUrl() error {
 	} else {
 		return errors.New("get html error")
 	}
+}
+
+func (e *HtmlInfo) configHost() (int, string, error) {
+	req, err := http.NewRequest("GET", e.url, nil)
+	if err != nil {
+		logger.Error("get url error")
+		return 0, "", err
+	}
+	req.Host = e.host
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logger.Error("config host error")
+		return 0, "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error("request url body error")
+		return 0, "", err
+	}
+	return 200, string(body), err
 }
 
 // change ip by abuyun
