@@ -94,7 +94,7 @@ func connectMongo() *mgo.Session {
 		panic(err)
 	}
 
-	session.SetMode(mgo.PrimaryPreferred, false)
+	session.SetMode(mgo.SecondaryPreferred, false)
 	return session
 }
 
