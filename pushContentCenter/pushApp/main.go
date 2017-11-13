@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "fmt"
 	"errors"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/go-xorm/xorm"
@@ -9,6 +8,10 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/task"
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
+	"gouminGitlab/common/orm/mongo/ClubData"
+	"os"
+	// "strconv"
+	"strings"
 )
 
 var c Config = Config{
@@ -25,23 +28,42 @@ func init() {
 }
 
 func main() {
-	var mongoConnInfo []string
-	mongoConnInfo = append(mongoConnInfo, c.mongoConn)
-	var mysqlInfo []string
-	mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
+	var clubId string
 
-	redisInfo := redis.Options{
-		Addr: c.redisConn,
+	params := os.Args[1]
+	jobType := params
+	jobTypeclubId := strings.Split(params, "_")
+	if len(jobTypeclubId) == 2 {
+		jobType = jobTypeclubId[0]
+		clubId = jobTypeclubId[1]
 	}
-	logger.Info("start work")
-	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, jobFuc)
-	if err != nil {
-		logger.Error("[NewRedisEngine] ", err)
-	}
+	switch jobType {
+	case "push": //push content conter
+		var mongoConnInfo []string
+		mongoConnInfo = append(mongoConnInfo, c.mongoConn)
+		var mysqlInfo []string
+		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 
-	err = r.Do()
-	if err != nil {
-		logger.Error("[redisEngine Do] ", err)
+		redisInfo := redis.Options{
+			Addr: c.redisConn,
+		}
+		logger.Info("start work")
+		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, jobFuc)
+		if err != nil {
+			logger.Error("[NewRedisEngine] ", err)
+		}
+
+		err = r.Do()
+		if err != nil {
+			logger.Error("[redisEngine Do] ", err)
+		}
+	case "allindex": // all collection create index
+		err := ClubData.AllCollectionsCreateIndex(c.mongoConn)
+		logger.Error("all collections create index error! ", err)
+	case "singleindex": // single collection create index
+		err := ClubData.SingleCollectionCreateIndex(nil, "forum_content_"+clubId, c.mongoConn)
+		logger.Error("single collection create index error by clubId is ", clubId, err)
+	default:
 	}
 }
 
