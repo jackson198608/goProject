@@ -13,7 +13,7 @@ import (
 	// "os"
 	// "reflect"
 	"strconv"
-	// "time"
+	"time"
 )
 
 type EventLogX struct {
@@ -536,20 +536,12 @@ func (e *EventLogNew) RemoveEventToFansTask(fans_uid int, numloop int, eventLimi
 		removeNum := count - eventLimitNum
 		logger.Info("mongodb need remove fans event_log data nums", tableNameX, fans_uid, removeNum)
 		created := e.getRemoveCreatedValue(c, eventLimitNum, fans_uid, typeIds)
-		// fmt.Println(created)
 		if created != "" {
 			c.RemoveAll(&bson.M{"type": bson.M{"$in": typeIds}, "fuid": fans_uid, "created": bson.M{"$lte": created}})
 			logger.Info("mongodb already remove fans event_log data ", fans_uid, created)
-		}
-		/*ms := []EventLogX{}
-		c.Find(&bson.M{"fuid": fans_uid, "type": bson.M{"$in": typeIds}}).Sort("created").Limit(removeNum).All(&ms)
-		for _, v := range ms {
-			c.Remove(&bson.M{"type": v.TypeId, "uid": v.Uid, "fuid": fans_uid, "infoid": v.Infoid, "created": v.Created})
-			logger.Info("mongodb already remove fans event_log data", v)
 			slptime, _ := strconv.Atoi(sleeptime)
 			time.Sleep(time.Duration(slptime) * time.Millisecond)
-
-		}*/
+		}
 	}
 }
 
