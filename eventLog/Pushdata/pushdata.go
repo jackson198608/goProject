@@ -13,7 +13,7 @@ import (
 	// "os"
 	// "reflect"
 	"strconv"
-	"time"
+	// "time"
 )
 
 type EventLogX struct {
@@ -535,7 +535,13 @@ func (e *EventLogNew) RemoveEventToFansTask(fans_uid int, numloop int, eventLimi
 	if count > eventLimitNum {
 		removeNum := count - eventLimitNum
 		logger.Info("mongodb need remove fans event_log data nums", tableNameX, fans_uid, removeNum)
-		ms := []EventLogX{}
+		created := e.getRemoveCreatedValue(c, eventLimitNum, fans_uid, typeIds)
+		// fmt.Println(created)
+		if created != "" {
+			c.RemoveAll(&bson.M{"type": bson.M{"$in": typeIds}, "fuid": fans_uid, "created": bson.M{"$lte": created}})
+			logger.Info("mongodb already remove fans event_log data ", fans_uid, created)
+		}
+		/*ms := []EventLogX{}
 		c.Find(&bson.M{"fuid": fans_uid, "type": bson.M{"$in": typeIds}}).Sort("created").Limit(removeNum).All(&ms)
 		for _, v := range ms {
 			c.Remove(&bson.M{"type": v.TypeId, "uid": v.Uid, "fuid": fans_uid, "infoid": v.Infoid, "created": v.Created})
@@ -543,8 +549,26 @@ func (e *EventLogNew) RemoveEventToFansTask(fans_uid int, numloop int, eventLimi
 			slptime, _ := strconv.Atoi(sleeptime)
 			time.Sleep(time.Duration(slptime) * time.Millisecond)
 
-		}
+		}*/
 	}
+}
+
+func (e *EventLogNew) getRemoveCreatedValue(c *mgo.Collection, offset int, fuid int, typeIds [7]int) string {
+	ms := []EventLogX{}
+	err1 := c.Find(&bson.M{"fuid": fuid, "type": bson.M{"$in": typeIds}}).Sort("-created").Skip(offset).Limit(1).All(&ms)
+
+	if err1 != nil {
+		logger.Info("mongodb find data", err1, c)
+		return ""
+	}
+	if len(ms) == 0 {
+		return ""
+	}
+	created := ""
+	for _, v := range ms {
+		created = v.Created
+	}
+	return created
 }
 
 //获取相同犬种的活跃用户
