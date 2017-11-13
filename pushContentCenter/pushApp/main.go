@@ -59,10 +59,14 @@ func main() {
 		}
 	case "allindex": // all collection create index
 		err := ClubData.AllCollectionsCreateIndex(c.mongoConn)
-		logger.Error("all collections create index error! ", err)
+		if err != nil {
+			logger.Error("all collections create index error! ", err)
+		}
 	case "singleindex": // single collection create index
 		err := ClubData.SingleCollectionCreateIndex(nil, "forum_content_"+clubId, c.mongoConn)
-		logger.Error("single collection create index error by clubId is ", clubId, err)
+		if err != nil {
+			logger.Error("single collection create index error by clubId is ", clubId, err)
+		}
 	default:
 	}
 }
