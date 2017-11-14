@@ -11,6 +11,7 @@ import (
 	"gouminGitlab/common/orm/mongo/ClubData"
 	"os"
 	// "strconv"
+	"fmt"
 	"strings"
 )
 
@@ -67,7 +68,10 @@ func main() {
 		if err != nil {
 			logger.Error("single collection create index error by clubId is ", clubId, err)
 		}
+	case "--help":
+		help()
 	default:
+		fmt.Println("unsupported params")
 	}
 }
 
@@ -84,4 +88,13 @@ func jobFuc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, task
 		return err
 	}
 	return err
+}
+
+func help() {
+	fmt.Println("usage: pushApp [options]")
+	fmt.Println("Options:")
+	fmt.Println("  allindex\t\t\t\tThe index of all collections is deleted, and then a new index is created")
+	fmt.Println("  singleindex_clubid\t\t\tSpecify a collection to create an index")
+	fmt.Println("  push\t\t\t\t\tpush data")
+	fmt.Println("  --help\t\t\t\tshow this usage information")
 }
