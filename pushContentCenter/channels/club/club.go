@@ -172,7 +172,7 @@ func (c *Club) pushClub(club int) error {
 		}
 	} else if c.jsonData.Action == 1 {
 		//修改数据状态
-		fmt.Println("update" + strconv.Itoa(club))
+		// fmt.Println("update" + strconv.Itoa(club))
 		err := c.updateClub(mc)
 		if err != nil {
 			return err
