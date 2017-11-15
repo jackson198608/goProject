@@ -36,21 +36,21 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 
 func TestGetClubs(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
-	jobStr := "{\"uid\":2060500,\"type\":1,\"typeid\":2,\"subject\":\"subject\",\"message\":\"message\",\"image_num\":\"image_num\",\"lastpost\":2,\"fid\":36,\"lastposter\":\"0ssss\",\"status\":1,\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600}|1|0"
+	jobStr := "{\"uid\":2060500,\"type\":1,\"typeid\":2,\"subject\":\"subject\",\"message\":\"message\",\"image_num\":\"image_num\",\"lastpost\":2,\"fid\":36,\"lastposter\":\"0ssss\",\"status\":1,\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600}"
 	c := NewClub(mysqlXorm, mongoConn, jobStr)
 	fmt.Println(c.getClubs())
 }
 
 func TestPushClub(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
-	jobStr := "{\"uid\":2060501,\"type\":1,\"infoid\":1234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\"message\",\"image_num\":\"image_num\",\"lastpost\":2,\"fid\":36,\"lastposter\":\"0ssss\",\"status\":1,\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600}|1|0"
+	jobStr := "{\"uid\":2060501,\"heats\":1,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\" push to 36 message\",\"image_num\":\"image_num\",\"lastpost\":881051,\"fid\":\"37,38,77\",\"lastposter\":\"123asad232344\",\"status\":1,\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":1,\"replies\":1,\"price\":1,\"isgroup\":1,\"special\":0,\"recommends\":3,\"sortid\":12,\"highlight\":1,\"closed\":1,\"cover\":2,\"thread_status\":256}"
 	c := NewClub(mysqlXorm, mongoConn, jobStr)
 	fmt.Println(c.pushClub(34))
 }
 
 func TestPushClubs(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
-	jobStr := "{\"uid\":2060501,\"type\":1,\"infoid\":1234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\"message\",\"image_num\":\"image_num\",\"lastpost\":2,\"fid\":36,\"lastposter\":\"0ssss\",\"status\":1,\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600}|1|0"
+	jobStr := "{\"uid\":2060501,\"heats\":1,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\" push to 36 message\",\"image_num\":\"image_num\",\"lastpost\":881051,\"fid\":\"37,38,77\",\"lastposter\":\"123asad2323455\",\"status\":1,\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":1,\"replies\":1,\"price\":1,\"isgroup\":1,\"special\":0,\"recommends\":3,\"sortid\":12,\"highlight\":1,\"closed\":1,\"cover\":2,\"thread_status\":256}"
 	c := NewClub(mysqlXorm, mongoConn, jobStr)
 
 	var clubs = []int{34, 36, 44, 52}
@@ -60,7 +60,7 @@ func TestPushClubs(t *testing.T) {
 
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
-	jobStr := "{\"uid\":2060501,\"heats\":1,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\" push to 36 message\",\"image_num\":\"image_num\",\"lastpost\":881051,\"fid\":\"37,38,77\",\"lastposter\":\"123asad2323\",\"status\":1,\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":2,\"replies\":1,\"price\":1,\"isgroup\":1,\"special\":0,\"recommends\":3,\"sortid\":12,\"highlight\":1,\"closed\":1,\"cover\":2,\"thread_status\":256}"
+	jobStr := "{\"uid\":2060501,\"heats\":1,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\" push to 36 message\",\"image_num\":\"image_num\",\"lastpost\":1510716086,\"fid\":\"37,38,77\",\"lastposter\":\"12我去玩若323578\",\"status\":0,\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":1,\"replies\":1,\"price\":1,\"isgroup\":1,\"special\":0,\"recommends\":3,\"sortid\":12,\"highlight\":1,\"closed\":1,\"cover\":2,\"thread_status\":256}"
 	c := NewClub(mysqlXorm, mongoConn, jobStr)
 	fmt.Println(c.Do())
 }

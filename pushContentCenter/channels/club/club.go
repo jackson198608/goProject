@@ -72,7 +72,6 @@ func NewClub(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string) 
 		return nil
 	}
 	c.jsonData = jsonColumn
-
 	return c
 }
 
@@ -173,15 +172,8 @@ func (c *Club) pushClub(club int) error {
 		}
 	} else if c.jsonData.Action == 1 {
 		//修改数据状态
-		// fmt.Println("update" + strconv.Itoa(club))
+		fmt.Println("update" + strconv.Itoa(club))
 		err := c.updateClub(mc)
-		if err != nil {
-			return err
-		}
-	} else if c.jsonData.Action == 2 {
-		//修改数据回复信息
-		// fmt.Println("update reply" + strconv.Itoa(club))
-		err := c.updateClubReply(mc)
 		if err != nil {
 			return err
 		}
@@ -246,9 +238,9 @@ func (c *Club) insertClub(mc *mgo.Collection) error {
 	return nil
 }
 
-//update thread status
+//update thread
 func (c *Club) updateClub(mc *mgo.Collection) error {
-	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "uid": c.jsonData.Uid, "infoid": c.jsonData.Infoid},
+	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "infoid": c.jsonData.Infoid},
 		bson.M{"$set": bson.M{"status": c.jsonData.Status,
 			"digest":        c.jsonData.Digest,
 			"displayorder":  c.jsonData.Displayorder,
@@ -259,20 +251,11 @@ func (c *Club) updateClub(mc *mgo.Collection) error {
 			"sortid":        c.jsonData.Sortid,
 			"isgroup":       c.jsonData.Isgroup,
 			"price":         c.jsonData.Price,
-			"thread_status": c.jsonData.ThreadStatus}})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-//update post reply info
-func (c *Club) updateClubReply(mc *mgo.Collection) error {
-	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "uid": c.jsonData.Uid, "infoid": c.jsonData.Infoid},
-		bson.M{"$set": bson.M{"lastpost": c.jsonData.Lastpost,
-			"lastposter": c.jsonData.Lastposter,
-			"replies":    c.jsonData.Replies,
-			"heats":      c.jsonData.Heats}})
+			"thread_status": c.jsonData.ThreadStatus,
+			"lastpost":      c.jsonData.Lastpost,
+			"lastposter":    c.jsonData.Lastposter,
+			"replies":       c.jsonData.Replies,
+			"heats":         c.jsonData.Heats}})
 	if err != nil {
 		return err
 	}
