@@ -242,6 +242,12 @@ func (c *Club) insertClub(mc *mgo.Collection) error {
 func (c *Club) updateClub(mc *mgo.Collection) error {
 	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "infoid": c.jsonData.Infoid},
 		bson.M{"$set": bson.M{"status": c.jsonData.Status,
+			"subject":       c.jsonData.Title,
+			"message":       c.jsonData.Content,
+			"image_num":     c.jsonData.Imagenums,
+			"special":       c.jsonData.Special,
+			"recommends":    c.jsonData.Recommends,
+			"typeid":        c.jsonData.TypeId,
 			"digest":        c.jsonData.Digest,
 			"displayorder":  c.jsonData.Displayorder,
 			"qst_type":      c.jsonData.Qsttype,
