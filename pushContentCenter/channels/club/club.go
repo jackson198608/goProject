@@ -20,6 +20,7 @@ type Club struct {
 	mongoConn []*mgo.Session
 	jobstr    string
 	jsonData  *jsonColumn
+	action    int
 }
 
 //json column
@@ -72,6 +73,7 @@ func NewClub(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string) 
 		return nil
 	}
 	c.jsonData = jsonColumn
+	c.action = jsonColumn.Action
 	return c
 }
 
@@ -112,32 +114,34 @@ func (c *Club) parseJson() (*jsonColumn, error) {
 
 	jsonC.Fid, _ = js.Get("fid").String()
 	jsonC.Infoid, _ = js.Get("infoid").Int()
-	jsonC.Uid, _ = js.Get("uid").Int()
 	jsonC.Type, _ = js.Get("type").Int()
-	jsonC.TypeId, _ = js.Get("typeid").Int()
-	jsonC.Title, _ = js.Get("subject").String()
-	jsonC.Content, _ = js.Get("message").String()
-	jsonC.Imagenums, _ = js.Get("image_num").Int()
-	jsonC.Created, _ = js.Get("created").Int()
-	jsonC.Lastpost, _ = js.Get("lastpost").Int()
-	jsonC.Lastposter, _ = js.Get("lastposter").String()
-	jsonC.Status, _ = js.Get("status").Int()
-	jsonC.Displayorder, _ = js.Get("displayorder").Int()
-	jsonC.Digest, _ = js.Get("digest").Int()
-	jsonC.Qsttype, _ = js.Get("qst_type").Int()
-	jsonC.ThreadStatus, _ = js.Get("thread_status").Int()
-	jsonC.Cover, _ = js.Get("cover").Int()
-	jsonC.Closed, _ = js.Get("closed").Int()
-	jsonC.Highlight, _ = js.Get("highlight").Int()
-	jsonC.Sortid, _ = js.Get("sortid").Int()
-	jsonC.Recommends, _ = js.Get("recommend").Int()
-	jsonC.Special, _ = js.Get("special").Int()
-	jsonC.Replies, _ = js.Get("replies").Int()
-	jsonC.Isgroup, _ = js.Get("isgroup").Int()
-	jsonC.Price, _ = js.Get("price").Int()
-	jsonC.Heats, _ = js.Get("heats").Int()
 	jsonC.Action, _ = js.Get("action").Int()
-
+	if jsonC.Action != 1 {
+		// 修改操作不获已下数据
+		jsonC.Uid, _ = js.Get("uid").Int()
+		jsonC.Status, _ = js.Get("status").Int()
+		jsonC.TypeId, _ = js.Get("typeid").Int()
+		jsonC.Title, _ = js.Get("subject").String()
+		jsonC.Content, _ = js.Get("message").String()
+		jsonC.Imagenums, _ = js.Get("image_num").Int()
+		jsonC.Created, _ = js.Get("created").Int()
+		jsonC.Lastpost, _ = js.Get("lastpost").Int()
+		jsonC.Lastposter, _ = js.Get("lastposter").String()
+		jsonC.Displayorder, _ = js.Get("displayorder").Int()
+		jsonC.Digest, _ = js.Get("digest").Int()
+		jsonC.Qsttype, _ = js.Get("qst_type").Int()
+		jsonC.ThreadStatus, _ = js.Get("thread_status").Int()
+		jsonC.Cover, _ = js.Get("cover").Int()
+		jsonC.Closed, _ = js.Get("closed").Int()
+		jsonC.Highlight, _ = js.Get("highlight").Int()
+		jsonC.Sortid, _ = js.Get("sortid").Int()
+		jsonC.Recommends, _ = js.Get("recommends").Int()
+		jsonC.Special, _ = js.Get("special").Int()
+		jsonC.Replies, _ = js.Get("replies").Int()
+		jsonC.Isgroup, _ = js.Get("isgroup").Int()
+		jsonC.Price, _ = js.Get("price").Int()
+		jsonC.Heats, _ = js.Get("heats").Int()
+	}
 	return &jsonC, nil
 }
 
@@ -163,21 +167,20 @@ func (c *Club) pushClubs(clubs []int) error {
 func (c *Club) pushClub(club int) error {
 	tableNameX := "forum_content_" + strconv.Itoa(club)
 	mc := c.mongoConn[0].DB("ClubData").C(tableNameX)
-	if c.jsonData.Action == 0 {
+	if c.action == 0 {
 		// fmt.Println("insert" + strconv.Itoa(club))
-
 		err := c.insertClub(mc)
 		if err != nil {
 			return err
 		}
-	} else if c.jsonData.Action == 1 {
+	} else if c.action == 1 {
 		//修改数据状态
 		// fmt.Println("update" + strconv.Itoa(club))
 		err := c.updateClub(mc)
 		if err != nil {
 			return err
 		}
-	} else if c.jsonData.Action == -1 {
+	} else if c.action == -1 {
 		//删除数据
 		// fmt.Println("remove" + strconv.Itoa(club))
 		err := c.removeClub(mc)
@@ -240,28 +243,8 @@ func (c *Club) insertClub(mc *mgo.Collection) error {
 
 //update thread
 func (c *Club) updateClub(mc *mgo.Collection) error {
-	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "infoid": c.jsonData.Infoid},
-		bson.M{"$set": bson.M{"status": c.jsonData.Status,
-			"subject":       c.jsonData.Title,
-			"message":       c.jsonData.Content,
-			"image_num":     c.jsonData.Imagenums,
-			"special":       c.jsonData.Special,
-			"recommends":    c.jsonData.Recommends,
-			"typeid":        c.jsonData.TypeId,
-			"digest":        c.jsonData.Digest,
-			"displayorder":  c.jsonData.Displayorder,
-			"qst_type":      c.jsonData.Qsttype,
-			"cover":         c.jsonData.Cover,
-			"closed":        c.jsonData.Closed,
-			"highlight":     c.jsonData.Highlight,
-			"sortid":        c.jsonData.Sortid,
-			"isgroup":       c.jsonData.Isgroup,
-			"price":         c.jsonData.Price,
-			"thread_status": c.jsonData.ThreadStatus,
-			"lastpost":      c.jsonData.Lastpost,
-			"lastposter":    c.jsonData.Lastposter,
-			"replies":       c.jsonData.Replies,
-			"heats":         c.jsonData.Heats}})
+	updateData := c.updateBsonMap()
+	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "infoid": c.jsonData.Infoid}, updateData)
 	if err != nil {
 		return err
 	}
@@ -274,4 +257,28 @@ func (c *Club) removeClub(mc *mgo.Collection) error {
 		return err
 	}
 	return nil
+}
+
+func (c *Club) updateBsonMap() bson.M {
+	data := make(map[string]interface{})
+	js, err := simplejson.NewJson([]byte(c.jobstr))
+	if err != nil {
+		return data
+	}
+	intkeys := []string{"uid", "typeid", "image_num", "created", "lastpost", "status",
+		"displayorder", "digest", "qst_type", "thread_status", "cover", "closed", "highlight",
+		"sortid", "recommends", "special", "replies", "isgroup", "price", "heats"}
+	for _, v := range intkeys {
+		if keyJson, ok := js.CheckGet(v); ok {
+			data[v], _ = keyJson.Int()
+		}
+	}
+	stringkeys := []string{"lastposter", "message", "subject"}
+	for _, v := range stringkeys {
+		if keyJson, ok := js.CheckGet(v); ok {
+			data[v], _ = keyJson.String()
+		}
+	}
+	setData := bson.M{"$set": data}
+	return setData
 }

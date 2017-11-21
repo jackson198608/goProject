@@ -60,7 +60,17 @@ func TestPushClubs(t *testing.T) {
 
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
-	jobStr := "{\"uid\":2060501,\"heats\":1,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\" push to 36 message\",\"image_num\":\"image_num\",\"lastpost\":1510716086,\"fid\":\"37,38,77\",\"lastposter\":\"12我去玩若323578\",\"status\":0,\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":1,\"replies\":1,\"price\":1,\"isgroup\":1,\"special\":0,\"recommends\":3,\"sortid\":12,\"highlight\":1,\"closed\":1,\"cover\":2,\"thread_status\":256}"
+	jobStr := "{\"uid\":2060500,\"heats\":1,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"subject\":\"asdasdasda\",\"message\":\" push to 36 message\",\"lastpost\":1510716086,\"fid\":\"37\",\"lastposter\":\"12我去玩若323578\",\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":-1,\"replies\":1,\"price\":1,\"isgroup\":1,\"special\":0,\"recommends\":3,\"sortid\":12,\"highlight\":1,\"closed\":1,\"cover\":2,\"thread_status\":256}"
+	// jobStr := "{\"type\":6,\"infoid\":2234567,\"fid\":\"37\",\"heats\":2,\"typeid\":22,\"message\":\" push to 321wsa6 message\",\"subject\":\"asdsadsddddddddd\",\"action\":1,\"image_num\":2,\"lastpost\":1508469900,\"lastposter\":\"12我去玩若32asdas3578\",\"displayorder\":2,\"digest\":2,\"qst_type\":1,\"replies\":0,\"price\":12,\"isgroup\":0,\"special\":1,\"recommends\":0,\"sortid\":10,\"highlight\":2,\"closed\":0,\"cover\":1,\"thread_status\":128,\"status\":1}"
 	c := NewClub(mysqlXorm, mongoConn, jobStr)
 	fmt.Println(c.Do())
+}
+
+func TestAddBsonMap(t *testing.T) {
+	mysqlXorm, mongoConn := testConn()
+	jobStr := "{\"uid\":2060501,\"heats\":1,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"message\":\" push to 36 message\",\"lastpost\":1510716086,\"fid\":\"37\",\"lastposter\":\"12我去玩若323578\",\"displayorder\":1,\"digest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":1,\"replies\":1,\"price\":1,\"isgroup\":1,\"special\":0,\"recommends\":3,\"sortid\":12,\"highlight\":1,\"closed\":1,\"cover\":2,\"thread_status\":256}"
+	c := NewClub(mysqlXorm, mongoConn, jobStr)
+
+	query := c.updateBsonMap()
+	fmt.Println(query)
 }
