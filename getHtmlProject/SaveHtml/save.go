@@ -84,7 +84,7 @@ func (e *HtmlInfo) configHost() (int, string, error) {
 		logger.Error("request url body error")
 		return 0, "", err
 	}
-	return 200, string(body), err
+	return resp.StatusCode, string(body), err
 }
 
 // change ip by abuyun
