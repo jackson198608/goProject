@@ -39,6 +39,12 @@ func idToUrl(jobType string, idstr []string) []string {
 			if jobType == "threadsave" {
 				url = c.domain + "thread-" + id + "-" + strconv.Itoa(page) + "-1.html?twig|" + id
 			}
+			if jobType == "bbsindexsave" {
+				url = c.domain + "index-area-" + strconv.Itoa(page) + ".html?twig|" + "1"
+			}
+			if jobType == "forumsave" {
+				url = c.domain + "forum-" + id + "-" + strconv.Itoa(page) + ".html?twig|" + id
+			}
 			urls = append(urls, url)
 		}
 	}
@@ -110,7 +116,7 @@ func saveHtmlUrl(jobType string, cat string) {
 }
 
 func createHtmlByUrl(jobType string) {
-	r := getDoRedisEngine()
+	r := getDoRedisEngine(jobType)
 	err := r.Do()
 	if err != nil {
 		logger.Error("[redisEngine Do] ", err)
@@ -133,7 +139,7 @@ func jobFunc(redisStr string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session
 	return err
 }
 
-func getDoRedisEngine() *redisEngine.RedisEngine {
+func getDoRedisEngine(jobType string) *redisEngine.RedisEngine {
 	var mongoConnInfo []string
 	var mysqlInfo []string
 	mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
@@ -141,7 +147,7 @@ func getDoRedisEngine() *redisEngine.RedisEngine {
 	redisInfo := redis.Options{
 		Addr: c.redisConn,
 	}
-	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.numloops, jobFunc, c.saveDir, c.host, c.is_abuyun)
+	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.numloops, jobFunc, c.saveDir, c.host, c.is_abuyun, jobType)
 	if err != nil {
 		logger.Error("[NewRedisEngine] ", err)
 	}

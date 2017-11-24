@@ -21,6 +21,7 @@ type HtmlInfo struct {
 	abuyun    *abuyunHttpClient.AbuyunProxy
 	host      string
 	is_abuyun string
+	jobType   string
 }
 
 func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []string, abuyun *abuyunHttpClient.AbuyunProxy) *HtmlInfo {
@@ -32,6 +33,7 @@ func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []s
 	e.saveDir = taskNewArgs[0]   // 0:saveDir
 	e.host = taskNewArgs[1]      //1:host
 	e.is_abuyun = taskNewArgs[2] //是否使用阿布云 0:不使用,1:使用
+	e.jobType = taskNewArgs[3]   //抓取数据类型
 	e.abuyun = abuyun
 	return e
 }
@@ -102,13 +104,17 @@ func (e *HtmlInfo) changeIpByAbuyun() (int, *http.Header, string, error) {
 func (e *HtmlInfo) saveFileName() string {
 	filename := ""
 	dir := ""
-	if e.id < 1000 {
-		dir = ""
+	if e.jobType == "forum" {
+		dir = "/" + strconv.Itoa(e.id) + "/"
 	} else {
-		n4 := e.id % 10               //个位数
-		n3 := (e.id - n4) % 100       //十位数
-		n2 := (e.id - n4 - n3) % 1000 //百位数
-		dir = strconv.Itoa(n2/100) + "/" + strconv.Itoa(n3/10) + "/" + strconv.Itoa(n4) + "/"
+		if e.id < 1000 {
+			dir = ""
+		} else {
+			n4 := e.id % 10               //个位数
+			n3 := (e.id - n4) % 100       //十位数
+			n2 := (e.id - n4 - n3) % 1000 //百位数
+			dir = strconv.Itoa(n2/100) + "/" + strconv.Itoa(n3/10) + "/" + strconv.Itoa(n4) + "/"
+		}
 	}
 	urlstr := strings.Split(e.url, "/")
 	strlen := len(urlstr)

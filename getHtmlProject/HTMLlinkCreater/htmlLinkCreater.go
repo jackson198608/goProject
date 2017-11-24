@@ -110,7 +110,55 @@ func (h *HtmlLinkCreater) buildAll(startId int, endId int) []string {
 	if h.jobType == "asksave" {
 		ids = h.getAskTask(startId, endId)
 	}
+	if h.jobType == "bbsindexsave" {
+		ids = h.getBbsIndexTask(startId, endId)
+	}
+	if h.jobType == "forumsave" {
+		ids = h.getForumTask(startId, endId)
+	}
 	return ids
+}
+
+func (h *HtmlLinkCreater) getBbsIndexTask(startId int, endId int) []string {
+	var ids []string
+	forum := new(ActiveRecord.PreForumForum)
+	count, err := h.engine.In("fup", 76, 78).Where("status=?", 1).Count(forum)
+	if err != nil {
+		logger.Error("get forum data ", err)
+		return nil
+	}
+	counts := int(count)
+	s := getIdAndPages(1, counts, 20)
+	ids = append(ids, s)
+	return ids
+}
+
+func (h *HtmlLinkCreater) getForumTask(startId int, endId int) []string {
+	var ids []string
+	var forum []ActiveRecord.PreForumForum
+	err := h.engine.In("fup", 76, 78).Where("status=?", 1).Cols("fid").Find(&forum)
+	if err != nil {
+		logger.Error("get forum data ", err)
+		return nil
+	}
+	for _, v := range forum {
+		count := h.getForumThreadCount(v.Fid)
+		fmt.Println(count)
+		s := getIdAndPages(v.Fid, count, 20)
+		ids = append(ids, s)
+	}
+	return ids
+}
+
+func (h *HtmlLinkCreater) getForumThreadCount(fid int) int {
+	//SELECT `pre_forum_thread`.* FROM `pre_forum_thread` INNER JOIN `pre_common_member` ON `pre_forum_thread`.`authorid` = `pre_common_member`.`uid` INNER JOIN `pre_ucenter_members` ON `pre_forum_thread`.`authorid` = `pre_ucenter_members`.`uid` WHERE fid=120 and displayorder>=0 and pre_common_member.groupid!=4 ORDER BY `lastpost` DESC LIMIT 20
+	thread := new(ActiveRecord.PreForumThread)
+	count, err := h.engine.Table("pre_forum_thread").Join("left", "pre_common_member", "pre_forum_thread.authorid=pre_common_member.uid").Where("groupid!=? and displayorder>=? and fid=?", 4, 0, fid).Count(thread)
+	if err != nil {
+		logger.Error("get forum_thread count ", err)
+		return 0
+	}
+	return int(count)
 }
 
 func (h *HtmlLinkCreater) getAskTask(startId int, endId int) []string {

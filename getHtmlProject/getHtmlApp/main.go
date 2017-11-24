@@ -45,6 +45,12 @@ func main() {
 		cat = os.Args[3]
 	}
 	switch jobType {
+	case "bbsindex": //thread
+		logger.Info("in the ask html get ")
+		createHtmlByUrl(jobType)
+	case "forum": //thread
+		logger.Info("in the ask html get ")
+		createHtmlByUrl(jobType)
 	case "thread": //thread
 		logger.Info("in the ask html get ")
 		createHtmlByUrl(jobType)
@@ -55,6 +61,12 @@ func main() {
 		logger.Info("in the html url save ")
 		saveHtmlUrl(jobType, cat)
 	case "threadsave": //create html url
+		logger.Info("in the html url save ")
+		saveHtmlUrl(jobType, cat)
+	case "bbsindexsave": //create html url
+		logger.Info("in the html url save ")
+		saveHtmlUrl(jobType, cat)
+	case "forumsave": //create html url
 		logger.Info("in the html url save ")
 		saveHtmlUrl(jobType, cat)
 	default:
