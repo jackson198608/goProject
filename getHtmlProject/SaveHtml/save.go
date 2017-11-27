@@ -66,14 +66,23 @@ func (e *HtmlInfo) CreateHtmlByUrl() error {
 	}
 }
 
+func noRedirect(req *http.Request, via []*http.Request) error {
+	return errors.New("Don't redirect!")
+}
+
 func (e *HtmlInfo) configHost() (int, string, error) {
+	client := &http.Client{
+		CheckRedirect: noRedirect,
+	}
 	req, err := http.NewRequest("GET", e.url, nil)
 	if err != nil {
 		logger.Error("get url error")
 		return 0, "", err
 	}
 	req.Host = e.host
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
+	// resp, err := http.DefaultClient.Do(req)
+
 	if err != nil {
 		logger.Error("config host error")
 		return 0, "", err
