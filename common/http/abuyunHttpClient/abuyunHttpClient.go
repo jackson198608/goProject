@@ -2,6 +2,7 @@ package abuyunHttpClient
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -34,6 +35,10 @@ func NewAbuyunProxy(proxyServer string, appID string, appSecret string) *AbuyunP
 
 }
 
+func abuyunHttpClient(req *http.Request, via []*http.Request) error {
+	return errors.New("this url has redirect" + req.URL.String())
+}
+
 func (p *AbuyunProxy) makeClient() {
 	proxyUrl, err := url.Parse("http://" + p.appID + ":" + p.appSecret + "@" + p.proxyServer)
 	if err != nil {
@@ -41,6 +46,7 @@ func (p *AbuyunProxy) makeClient() {
 	}
 
 	p.client = &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
+	p.client.CheckRedirect = abuyunHttpClient
 }
 
 func (p *AbuyunProxy) Close() {
