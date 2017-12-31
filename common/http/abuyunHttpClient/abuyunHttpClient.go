@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 type AbuyunProxy struct {
@@ -45,7 +46,7 @@ func (p *AbuyunProxy) makeClient() {
 		fmt.Println("[error]url parse error", p.appID, p.appSecret, p.proxyServer)
 	}
 
-	p.client = &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}}
+	p.client = &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyUrl)}, Timeout: 5 * time.Second}
 	p.client.CheckRedirect = abuyunHttpClient
 }
 

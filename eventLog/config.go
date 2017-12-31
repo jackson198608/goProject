@@ -14,7 +14,7 @@ type Config struct {
 	redisConn     string
 	queueName     string
 	logFile       string
-	logLevel      int
+	logLevel      int;
 	fansLimit     string
 	dateLimit     string
 	currentNum    string
