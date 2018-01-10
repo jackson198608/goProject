@@ -18,10 +18,6 @@ type AbuyunProxy struct {
 }
 
 func NewAbuyunProxy(proxyServer string, appID string, appSecret string) *AbuyunProxy {
-	if (proxyServer == "") || (appID == "") || (appSecret == "") {
-		fmt.Println("[error]params empty")
-		return nil
-	}
 	abuyunProxy := new(AbuyunProxy)
 	if abuyunProxy == nil {
 		fmt.Println("[error]create fail")
@@ -31,7 +27,13 @@ func NewAbuyunProxy(proxyServer string, appID string, appSecret string) *AbuyunP
 	abuyunProxy.appID = appID
 	abuyunProxy.appSecret = appSecret
 	abuyunProxy.proxyServer = proxyServer
-	abuyunProxy.makeClient()
+	if (proxyServer == "") || (appID == "") || (appSecret == "") {
+		abuyunProxy.makeClientWithoutProxy()
+	} else {
+
+		abuyunProxy.makeClient()
+	}
+
 	return abuyunProxy
 
 }
@@ -50,12 +52,17 @@ func (p *AbuyunProxy) makeClient() {
 	p.client.CheckRedirect = abuyunHttpClient
 }
 
+func (p *AbuyunProxy) makeClientWithoutProxy() {
+	p.client = &http.Client{Timeout: 5 * time.Second}
+	p.client.CheckRedirect = abuyunHttpClient
+}
+
 func (p *AbuyunProxy) Close() {
 }
 
 // todo: make customHeader to be pointer
-func (p *AbuyunProxy) SendRequest(targetUrl string, customHeader http.Header, switchip bool) (int, *http.Header, string, error) {
-	request, err := http.NewRequest("GET", targetUrl, bytes.NewBuffer([]byte(``)))
+func (p *AbuyunProxy) SendRequest(targetUrl string, customHeader http.Header, requestBody string, switchip bool) (int, *http.Header, string, error) {
+	request, err := http.NewRequest("GET", targetUrl, bytes.NewBuffer([]byte(requestBody)))
 	if err != nil {
 		return 0, nil, "", err
 	}
