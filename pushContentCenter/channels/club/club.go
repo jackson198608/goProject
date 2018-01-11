@@ -79,14 +79,12 @@ func NewClub(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string) 
 
 func (c *Club) Do() error {
 	var currentClubList []int
-	if c.jsonData.Fid == "" {
+	if c.jsonData.Fid == "" || c.jsonData.Fid == "0" {
 		return errors.New("you have no club to push " + c.jobstr)
 	}
-
 	fids := strings.Split(c.jsonData.Fid, ",")
 
-	clubid, _ := strconv.Atoi(fids[0])
-	if (len(fids) == 1) && (clubid == 0) {
+	if (len(fids) == 1) && (fids[0] == "All") {
 		//推送到所有展示状态俱乐部
 		currentClubList = c.getClubs()
 	} else {
@@ -168,21 +166,21 @@ func (c *Club) pushClub(club int) error {
 	tableNameX := "forum_content_" + strconv.Itoa(club)
 	mc := c.mongoConn[0].DB("ClubData").C(tableNameX)
 	if c.action == 0 {
-		fmt.Println("insert" + strconv.Itoa(club))
+		fmt.Println(strconv.Itoa(c.jsonData.Infoid) + " insert to " + strconv.Itoa(club))
 		err := c.insertClub(mc)
 		if err != nil {
 			return err
 		}
 	} else if c.action == 1 {
 		//修改数据状态
-		// fmt.Println("update" + strconv.Itoa(club))
+		fmt.Println(strconv.Itoa(c.jsonData.Infoid) + " update to " + strconv.Itoa(club))
 		err := c.updateClub(mc)
 		if err != nil {
 			return err
 		}
 	} else if c.action == -1 {
 		//删除数据
-		// fmt.Println("remove" + strconv.Itoa(club))
+		fmt.Println(strconv.Itoa(c.jsonData.Infoid) + " delete to " + strconv.Itoa(club))
 		err := c.removeClub(mc)
 		if err != nil {
 			return err
