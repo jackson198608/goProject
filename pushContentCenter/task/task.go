@@ -97,13 +97,12 @@ func (t *Task) ChannelClub() error {
 //	       type
 //		   error
 func (t *Task) parseRaw() error {
-	rawArray := strings.Split(t.Raw, "|")
-	if len(rawArray) < 2 {
-		return errors.New("job str format error " + t.Raw)
-	}
+	rawSlice := []byte(t.Raw)
+	rawLen := len(rawSlice)
+	lastIndex := strings.LastIndex(t.Raw, "|")
 
-	t.Jobstr = rawArray[0]
-	t.JobType = rawArray[1]
+	t.Jobstr = string(rawSlice[0:lastIndex])
+	t.JobType = string(rawSlice[lastIndex+1 : rawLen])
 
 	return nil
 

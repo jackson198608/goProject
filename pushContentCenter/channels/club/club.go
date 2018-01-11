@@ -116,32 +116,32 @@ func (c *Club) parseJson() (*jsonColumn, error) {
 	jsonC.Infoid, _ = js.Get("infoid").Int()
 	jsonC.Type, _ = js.Get("type").Int()
 	jsonC.Action, _ = js.Get("action").Int()
-	if jsonC.Action != 1 {
-		// 修改操作不获已下数据
-		jsonC.Uid, _ = js.Get("uid").Int()
-		jsonC.Status, _ = js.Get("status").Int()
-		jsonC.TypeId, _ = js.Get("typeid").Int()
-		jsonC.Title, _ = js.Get("subject").String()
-		jsonC.Content, _ = js.Get("message").String()
-		jsonC.Imagenums, _ = js.Get("image_num").Int()
-		jsonC.Created, _ = js.Get("created").Int()
-		jsonC.Lastpost, _ = js.Get("lastpost").Int()
-		jsonC.Lastposter, _ = js.Get("lastposter").String()
-		jsonC.Displayorder, _ = js.Get("displayorder").Int()
-		jsonC.Digest, _ = js.Get("digest").Int()
-		jsonC.Qsttype, _ = js.Get("qst_type").Int()
-		jsonC.ThreadStatus, _ = js.Get("thread_status").Int()
-		jsonC.Cover, _ = js.Get("cover").Int()
-		jsonC.Closed, _ = js.Get("closed").Int()
-		jsonC.Highlight, _ = js.Get("highlight").Int()
-		jsonC.Sortid, _ = js.Get("sortid").Int()
-		jsonC.Recommends, _ = js.Get("recommends").Int()
-		jsonC.Special, _ = js.Get("special").Int()
-		jsonC.Replies, _ = js.Get("replies").Int()
-		jsonC.Isgroup, _ = js.Get("isgroup").Int()
-		jsonC.Price, _ = js.Get("price").Int()
-		jsonC.Heats, _ = js.Get("heats").Int()
-	}
+	// if jsonC.Action != 1 {
+	// 修改操作不获已下数据
+	jsonC.Uid, _ = js.Get("uid").Int()
+	jsonC.Status, _ = js.Get("status").Int()
+	jsonC.TypeId, _ = js.Get("typeid").Int()
+	jsonC.Title, _ = js.Get("subject").String()
+	jsonC.Content, _ = js.Get("message").String()
+	jsonC.Imagenums, _ = js.Get("image_num").Int()
+	jsonC.Created, _ = js.Get("created").Int()
+	jsonC.Lastpost, _ = js.Get("lastpost").Int()
+	jsonC.Lastposter, _ = js.Get("lastposter").String()
+	jsonC.Displayorder, _ = js.Get("displayorder").Int()
+	jsonC.Digest, _ = js.Get("digest").Int()
+	jsonC.Qsttype, _ = js.Get("qst_type").Int()
+	jsonC.ThreadStatus, _ = js.Get("thread_status").Int()
+	jsonC.Cover, _ = js.Get("cover").Int()
+	jsonC.Closed, _ = js.Get("closed").Int()
+	jsonC.Highlight, _ = js.Get("highlight").Int()
+	jsonC.Sortid, _ = js.Get("sortid").Int()
+	jsonC.Recommends, _ = js.Get("recommends").Int()
+	jsonC.Special, _ = js.Get("special").Int()
+	jsonC.Replies, _ = js.Get("replies").Int()
+	jsonC.Isgroup, _ = js.Get("isgroup").Int()
+	jsonC.Price, _ = js.Get("price").Int()
+	jsonC.Heats, _ = js.Get("heats").Int()
+	// }
 	return &jsonC, nil
 }
 
@@ -168,7 +168,7 @@ func (c *Club) pushClub(club int) error {
 	tableNameX := "forum_content_" + strconv.Itoa(club)
 	mc := c.mongoConn[0].DB("ClubData").C(tableNameX)
 	if c.action == 0 {
-		// fmt.Println("insert" + strconv.Itoa(club))
+		fmt.Println("insert" + strconv.Itoa(club))
 		err := c.insertClub(mc)
 		if err != nil {
 			return err
@@ -241,12 +241,26 @@ func (c *Club) insertClub(mc *mgo.Collection) error {
 	return nil
 }
 
+//find thread data
+func (c *Club) findCount(mc *mgo.Collection) int {
+	count, _ := mc.Find(&bson.M{"type": c.jsonData.Type, "infoid": c.jsonData.Infoid}).Count()
+	return count
+}
+
 //update thread
 func (c *Club) updateClub(mc *mgo.Collection) error {
-	updateData := c.updateBsonMap()
-	_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "infoid": c.jsonData.Infoid}, updateData)
-	if err != nil {
-		return err
+	count := c.findCount(mc)
+	if count == 0 {
+		err := c.insertClub(mc)
+		if err != nil {
+			return err
+		}
+	} else {
+		updateData := c.updateBsonMap()
+		_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "infoid": c.jsonData.Infoid}, updateData)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
