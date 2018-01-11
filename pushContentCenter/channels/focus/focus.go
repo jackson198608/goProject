@@ -7,7 +7,7 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/allPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/breedPersons"
-	"github.com/jackson198608/goProject/pushContentCenter/channels/location/clubPersons"
+	// "github.com/jackson198608/goProject/pushContentCenter/channels/location/clubPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/fansPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
@@ -69,12 +69,12 @@ func (f *Focus) Do() error {
 			return err
 		}
 
-		f.jsonData.Source = 2
-		cp := clubPersons.NewClubPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
-		err = cp.Do()
-		if err != nil {
-			return err
-		}
+		// f.jsonData.Source = 2
+		// cp := clubPersons.NewClubPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
+		// err = cp.Do()
+		// if err != nil {
+		// 	return err
+		// }
 	} else if f.jsonData.TypeId == 6 {
 		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
 		err := fp.Do()

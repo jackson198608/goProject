@@ -2,7 +2,7 @@ package club
 
 import (
 	"errors"
-	// "fmt"
+	"fmt"
 	"github.com/bitly/go-simplejson"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
