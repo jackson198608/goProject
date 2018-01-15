@@ -102,6 +102,13 @@ func (u *User) getMyData() *[]elkUserBody {
 		u.age = age
 		data := *user
 		u.myData = data[0]
+		if u.myData.follow_users != "" {
+			follow_users := strings.Split(u.myData.follow_users, ",")
+			for f, _ := range follow_users {
+				follow_uid, _ := strconv.Atoi(follow_users[f])
+				notRecommendUid = append(notRecommendUid, follow_uid)
+			}
+		}
 	}
 	return nil
 }
