@@ -1,23 +1,60 @@
-package club
+package user
 
 import (
-	"errors"
 	"fmt"
-	// "github.com/jackson198608/goProject/common/tools/elkClient"
-	"github.com/olivere/elastic"
+	"github.com/bitly/go-simplejson"
+	"github.com/go-xorm/xorm"
+	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"gouminGitlab/common/orm/mongo/RecommendData"
+	"net/http"
+	// "reflect"
+	"strconv"
+	"strings"
+	"time"
 )
+
+var notRecommendUid []int
+
+type elkClubBody struct {
+	Id          int
+	name        string
+	membernum   string
+	todayposts  int
+	description string
+	fup         int
+	icon        string
+}
+
+type elkUserBody struct {
+	Id            int
+	nickname      string
+	avatar        string
+	grouptitle    string
+	pets          string
+	address       string
+	follow_clubs  string
+	follow_users  string
+	lastlogintime int
+	is_welluser   int
+	age           string
+}
 
 type User struct {
 	mysqlXorm []*xorm.Engine
 	mongoConn []*mgo.Session
 	Uid       int
 	elkDsn    string
+	province  string
+	species   string
+	address   string
+	age       string
+	myData    elkUserBody
 }
 
-func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid int, elkDsn string) *User {
-	if (mysqlXorm == nil) || (mongoConn == nil) || (uid == 0) || (elkDsn == "") {
+func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, elkDsn string) *User {
+	if (mysqlXorm == nil) || (mongoConn == nil) || (uid == "") || (elkDsn == "") {
 		return nil
 	}
 
@@ -25,42 +62,512 @@ func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid int, elkDsn
 	if u == nil {
 		return nil
 	}
-
 	u.mysqlXorm = mysqlXorm
 	u.mongoConn = mongoConn
-	u.Uid = uid
+	u.Uid, _ = strconv.Atoi(uid)
 	u.elkDsn = elkDsn
 	return u
 }
 
-func (u *User) Do() error {
-	client, err := elastic.NewClient(elastic.SetURL("http://192.168.86.5:9200"))
-	if err != nil {
-		panic(err)
+func (u *User) setAbuyun() *abuyunHttpClient.AbuyunProxy {
+	var abuyun *abuyunHttpClient.AbuyunProxy = abuyunHttpClient.NewAbuyunProxy("", "", "")
+
+	if abuyun == nil {
+		fmt.Println("create abuyun error")
+		return nil
 	}
-	fmt.Println(client)
+	return abuyun
+}
+
+func (u *User) Do() error {
+	notRecommendUid = append(notRecommendUid, u.Uid)
+	u.getMyData() //获取我的数据
+	u.getRecommendClub()
+	u.getRecommendUser()
 	return nil
 }
 
-func (u *User) getUser(client *elastic.Client) error {
-	termQuery := elastic.NewTermQuery("app", appName)
+func (u *User) getMyData() *[]elkUserBody {
+	uidStr := strconv.Itoa(u.Uid)
+	query := u.getUserQueries(uidStr, 1)
+	user, _ := u.getUser(query)
+	if user != nil {
+		species := u.getSpecies(user)   //我的宠物品种
+		age := u.getAge(user)           //我的宠物年龄
+		province := u.getProvince(user) //我的地域
+		address := u.getAddress(user)
+		u.species = species
+		u.province = province
+		u.address = address
+		u.age = age
+		data := *user
+		u.myData = data[0]
+	}
+	return nil
+}
 
-	res, err := client.Search(indexName).
-		Index(indexName).
-		Query(termQuery).
-		Sort("time", true).
-		Do()
+func (u *User) getAge(user *[]elkUserBody) string {
+	userAry := *user
+	age := ""
+	pets := userAry[0].pets
+	petItems := strings.Split(pets, ";")
+	for p, _ := range petItems {
+		petItem := strings.Split(petItems[p], ",")
+		age += petItem[4] + ";"
+	}
+	age = string(age[0 : len(age)-1])
+	return age
+}
 
+func (u *User) getSpecies(user *[]elkUserBody) string {
+	userAry := *user
+	species := ""
+	pets := userAry[0].pets
+	petItems := strings.Split(pets, ";")
+	for p, _ := range petItems {
+		petItem := strings.Split(petItems[p], ",")
+		species += petItem[2] + ";"
+	}
+	species = string(species[0 : len(species)-1])
+	return species
+}
+
+func (u *User) getAddress(user *[]elkUserBody) string {
+	userAry := *user
+	address := userAry[0].address
+	addressItems := strings.Split(address, ";")
+	formatted_address := addressItems[2]
+	return formatted_address
+}
+
+func (u *User) getProvince(user *[]elkUserBody) string {
+	userAry := *user
+	province := ""
+	address := userAry[0].address
+	addressItems := strings.Split(address, ";")
+	formatted_address := addressItems[2]
+	provinceAry := strings.Split(formatted_address, "省")
+	if len(provinceAry) > 1 {
+		province = provinceAry[0]
+	} else {
+		provinceAry := strings.Split(formatted_address, "市")
+		if len(provinceAry) > 1 {
+			province = provinceAry[0]
+		}
+	}
+	return province
+}
+
+func (u *User) getRecommendClub() error {
+	speciesNum, _ := u.recommendClubBySpecies() //犬种
+	if speciesNum < 6 {
+		addressNum, _ := u.recommendClubByAddress() //地域
+		if addressNum+speciesNum < 6 {
+			fidNum, _ := u.recommendClubByFid(159) //训练
+			if addressNum+speciesNum+fidNum < 6 {
+				fid1Num, _ := u.recommendClubByFid(10) //巧手
+				if addressNum+speciesNum+fidNum+fid1Num < 6 {
+					u.recommendClubByFup(2) //综合
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (u *User) getRecommendUser() error {
+
+	speciesNum, _ := u.recommendUserBySpecies() //相同犬种
+	addressNum, _ := u.recommendUserByAddress()
+	if addressNum+speciesNum < 6 {
+		ageNum, _ := u.recommendUserByAge() //相同年龄
+		if addressNum+speciesNum+ageNum < 8 {
+			u.recommendUserBySpecies() //相同犬种
+		}
+	}
+	return nil
+}
+
+//根据犬种推荐用户
+func (u *User) recommendUserBySpecies() (int, error) {
+	if u.species != "" {
+		speciesItems := strings.Split(u.species, ";")
+		speciesKeyword := ""
+		for s, _ := range speciesItems {
+			speciesKeyword += `\"` + speciesItems[s] + `\"` + ","
+		}
+		speciesKeyword = string(speciesKeyword[0 : len(speciesKeyword)-1])
+		query := u.getUserQueries(speciesKeyword, 3) //获取根据犬种查询条件
+		// fmt.Println("species query:")
+		// fmt.Println(query)
+		user, err := u.getUser(query)
+		if err != nil {
+			fmt.Println("get user error, by " + speciesKeyword)
+			return 0, nil
+		}
+		if user != nil {
+			err = u.pushUserRecommend(user, 1)
+			if err != nil {
+				fmt.Println("push user error, by " + u.age)
+				return 0, nil
+			}
+			return len(*user), nil
+		}
+	}
+	return 0, nil
+}
+
+//根据地域推荐用户
+func (u *User) recommendUserByAddress() (int, error) {
+	if u.address != "" {
+		query := u.getUserQueries(u.address, 0) //获取根据地址查询条件
+		// fmt.Println("address query:")
+		// fmt.Println(query)
+		user, err := u.getUser(query)
+		if err != nil {
+			fmt.Println("get user error, by " + u.address)
+			return 0, nil
+		}
+		if user != nil {
+			err = u.pushUserRecommend(user, 2)
+			if err != nil {
+				fmt.Println("push user error, by " + u.age)
+				return 0, nil
+			}
+			return len(*user), nil
+		}
+	}
+	return 0, nil
+}
+
+//根据年龄推荐用户
+func (u *User) recommendUserByAge() (int, error) {
+	if u.age != "" {
+		ageItems := strings.Split(u.age, ";")
+		ageKeyword := ""
+		for s, _ := range ageItems {
+			ageKeyword += `\"` + ageItems[s] + `\"` + ","
+		}
+		ageKeyword = string(ageKeyword[0 : len(ageKeyword)-1])
+		query := u.getUserQueries(ageKeyword, 3) //获取根据年龄查询条件
+		// fmt.Println("age query:")
+		// fmt.Println(query)
+		user, err := u.getUser(query)
+		if err != nil {
+			fmt.Println("get user error, by " + u.age)
+			return 0, nil
+		}
+		if user != nil {
+			err = u.pushUserRecommend(user, 0)
+			if err != nil {
+				fmt.Println("push user error, by " + u.age)
+				return 0, nil
+			}
+			return len(*user), nil
+		}
+	}
+	return 0, nil
+}
+
+// 存储用户数据
+func (u *User) pushUserRecommend(user *[]elkUserBody, dateType int) error {
+	mc := u.mongoConn[0].DB("RecommendData").C("recommend_user")
+	userItems := *user
+	for i, _ := range userItems {
+		err := u.insertUser(mc, &userItems[i], dateType)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// -----   推荐俱乐部  ------
+
+//根据犬种推荐俱乐部
+func (u *User) recommendClubBySpecies() (int, error) {
+	speciesItems := strings.Split(u.species, ";")
+	speciesKeyword := ""
+	for s, _ := range speciesItems {
+		speciesKeyword += `\"` + speciesItems[s] + `\"` + ","
+	}
+	speciesKeyword = string(speciesKeyword[0 : len(speciesKeyword)-1])
+	query := u.getClubQueries(speciesKeyword, 0, 0) //获取根据犬种查询条件
+	club, err := u.getClub(query)
 	if err != nil {
-		return err
+		fmt.Println("get club error, by " + u.species)
+		return 0, nil
+	}
+	if club != nil {
+		err = u.pushClubRecommend(club)
+		if err != nil {
+			fmt.Println("push club error, by " + u.species)
+			return 0, nil
+		}
+		return len(*club), nil
+	}
+	return 0, nil
+}
+
+func (u *User) recommendClubByFid(fid int) (int, error) {
+	query := u.getClubQueries("", 0, fid) //获取根据犬种查询条件
+	club, err := u.getClub(query)
+	if err != nil {
+		fmt.Println("get club error, by " + strconv.Itoa(fid))
+		return 0, nil
+	}
+	if club != nil {
+		err = u.pushClubRecommend(club)
+		if err != nil {
+			fmt.Println("push club error, by " + strconv.Itoa(fid))
+			return 0, nil
+		}
+		return len(*club), nil
+	}
+	return 0, nil
+}
+
+func (u *User) recommendClubByAddress() (int, error) {
+	if u.province != "" {
+		provinceKeyword := `\"` + u.province + `\"`
+		query := u.getClubQueries(provinceKeyword, 0, 0) //获取根据地址查询条件
+		club, err := u.getClub(query)
+		if err != nil {
+			fmt.Println("get club error, by " + u.province)
+			return 0, nil
+		}
+		if club != nil {
+			err = u.pushClubRecommend(club)
+			if err != nil {
+				fmt.Println("push club error, by " + u.province)
+				return 0, nil
+			}
+			return len(*club), nil
+		}
+	}
+	return 0, nil
+}
+
+func (u *User) recommendClubByFup(fup int) (int, error) {
+	query := u.getClubQueries("", fup, 0) //获取根据地址查询条件
+	club, err := u.getClub(query)
+	if err != nil {
+		fmt.Println("get club error, by " + strconv.Itoa(fup))
+		return 0, nil
+	}
+	if club != nil {
+		err = u.pushClubRecommend(club)
+		if err != nil {
+			fmt.Println("push club error, by " + strconv.Itoa(fup))
+			return 0, nil
+		}
+		return len(*club), nil
+	}
+	return 0, nil
+}
+
+func (u *User) pushClubRecommend(club *[]elkClubBody) error {
+	mc := u.mongoConn[0].DB("RecommendData").C("recommend_club")
+	clubItems := *club
+	for i, _ := range clubItems {
+		err := u.insertClub(mc, &clubItems[i])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+//-----  base function  ---
+
+func (u *User) getUserQueries(keyword string, getType int) string {
+	query := ""
+	mustNotQuery := ""
+	filterQuery := ""
+	filterQuery += "\"filter\":{\"bool\":{\"must_not\":["
+	for m, _ := range notRecommendUid {
+		mustNotQuery += "{\"term\":{\"id\":" + strconv.Itoa(notRecommendUid[m]) + "}},"
+	}
+	filterQuery += string(mustNotQuery[0 : len(mustNotQuery)-1])
+	filterQuery += "]}},"
+	// 达人数据
+	if getType == 2 {
+		query = "{\"query\": {\"query_string\":{\"query\":\"1\",\"fields\":[\"is_welluser\"]}},\"sort\": { \"lastlogintime\": { \"order\": \"desc\" }}}"
+	} else if getType == 3 {
+		//相同品种或年龄
+		query = "{\"size\" : 5,\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"pets\"]}}," + filterQuery + "\"sort\": { \"lastlogintime\": { \"order\": \"desc\" }}}"
+	} else if getType == 1 {
+		//我的数据
+		query = "{\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"id\"]}}}"
+	} else {
+		//地域相近
+		query = "{\"size\" : 3,\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"address\"]}}," + filterQuery + "\"sort\": { \"lastlogintime\": { \"order\": \"desc\" }}}"
+	}
+	return query
+}
+
+//获取用户数据
+func (u *User) getUser(query string) (*[]elkUserBody, error) {
+	abuyun := u.setAbuyun()
+	targetUrl := "http://" + u.elkDsn + "/user/user_info/_search?pretty"
+	var h http.Header = make(http.Header)
+	h.Set("a", "1")
+	statusCode, _, body, err := abuyun.SendRequest(targetUrl, h, query, true)
+	if err != nil {
+		fmt.Println("http request error", err)
+		return nil, err
+	}
+	if statusCode == 200 {
+		user, err := u.formatUser(body)
+		if err != nil {
+			fmt.Println("format user data error", err)
+			return nil, err
+		}
+		return user, nil
+	}
+	return nil, err
+}
+
+func (u *User) formatUser(body string) (*[]elkUserBody, error) {
+	var user []elkUserBody
+	js, err := simplejson.NewJson([]byte(body))
+	if err != nil {
+		return &user, err
+	}
+	hits, _ := js.Get("hits").Get("hits").Array()
+	for i, _ := range hits {
+		var userBody elkUserBody
+		source := js.Get("hits").Get("hits").GetIndex(i).Get("_source")
+		userBody.Id, _ = source.Get("id").Int()
+		userBody.nickname, _ = source.Get("nickname").String()
+		userBody.grouptitle, _ = source.Get("grouptitle").String()
+		userBody.follow_clubs, _ = source.Get("follow_clubs").String()
+		userBody.follow_users, _ = source.Get("follow_users").String()
+		userBody.is_welluser, _ = source.Get("is_welluser").Int()
+		userBody.lastlogintime, _ = source.Get("lastlogintime").Int()
+		userBody.pets, _ = source.Get("pets").String()
+		userBody.address, _ = source.Get("address").String()
+		user = append(user, userBody)
+	}
+	return &user, nil
+}
+
+//根据关键词搜索相关俱乐部
+//fup=76 各地俱乐部
+//fup=78 犬种俱乐部
+//fup=2 综合论坛
+//fup=0时, 不限
+
+func (u *User) getClubQueries(keyword string, fup int, fid int) string {
+	query := ""
+	//综合版区
+	if fup == 2 {
+		fupStr := strconv.Itoa(fup)
+		query = "{\"size\" : 2,\"query\": {\"query_string\":{\"query\":\"" + fupStr + "\",\"fields\":[\"fup\"]}},\"sort\": { \"todayposts\": { \"order\": \"desc\" }}}"
+	} else if fid != 0 {
+		fidStr := strconv.Itoa(fid)
+		query = "{\"query\": {\"query_string\":{\"query\":\"" + fidStr + "\",\"fields\":[\"id\"]}}}"
+	} else {
+		query = "{\"size\" : 6,\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"name\",\"description\"]}},\"sort\": { \"todayposts\": { \"order\": \"desc\" }}}"
+	}
+	return query
+}
+
+func (u *User) getClub(query string) (*[]elkClubBody, error) {
+	abuyun := u.setAbuyun()
+	targetUrl := "http://" + u.elkDsn + "/club/club_info/_search?pretty"
+
+	var h http.Header = make(http.Header)
+	h.Set("a", "1")
+	statusCode, _, body, err := abuyun.SendRequest(targetUrl, h, query, true)
+	if err != nil {
+		fmt.Println("http request error", err)
+		return nil, err
 	}
 
-	// fmt.Println("Logs found:")
-	// var l Log
-	// for _, item := range res.Each(reflect.TypeOf(l)) {
-	// 	l := item.(Log)
-	// 	fmt.Printf("time: %s message: %s\n", l.Time, l.Message)
-	// }
+	if statusCode == 200 {
+		club, err := u.formatClub(body)
+		if err != nil {
+			fmt.Println("format club data error", err)
+		}
+		return club, nil
+	}
+	return nil, err
+}
 
-	// return nil
+func (u *User) formatClub(body string) (*[]elkClubBody, error) {
+	var club []elkClubBody
+	js, err := simplejson.NewJson([]byte(body))
+	if err != nil {
+		return &club, err
+	}
+	hits, _ := js.Get("hits").Get("hits").Array()
+	for i, _ := range hits {
+		var clubBody elkClubBody
+		source := js.Get("hits").Get("hits").GetIndex(i).Get("_source")
+		clubBody.Id, _ = source.Get("id").Int()
+		clubBody.name, _ = source.Get("name").String()
+		clubBody.icon, _ = source.Get("icon").String()
+		clubBody.description, _ = source.Get("description").String()
+		clubBody.membernum, _ = source.Get("membernum").String()
+		clubBody.todayposts, _ = source.Get("todayposts").Int()
+		clubBody.fup, _ = source.Get("fup").Int()
+		club = append(club, clubBody)
+	}
+	return &club, nil
+}
+
+func (u *User) insertClub(mc *mgo.Collection, elkClubBody *elkClubBody) error {
+	//新增数据
+	created := time.Now().Format("2006-01-02")
+	membernum, _ := strconv.Atoi(elkClubBody.membernum)
+	var data RecommendData.Club
+	data = RecommendData.Club{bson.NewObjectId(),
+		u.Uid,
+		elkClubBody.Id,
+		elkClubBody.name,
+		elkClubBody.description,
+		elkClubBody.icon,
+		membernum,
+		1,
+		created}
+	err := mc.Insert(&data) //插入数据
+	if err != nil {
+
+		fmt.Println("insert club error")
+		return err
+	}
+	return nil
+}
+
+func (u *User) insertUser(mc *mgo.Collection, elkUserBody *elkUserBody, dataType int) error {
+	//新增数据
+	created := time.Now().Format("2006-01-02")
+	notRecommendUid = append(notRecommendUid, elkUserBody.Id)
+	var data RecommendData.User
+	data = RecommendData.User{bson.NewObjectId(),
+		elkUserBody.Id,
+		u.Uid,
+		elkUserBody.nickname,
+		elkUserBody.avatar,
+		0,
+		dataType,
+		created}
+	err := mc.Insert(&data) //插入数据
+	if err != nil {
+		fmt.Println("insert user error")
+		return err
+	}
+	return nil
+}
+
+func (u *User) isFollow(uid int) int {
+	follows := strings.Split(u.myData.follow_users, strconv.Itoa(uid))
+	fmt.Println(u.myData.follow_users)
+	fmt.Println(uid)
+	fmt.Println(follows)
+	if len(follows) > 1 {
+		return 1
+	}
+	return 0
 }
