@@ -275,6 +275,7 @@ func (r *RedisEngine) parseRaw(raw string) (string, int, error) {
 	//maybe realraw may have the sep string,so we can not use strings.split
 	rawSlice := []byte(raw)
 	rawLen := len(rawSlice)
+	//当是用户推荐时，raw是uid,长度可能会<2
 	if rawLen < 2 {
 		return raw, 0, nil
 	}
