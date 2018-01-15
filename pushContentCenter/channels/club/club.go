@@ -2,8 +2,9 @@ package club
 
 import (
 	"errors"
-	"fmt"
+	// "fmt"
 	"github.com/bitly/go-simplejson"
+	"github.com/donnie4w/go-logger/logger"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	mgo "gopkg.in/mgo.v2"
@@ -166,21 +167,22 @@ func (c *Club) pushClub(club int) error {
 	tableNameX := "forum_content_" + strconv.Itoa(club)
 	mc := c.mongoConn[0].DB("ClubData").C(tableNameX)
 	if c.action == 0 {
-		fmt.Println(strconv.Itoa(c.jsonData.Infoid) + " insert to " + strconv.Itoa(club))
+		logger.Info("infoid:", strconv.Itoa(c.jsonData.Infoid), " insert to forum_content_", strconv.Itoa(club))
+		// fmt.Println(strconv.Itoa(c.jsonData.Infoid) + " insert to " + strconv.Itoa(club))
 		err := c.insertClub(mc)
 		if err != nil {
 			return err
 		}
 	} else if c.action == 1 {
 		//修改数据状态
-		fmt.Println(strconv.Itoa(c.jsonData.Infoid) + " update to " + strconv.Itoa(club))
+		logger.Info("infoid:", strconv.Itoa(c.jsonData.Infoid), " update to forum_content_", strconv.Itoa(club))
 		err := c.updateClub(mc)
 		if err != nil {
 			return err
 		}
 	} else if c.action == -1 {
 		//删除数据
-		fmt.Println(strconv.Itoa(c.jsonData.Infoid) + " delete to " + strconv.Itoa(club))
+		logger.Info("infoid:", strconv.Itoa(c.jsonData.Infoid), " delete to forum_content_", strconv.Itoa(club))
 		err := c.removeClub(mc)
 		if err != nil {
 			return err
