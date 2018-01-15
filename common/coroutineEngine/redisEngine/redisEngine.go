@@ -275,6 +275,9 @@ func (r *RedisEngine) parseRaw(raw string) (string, int, error) {
 	//maybe realraw may have the sep string,so we can not use strings.split
 	rawSlice := []byte(raw)
 	rawLen := len(rawSlice)
+	if rawLen < 2 {
+		return raw, 0, nil
+	}
 	if (rawSlice[rawLen-2] == '_') && (rawLen > 2) {
 		tryTimesStr := string(rawSlice[rawLen-1])
 		tryTimesInt, err := strconv.Atoi(tryTimesStr)
