@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	"github.com/bitly/go-simplejson"
+	"github.com/donnie4w/go-logger/logger"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
 	mgo "gopkg.in/mgo.v2"
@@ -92,16 +93,17 @@ func (u *User) getMyData() *[]elkUserBody {
 	query := u.getUserQueries(uidStr, 1)
 	user, _ := u.getUser(query)
 	if user != nil {
-		species := u.getSpecies(user)   //我的宠物品种
-		age := u.getAge(user)           //我的宠物年龄
-		province := u.getProvince(user) //我的地域
-		address := u.getAddress(user)
+		data := *user
+		u.myData = data[0]
+		species := u.getSpecies()   //我的宠物品种
+		age := u.getAge()           //我的宠物年龄
+		province := u.getProvince() //我的地域
+		address := u.getAddress()
 		u.species = species
 		u.province = province
 		u.address = address
 		u.age = age
-		data := *user
-		u.myData = data[0]
+
 		if u.myData.follow_users != "" {
 			follow_users := strings.Split(u.myData.follow_users, ",")
 			for f, _ := range follow_users {
@@ -113,11 +115,10 @@ func (u *User) getMyData() *[]elkUserBody {
 	return nil
 }
 
-func (u *User) getAge(user *[]elkUserBody) string {
-	userAry := *user
+func (u *User) getAge() string {
 	age := ""
-	pets := userAry[0].pets
-	petItems := strings.Split(pets, ";")
+	pets := u.myData.pets
+	petItems := strings.Split(pets, "|")
 	for p, _ := range petItems {
 		petItem := strings.Split(petItems[p], ",")
 		age += petItem[4] + ";"
@@ -126,31 +127,28 @@ func (u *User) getAge(user *[]elkUserBody) string {
 	return age
 }
 
-func (u *User) getSpecies(user *[]elkUserBody) string {
-	userAry := *user
+func (u *User) getSpecies() string {
 	species := ""
-	pets := userAry[0].pets
-	petItems := strings.Split(pets, ";")
+	pets := u.myData.pets
+	petItems := strings.Split(pets, "|")
 	for p, _ := range petItems {
 		petItem := strings.Split(petItems[p], ",")
-		species += petItem[2] + ";"
+		species += petItem[3] + ";"
 	}
 	species = string(species[0 : len(species)-1])
 	return species
 }
 
-func (u *User) getAddress(user *[]elkUserBody) string {
-	userAry := *user
-	address := userAry[0].address
+func (u *User) getAddress() string {
+	address := u.myData.address
 	addressItems := strings.Split(address, ";")
 	formatted_address := addressItems[2]
 	return formatted_address
 }
 
-func (u *User) getProvince(user *[]elkUserBody) string {
-	userAry := *user
+func (u *User) getProvince() string {
 	province := ""
-	address := userAry[0].address
+	address := u.myData.address
 	addressItems := strings.Split(address, ";")
 	formatted_address := addressItems[2]
 	provinceAry := strings.Split(formatted_address, "省")
@@ -185,11 +183,16 @@ func (u *User) getRecommendClub() error {
 func (u *User) getRecommendUser() error {
 
 	speciesNum, _ := u.recommendUserBySpecies() //相同犬种
-	addressNum, _ := u.recommendUserByAddress()
-	if addressNum+speciesNum < 6 {
-		ageNum, _ := u.recommendUserByAge() //相同年龄
+	ageNum, _ := u.recommendUserByAge()         //相同年龄
+
+	logger.Info("recommend speciesNum is ", strconv.Itoa(speciesNum), " by uid ", strconv.Itoa(u.Uid))
+	logger.Info("recommend ageNum is ", strconv.Itoa(ageNum), " by uid ", strconv.Itoa(u.Uid))
+	if ageNum+speciesNum < 8 {
+		addressNum, _ := u.recommendUserByAddress()
+		logger.Info("recommend addressNum is ", strconv.Itoa(addressNum), " by uid ", strconv.Itoa(u.Uid))
 		if addressNum+speciesNum+ageNum < 8 {
-			u.recommendUserBySpecies() //相同犬种
+			nextSpeciesNum, _ := u.recommendUserBySpecies() //相同犬种
+			logger.Info("recommend nextSpeciesNum is ", strconv.Itoa(nextSpeciesNum), " by uid ", strconv.Itoa(u.Uid))
 		}
 	}
 	return nil
