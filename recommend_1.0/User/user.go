@@ -81,6 +81,9 @@ func (u *User) setAbuyun() *abuyunHttpClient.AbuyunProxy {
 }
 
 func (u *User) Do() error {
+	if u.Uid <= 0 {
+		return errors.New("uid is error; uid is " + strconv.Itoa(u.Uid))
+	}
 	u.notRecommendUid = append(u.notRecommendUid, u.Uid)
 	err := u.getMyData() //获取我的数据
 	if err == nil {
@@ -96,20 +99,22 @@ func (u *User) getMyData() error {
 	user, _ := u.getUser(query)
 	if user != nil {
 		data := *user
-		u.myData = data[0]
-		u.species = u.getSpecies()   //我的宠物品种
-		u.age = u.getAge()           //我的宠物年龄
-		u.province = u.getProvince() //我的地域
-		u.address = u.getAddress()
+		if len(data) > 0 {
+			u.myData = data[0]
+			u.species = u.getSpecies()   //我的宠物品种
+			u.age = u.getAge()           //我的宠物年龄
+			u.province = u.getProvince() //我的地域
+			u.address = u.getAddress()
 
-		if u.myData.follow_users != "" {
-			follow_users := strings.Split(u.myData.follow_users, ",")
-			for f, _ := range follow_users {
-				follow_uid, _ := strconv.Atoi(follow_users[f])
-				u.notRecommendUid = append(u.notRecommendUid, follow_uid)
+			if u.myData.follow_users != "" {
+				follow_users := strings.Split(u.myData.follow_users, ",")
+				for f, _ := range follow_users {
+					follow_uid, _ := strconv.Atoi(follow_users[f])
+					u.notRecommendUid = append(u.notRecommendUid, follow_uid)
+				}
 			}
+			return nil
 		}
-		return nil
 	}
 	return errors.New("get my info error by uid is " + uidStr)
 }
