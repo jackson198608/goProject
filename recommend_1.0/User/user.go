@@ -17,8 +17,6 @@ import (
 	"time"
 )
 
-var notRecommendUid []int
-
 type elkClubBody struct {
 	Id          int
 	name        string
@@ -44,15 +42,16 @@ type elkUserBody struct {
 }
 
 type User struct {
-	mysqlXorm []*xorm.Engine
-	mongoConn []*mgo.Session
-	Uid       int
-	elkDsn    string
-	province  string
-	species   string
-	address   string
-	age       string
-	myData    elkUserBody
+	mysqlXorm       []*xorm.Engine
+	mongoConn       []*mgo.Session
+	Uid             int
+	elkDsn          string
+	province        string
+	species         string
+	address         string
+	age             string
+	myData          elkUserBody
+	notRecommendUid []int
 }
 
 func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, elkDsn string) *User {
@@ -82,7 +81,7 @@ func (u *User) setAbuyun() *abuyunHttpClient.AbuyunProxy {
 }
 
 func (u *User) Do() error {
-	notRecommendUid = append(notRecommendUid, u.Uid)
+	u.notRecommendUid = append(u.notRecommendUid, u.Uid)
 	err := u.getMyData() //获取我的数据
 	if err == nil {
 		u.getRecommendClub()
@@ -107,7 +106,7 @@ func (u *User) getMyData() error {
 			follow_users := strings.Split(u.myData.follow_users, ",")
 			for f, _ := range follow_users {
 				follow_uid, _ := strconv.Atoi(follow_users[f])
-				notRecommendUid = append(notRecommendUid, follow_uid)
+				u.notRecommendUid = append(u.notRecommendUid, follow_uid)
 			}
 		}
 		return nil
@@ -426,8 +425,8 @@ func (u *User) getUserQueries(keyword string, getType int) string {
 	mustNotQuery := ""
 	filterQuery := ""
 	filterQuery += "\"filter\":{\"bool\":{\"must_not\":["
-	for m, _ := range notRecommendUid {
-		mustNotQuery += "{\"term\":{\"id\":" + strconv.Itoa(notRecommendUid[m]) + "}},"
+	for m, _ := range u.notRecommendUid {
+		mustNotQuery += "{\"term\":{\"id\":" + strconv.Itoa(u.notRecommendUid[m]) + "}},"
 	}
 	filterQuery += string(mustNotQuery[0 : len(mustNotQuery)-1])
 	filterQuery += "]}},"
@@ -584,7 +583,7 @@ func (u *User) insertClub(mc *mgo.Collection, elkClubBody *elkClubBody) error {
 func (u *User) insertUser(mc *mgo.Collection, elkUserBody *elkUserBody, dataType int) error {
 	//新增数据
 	created := time.Now().Format("2006-01-02")
-	notRecommendUid = append(notRecommendUid, elkUserBody.Id)
+	u.notRecommendUid = append(u.notRecommendUid, elkUserBody.Id)
 	var data RecommendData.User
 	data = RecommendData.User{bson.NewObjectId(),
 		elkUserBody.Id,
