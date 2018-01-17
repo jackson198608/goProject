@@ -11,6 +11,7 @@ import (
 	"gouminGitlab/common/orm/mongo/RecommendData"
 	"net/http"
 	// "reflect"
+	"errors"
 	"strconv"
 	"strings"
 	"time"
@@ -58,7 +59,7 @@ func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, elk
 	if (mysqlXorm == nil) || (mongoConn == nil) || (uid == "") || (elkDsn == "") {
 		return nil
 	}
-
+	logger.Info("start recommend: ", uid)
 	u := new(User)
 	if u == nil {
 		return nil
@@ -82,13 +83,15 @@ func (u *User) setAbuyun() *abuyunHttpClient.AbuyunProxy {
 
 func (u *User) Do() error {
 	notRecommendUid = append(notRecommendUid, u.Uid)
-	u.getMyData() //获取我的数据
-	u.getRecommendClub()
-	u.getRecommendUser()
-	return nil
+	err := u.getMyData() //获取我的数据
+	if err == nil {
+		u.getRecommendClub()
+		u.getRecommendUser()
+	}
+	return err
 }
 
-func (u *User) getMyData() *[]elkUserBody {
+func (u *User) getMyData() error {
 	uidStr := strconv.Itoa(u.Uid)
 	query := u.getUserQueries(uidStr, 1)
 	user, _ := u.getUser(query)
@@ -111,8 +114,9 @@ func (u *User) getMyData() *[]elkUserBody {
 				notRecommendUid = append(notRecommendUid, follow_uid)
 			}
 		}
+		return nil
 	}
-	return nil
+	return errors.New("get my info error by uid is " + uidStr)
 }
 
 func (u *User) getAge() string {
@@ -165,14 +169,20 @@ func (u *User) getProvince() string {
 
 func (u *User) getRecommendClub() error {
 	speciesNum, _ := u.recommendClubBySpecies() //犬种
+	logger.Info("[club] recommend speciesNum is ", strconv.Itoa(speciesNum), " by uid ", strconv.Itoa(u.Uid))
 	if speciesNum < 6 {
 		addressNum, _ := u.recommendClubByAddress() //地域
+		logger.Info("[club] recommend addressNum is ", strconv.Itoa(addressNum), " by uid ", strconv.Itoa(u.Uid))
 		if addressNum+speciesNum < 6 {
 			fidNum, _ := u.recommendClubByFid(159) //训练
+			logger.Info("[club] recommend fidNum is ", strconv.Itoa(fidNum), "by fid is 159 by uid ", strconv.Itoa(u.Uid))
 			if addressNum+speciesNum+fidNum < 6 {
 				fid1Num, _ := u.recommendClubByFid(10) //巧手
+				logger.Info("[club] recommend fid1Num is ", strconv.Itoa(fid1Num), "by fid is 10 by uid ", strconv.Itoa(u.Uid))
 				if addressNum+speciesNum+fidNum+fid1Num < 6 {
-					u.recommendClubByFup(2) //综合
+					FupNum, _ := u.recommendClubByFup(2) //综合
+					logger.Info("[club] recommend FupNum is ", strconv.Itoa(FupNum), " by uid ", strconv.Itoa(u.Uid))
+
 				}
 			}
 		}
@@ -181,18 +191,16 @@ func (u *User) getRecommendClub() error {
 }
 
 func (u *User) getRecommendUser() error {
-
 	speciesNum, _ := u.recommendUserBySpecies() //相同犬种
 	ageNum, _ := u.recommendUserByAge()         //相同年龄
-
-	logger.Info("recommend speciesNum is ", strconv.Itoa(speciesNum), " by uid ", strconv.Itoa(u.Uid))
-	logger.Info("recommend ageNum is ", strconv.Itoa(ageNum), " by uid ", strconv.Itoa(u.Uid))
+	logger.Info("[user] recommend speciesNum is ", strconv.Itoa(speciesNum), " by uid ", strconv.Itoa(u.Uid))
+	logger.Info("[user] recommend ageNum is ", strconv.Itoa(ageNum), " by uid ", strconv.Itoa(u.Uid))
 	if ageNum+speciesNum < 8 {
 		addressNum, _ := u.recommendUserByAddress()
-		logger.Info("recommend addressNum is ", strconv.Itoa(addressNum), " by uid ", strconv.Itoa(u.Uid))
+		logger.Info("[user] recommend addressNum is ", strconv.Itoa(addressNum), " by uid ", strconv.Itoa(u.Uid))
 		if addressNum+speciesNum+ageNum < 8 {
 			nextSpeciesNum, _ := u.recommendUserBySpecies() //相同犬种
-			logger.Info("recommend nextSpeciesNum is ", strconv.Itoa(nextSpeciesNum), " by uid ", strconv.Itoa(u.Uid))
+			logger.Info("[user] recommend nextSpeciesNum is ", strconv.Itoa(nextSpeciesNum), " by uid ", strconv.Itoa(u.Uid))
 		}
 	}
 	return nil
