@@ -126,7 +126,9 @@ func (u *User) getAge() string {
 				age += petItem[4] + ";"
 			}
 		}
-		age = string(age[0 : len(age)-1])
+		if age != "" {
+			age = string(age[0 : len(age)-1])
+		}
 	}
 	return age
 }
@@ -134,15 +136,20 @@ func (u *User) getAge() string {
 func (u *User) getSpecies() string {
 	species := ""
 	pets := u.myData.pets
-	petItems := strings.Split(pets, "|")
-	for p, _ := range petItems {
-		petItem := strings.Split(petItems[p], ",")
-		if len(petItem) == 4 {
-			species += petItem[3] + ";"
+	if pets != "" {
+		petItems := strings.Split(pets, "|")
+		for p, _ := range petItems {
+			petItem := strings.Split(petItems[p], ",")
+			if len(petItem) > 4 {
+				species += petItem[3] + ";"
+			}
+		}
+		if species != "" {
+			species = string(species[0 : len(species)-1])
 		}
 	}
-	if species != "" {
-		species = string(species[0 : len(species)-1])
+	if species == "" {
+		species = "金毛"
 	}
 	return species
 }
@@ -497,7 +504,7 @@ func (u *User) getClubQueries(keyword string, fup int, fid int) string {
 	//综合版区
 	if fup == 2 {
 		fupStr := strconv.Itoa(fup)
-		query = "{\"size\" : 2,\"query\": {\"query_string\":{\"query\":\"" + fupStr + "\",\"fields\":[\"fup\"]}},\"sort\": { \"todayposts\": { \"order\": \"desc\" }}}"
+		query = "{\"size\" : 4,\"query\": {\"query_string\":{\"query\":\"" + fupStr + "\",\"fields\":[\"fup\"]}},\"sort\": { \"todayposts\": { \"order\": \"desc\" }}}"
 	} else if fid != 0 {
 		fidStr := strconv.Itoa(fid)
 		query = "{\"query\": {\"query_string\":{\"query\":\"" + fidStr + "\",\"fields\":[\"id\"]}}}"
