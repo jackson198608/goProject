@@ -166,16 +166,13 @@ func (c *Club) pushClubs(clubs []int) error {
 func (c *Club) pushClub(club int) error {
 	tableNameX := "forum_content_" + strconv.Itoa(club)
 	mc := c.mongoConn[0].DB("ClubData").C(tableNameX)
-	if c.action == 0 {
-		logger.Info("infoid:", strconv.Itoa(c.jsonData.Infoid), " insert to forum_content_", strconv.Itoa(club))
-		// fmt.Println(strconv.Itoa(c.jsonData.Infoid) + " insert to " + strconv.Itoa(club))
-		err := c.insertClub(mc)
-		if err != nil {
-			return err
+	if c.action == 0 || c.action == 1 {
+		saveType := " insert"
+		if c.action == 1 {
+			saveType = " update"
 		}
-	} else if c.action == 1 {
-		//修改数据状态
-		logger.Info("infoid:", strconv.Itoa(c.jsonData.Infoid), " update to forum_content_", strconv.Itoa(club))
+		logger.Info("infoid:", strconv.Itoa(c.jsonData.Infoid), saveType, " to forum_content_", strconv.Itoa(club))
+		// fmt.Println(strconv.Itoa(c.jsonData.Infoid) + " insert to " + strconv.Itoa(club))
 		err := c.updateClub(mc)
 		if err != nil {
 			return err
