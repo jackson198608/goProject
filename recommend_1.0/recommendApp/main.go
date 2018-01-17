@@ -88,11 +88,6 @@ func main() {
 	switch jobType {
 	case "recommend": //push content conter
 		var mongoConnInfo []string
-		var Host := []string{
-			"dfw-c9-0.objectrocket.com:12345",
-			"dfw-c9-1.objectrocket.com:12345",
-		}
-
 		mongoConnInfo = append(mongoConnInfo, c.mongoConn)
 		var mysqlInfo []string
 		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
