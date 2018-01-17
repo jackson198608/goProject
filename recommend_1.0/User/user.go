@@ -98,14 +98,10 @@ func (u *User) getMyData() error {
 	if user != nil {
 		data := *user
 		u.myData = data[0]
-		species := u.getSpecies()   //我的宠物品种
-		age := u.getAge()           //我的宠物年龄
-		province := u.getProvince() //我的地域
-		address := u.getAddress()
-		u.species = species
-		u.province = province
-		u.address = address
-		u.age = age
+		u.species = u.getSpecies()   //我的宠物品种
+		u.age = u.getAge()           //我的宠物年龄
+		u.province = u.getProvince() //我的地域
+		u.address = u.getAddress()
 
 		if u.myData.follow_users != "" {
 			follow_users := strings.Split(u.myData.follow_users, ",")
@@ -122,12 +118,16 @@ func (u *User) getMyData() error {
 func (u *User) getAge() string {
 	age := ""
 	pets := u.myData.pets
-	petItems := strings.Split(pets, "|")
-	for p, _ := range petItems {
-		petItem := strings.Split(petItems[p], ",")
-		age += petItem[4] + ";"
+	if pets != "" {
+		petItems := strings.Split(pets, "|")
+		for p, _ := range petItems {
+			petItem := strings.Split(petItems[p], ",")
+			if len(petItem) > 4 {
+				age += petItem[4] + ";"
+			}
+		}
+		age = string(age[0 : len(age)-1])
 	}
-	age = string(age[0 : len(age)-1])
 	return age
 }
 
@@ -137,31 +137,44 @@ func (u *User) getSpecies() string {
 	petItems := strings.Split(pets, "|")
 	for p, _ := range petItems {
 		petItem := strings.Split(petItems[p], ",")
-		species += petItem[3] + ";"
+		if len(petItem) == 4 {
+			species += petItem[3] + ";"
+		}
 	}
-	species = string(species[0 : len(species)-1])
+	if species != "" {
+		species = string(species[0 : len(species)-1])
+	}
 	return species
 }
 
 func (u *User) getAddress() string {
+	formatted_address := ""
 	address := u.myData.address
-	addressItems := strings.Split(address, ";")
-	formatted_address := addressItems[2]
+	if address != "" {
+		addressItems := strings.Split(address, ";")
+		if len(addressItems) > 2 {
+			formatted_address = addressItems[2]
+		}
+	}
 	return formatted_address
 }
 
 func (u *User) getProvince() string {
 	province := ""
 	address := u.myData.address
-	addressItems := strings.Split(address, ";")
-	formatted_address := addressItems[2]
-	provinceAry := strings.Split(formatted_address, "省")
-	if len(provinceAry) > 1 {
-		province = provinceAry[0]
-	} else {
-		provinceAry := strings.Split(formatted_address, "市")
-		if len(provinceAry) > 1 {
-			province = provinceAry[0]
+	if address != "" {
+		addressItems := strings.Split(address, ";")
+		if len(addressItems) > 2 {
+			formatted_address := addressItems[2]
+			provinceAry := strings.Split(formatted_address, "省")
+			if len(provinceAry) > 1 {
+				province = provinceAry[0]
+			} else {
+				provinceAry := strings.Split(formatted_address, "市")
+				if len(provinceAry) > 1 {
+					province = provinceAry[0]
+				}
+			}
 		}
 	}
 	return province
@@ -304,6 +317,9 @@ func (u *User) pushUserRecommend(user *[]elkUserBody, dateType int) error {
 
 //根据犬种推荐俱乐部
 func (u *User) recommendClubBySpecies() (int, error) {
+	if u.species == "" {
+		return 0, nil
+	}
 	speciesItems := strings.Split(u.species, ";")
 	speciesKeyword := ""
 	for s, _ := range speciesItems {
