@@ -236,8 +236,8 @@ func (u *User) recommendUserBySpecies() (int, error) {
 		}
 		speciesKeyword = string(speciesKeyword[0 : len(speciesKeyword)-1])
 		query := u.getUserQueries(speciesKeyword, 3) //获取根据犬种查询条件
-		// fmt.Println("species query:")
-		// fmt.Println(query)
+		fmt.Println("species query:")
+		fmt.Println(query)
 		user, err := u.getUser(query)
 		if err != nil {
 			fmt.Println("get user error, by " + speciesKeyword)
@@ -259,8 +259,8 @@ func (u *User) recommendUserBySpecies() (int, error) {
 func (u *User) recommendUserByAddress() (int, error) {
 	if u.address != "" {
 		query := u.getUserQueries(u.address, 0) //获取根据地址查询条件
-		// fmt.Println("address query:")
-		// fmt.Println(query)
+		fmt.Println("address query:")
+		fmt.Println(query)
 		user, err := u.getUser(query)
 		if err != nil {
 			fmt.Println("get user error, by " + u.address)
@@ -288,8 +288,8 @@ func (u *User) recommendUserByAge() (int, error) {
 		}
 		ageKeyword = string(ageKeyword[0 : len(ageKeyword)-1])
 		query := u.getUserQueries(ageKeyword, 3) //获取根据年龄查询条件
-		// fmt.Println("age query:")
-		// fmt.Println(query)
+		fmt.Println("age query:")
+		fmt.Println(query)
 		user, err := u.getUser(query)
 		if err != nil {
 			fmt.Println("get user error, by " + u.age)

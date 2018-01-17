@@ -13,7 +13,7 @@ const dbAuth = "dog123:dog123"
 const dbDsn = "192.168.86.193:3307"
 const dbName = "new_dog123"
 const mongoConn = "192.168.86.192:27017" //"192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019"
-const elkDsn = "192.168.86.5:9200"
+const elkDsn = "210.14.154.117:8986"     //"192.168.86.5:9200"
 
 func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	dbAuth := "dog123:dog123"
