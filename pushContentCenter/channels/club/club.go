@@ -168,7 +168,6 @@ func (c *Club) pushClub(club int) error {
 	mc := c.mongoConn[0].DB("ClubData").C(tableNameX)
 	if c.action == 0 {
 		logger.Info("infoid:", strconv.Itoa(c.jsonData.Infoid), " insert to forum_content_", strconv.Itoa(club))
-		// fmt.Println(strconv.Itoa(c.jsonData.Infoid) + " insert to " + strconv.Itoa(club))
 		err := c.insertClub(mc)
 		if err != nil {
 			return err
@@ -254,10 +253,7 @@ func (c *Club) findCount(mc *mgo.Collection) int {
 func (c *Club) updateClub(mc *mgo.Collection) error {
 	count := c.findCount(mc)
 	if count == 0 {
-		err := c.insertClub(mc)
-		if err != nil {
-			return err
-		}
+		return errors.New("infoid is " + strconv.Itoa(c.jsonData.Infoid) + " update error")
 	} else {
 		updateData := c.updateBsonMap()
 		_, err := mc.UpdateAll(bson.M{"type": c.jsonData.Type, "infoid": c.jsonData.Infoid}, updateData)

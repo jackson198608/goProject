@@ -266,7 +266,7 @@ func (r *RedisEngine) closeMgoConn(mgoConns []*mgo.Session) {
 func (r *RedisEngine) pushFails(redisConn *redis.Client, realraw string, tryTimes int) error {
 	//@todo check params
 	backRaw := realraw + "_" + strconv.Itoa(tryTimes+1)
-	redisConn.LPush(r.queueName, backRaw)
+	redisConn.RPush(r.queueName, backRaw)
 	return nil
 }
 
