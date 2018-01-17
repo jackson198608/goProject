@@ -166,13 +166,16 @@ func (c *Club) pushClubs(clubs []int) error {
 func (c *Club) pushClub(club int) error {
 	tableNameX := "forum_content_" + strconv.Itoa(club)
 	mc := c.mongoConn[0].DB("ClubData").C(tableNameX)
-	if c.action == 0 || c.action == 1 {
-		saveType := " insert"
-		if c.action == 1 {
-			saveType = " update"
-		}
-		logger.Info("infoid:", strconv.Itoa(c.jsonData.Infoid), saveType, " to forum_content_", strconv.Itoa(club))
+	if c.action == 0 {
+		logger.Info("infoid:", strconv.Itoa(c.jsonData.Infoid), " insert to forum_content_", strconv.Itoa(club))
 		// fmt.Println(strconv.Itoa(c.jsonData.Infoid) + " insert to " + strconv.Itoa(club))
+		err := c.insertClub(mc)
+		if err != nil {
+			return err
+		}
+	} else if c.action == 1 {
+		//修改数据状态
+		logger.Info("infoid:", strconv.Itoa(c.jsonData.Infoid), " update to forum_content_", strconv.Itoa(club))
 		err := c.updateClub(mc)
 		if err != nil {
 			return err
@@ -203,37 +206,40 @@ func (c *Club) getClubs() []int {
 }
 
 func (c *Club) insertClub(mc *mgo.Collection) error {
-	//新增数据
-	var data ClubData.ClubX
-	data = ClubData.ClubX{bson.NewObjectId(),
-		c.jsonData.Infoid,
-		c.jsonData.Uid,
-		c.jsonData.Type,
-		c.jsonData.TypeId,
-		c.jsonData.Title,
-		c.jsonData.Content,
-		c.jsonData.Imagenums,
-		c.jsonData.Created,
-		c.jsonData.Lastpost,
-		c.jsonData.Lastposter,
-		c.jsonData.Status,
-		c.jsonData.Displayorder,
-		c.jsonData.Digest,
-		c.jsonData.Qsttype,
-		c.jsonData.ThreadStatus,
-		c.jsonData.Cover,
-		c.jsonData.Closed,
-		c.jsonData.Highlight,
-		c.jsonData.Sortid,
-		c.jsonData.Recommends,
-		c.jsonData.Special,
-		c.jsonData.Replies,
-		c.jsonData.Isgroup,
-		c.jsonData.Price,
-		c.jsonData.Heats}
-	err := mc.Insert(&data) //插入数据
-	if err != nil {
-		return err
+	count := c.findCount(mc)
+	if count == 0 {
+		//新增数据
+		var data ClubData.ClubX
+		data = ClubData.ClubX{bson.NewObjectId(),
+			c.jsonData.Infoid,
+			c.jsonData.Uid,
+			c.jsonData.Type,
+			c.jsonData.TypeId,
+			c.jsonData.Title,
+			c.jsonData.Content,
+			c.jsonData.Imagenums,
+			c.jsonData.Created,
+			c.jsonData.Lastpost,
+			c.jsonData.Lastposter,
+			c.jsonData.Status,
+			c.jsonData.Displayorder,
+			c.jsonData.Digest,
+			c.jsonData.Qsttype,
+			c.jsonData.ThreadStatus,
+			c.jsonData.Cover,
+			c.jsonData.Closed,
+			c.jsonData.Highlight,
+			c.jsonData.Sortid,
+			c.jsonData.Recommends,
+			c.jsonData.Special,
+			c.jsonData.Replies,
+			c.jsonData.Isgroup,
+			c.jsonData.Price,
+			c.jsonData.Heats}
+		err := mc.Insert(&data) //插入数据
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
