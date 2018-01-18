@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
+	"github.com/jackson198608/goProject/common/tools"
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -88,7 +90,15 @@ func (t *RedisEngine) croutinePopJobData(c chan int, i int) {
 	}
 	defer db.Close()
 
-	session, err := mgo.Dial(t.mongoConn)
+	var session *mgo.Session
+	// var err error
+	mgoInfos := strings.Split(t.mongoConn, ",")
+	if len(mgoInfos) == 1 {
+		session, err = tools.GetStandAloneConnecting(t.mongoConn)
+	} else {
+		session, err = tools.GetReplicaConnecting(mgoInfos)
+	}
+	// session, err := mgo.Dial(t.mongoConn)
 	if err != nil {
 		logger.Error("[error] connect mongodb err")
 		return
