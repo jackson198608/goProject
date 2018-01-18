@@ -48,7 +48,7 @@ func getAllActiveUsers(mongoConn string) []int {
 	var user []int
 	var session *mgo.Session
 	var err error
-	mgoInfos := strings.Split(mongoConn, ";")
+	mgoInfos := strings.Split(mongoConn, ",")
 	if len(mgoInfos) == 1 {
 		session, err = tools.GetStandAloneConnecting(mongoConn)
 	} else {

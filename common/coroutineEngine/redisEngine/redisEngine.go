@@ -126,7 +126,7 @@ func (r *RedisEngine) mgoConnect() ([]*mgo.Session, error) {
 func (r *RedisEngine) mgoSingleConnect(mgoInfo string) (*mgo.Session, error) {
 	var session *mgo.Session
 	var err error
-	mgoInfos := strings.Split(mgoInfo, ";")
+	mgoInfos := strings.Split(mgoInfo, ",")
 	if len(mgoInfos) == 1 {
 		session, err = tools.GetStandAloneConnecting(mgoInfo)
 	} else {

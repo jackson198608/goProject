@@ -1,21 +1,23 @@
 package focus
 
 import (
-	// "fmt"
+	"fmt"
 	"github.com/bitly/go-simplejson"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/allPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/breedPersons"
 	// "github.com/jackson198608/goProject/pushContentCenter/channels/location/clubPersons"
+	"github.com/jackson198608/goProject/common/tools"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/fansPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
+	"strings"
 )
 
 const (
 	mongoConn = "192.168.5.22:27017,192.168.5.26:27017,192.168.5.200:27017"
-	//mongoConn = "192.168.86.192:27017" //@todo change online dsn
+	// mongoConn = "192.168.86.193:27017,192.168.86.193:270178,192.168.86.193:27019" //@todo change online dsn
 )
 
 var m map[int]bool
@@ -55,13 +57,15 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 	return f
 }
 
-//TypeId = 1 bbs, push fans and club active persons
+//TypeId = 1 bbs, push fans active persons
 //TypeId = 6 video, push fans active persons
-//TypeId = 8 bbs, push fans and breed active persons
+//TypeId = 8 ask, push fans and breed active persons
 //TypeId = 9 recommend bbs, push all active persons
 //TypeId = 15 recommend video, push all active persons
+//TypeId = 18 宠家号, push fans active persons
 func (f *Focus) Do() error {
-	if f.jsonData.TypeId == 1 {
+	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 {
+		fmt.Println(f.jsonData.TypeId)
 		f.jsonData.Source = 3
 		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
 		err := fp.Do()
@@ -143,8 +147,14 @@ func loadActiveUserToMap() map[int]bool {
 	var m map[int]bool
 	m = make(map[int]bool)
 
-	// mongoConn := "192.168.86.192:27017"
-	session, err := mgo.Dial(mongoConn)
+	var session *mgo.Session
+	var err error
+	mgoInfos := strings.Split(mongoConn, ",")
+	if len(mgoInfos) == 1 {
+		session, err = tools.GetStandAloneConnecting(mongoConn)
+	} else {
+		session, err = tools.GetReplicaConnecting(mgoInfos)
+	}
 	if err != nil {
 		return m
 	}
