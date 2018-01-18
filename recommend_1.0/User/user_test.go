@@ -26,10 +26,32 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 		return nil, nil
 	}
 
-	mongoConn := "192.168.86.192:27017"
-	session, err := mgo.Dial(mongoConn)
+	// mongoConn := "192.168.86.192:27017"
+	// session, err := mgo.Dial(mongoConn)
+	// if err != nil {
+	// 	fmt.Println("[error] connect mongodb err")
+	// 	return nil, nil
+	// }
+
+	Host := []string{
+		"192.168.86.193:27017",
+		"192.168.86.193:27018",
+		"192.168.86.193:27019",
+	}
+	const (
+		Username       = ""
+		Password       = ""
+		Database       = ""
+		ReplicaSetName = "goumin"
+	)
+	session, err := mgo.DialWithInfo(&mgo.DialInfo{
+		Addrs:          Host,
+		Username:       Username,
+		Password:       Password,
+		Database:       Database,
+		ReplicaSetName: ReplicaSetName,
+	})
 	if err != nil {
-		fmt.Println("[error] connect mongodb err")
 		return nil, nil
 	}
 	// return engine, session

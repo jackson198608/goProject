@@ -7,9 +7,11 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/Recommend_1.0/task"
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
+	"github.com/jackson198608/goProject/common/tools"
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
 	"os"
+	"strings"
 )
 
 var c Config = Config{
@@ -44,9 +46,15 @@ func createClient() *redis.Client {
 //全部活跃用户
 func getAllActiveUsers(mongoConn string) []int {
 	var user []int
-	session, err := mgo.Dial(mongoConn)
+	var session *mgo.Session
+	var err error
+	mgoInfos := strings.Split(mongoConn, ";")
+	if len(mgoInfos) == 1 {
+		session, err = tools.GetStandAloneConnecting(mongoConn)
+	} else {
+		session, err = tools.GetReplicaConnecting(mgoInfos)
+	}
 	if err != nil {
-		logger.Error("[error] connect mongodb err")
 		return user
 	}
 

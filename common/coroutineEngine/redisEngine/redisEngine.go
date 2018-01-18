@@ -5,9 +5,11 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
+	"github.com/jackson198608/goProject/common/tools"
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -122,11 +124,17 @@ func (r *RedisEngine) mgoConnect() ([]*mgo.Session, error) {
 }
 
 func (r *RedisEngine) mgoSingleConnect(mgoInfo string) (*mgo.Session, error) {
-	session, err := mgo.Dial(mgoInfo)
+	var session *mgo.Session
+	var err error
+	mgoInfos := strings.Split(mgoInfo, ";")
+	if len(mgoInfos) == 1 {
+		session, err = tools.GetStandAloneConnecting(mgoInfo)
+	} else {
+		session, err = tools.GetReplicaConnecting(mgoInfos)
+	}
 	if err != nil {
 		return nil, err
 	}
-
 	return session, nil
 }
 
