@@ -62,9 +62,10 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 //TypeId = 8 ask, push fans and breed active persons
 //TypeId = 9 recommend bbs, push all active persons
 //TypeId = 15 recommend video, push all active persons
-//TypeId = 18 宠家号, push fans active persons
+//TypeId = 18 宠家号文档, push fans active persons
+//TypeId = 19 宠家号视频, push fans active persons
 func (f *Focus) Do() error {
-	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 {
+	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 || f.jsonData.TypeId == 19 {
 		// fmt.Println(f.jsonData.TypeId)
 		f.jsonData.Source = 3
 		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
