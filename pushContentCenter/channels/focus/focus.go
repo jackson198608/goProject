@@ -1,7 +1,7 @@
 package focus
 
 import (
-	"fmt"
+	// "fmt"
 	"github.com/bitly/go-simplejson"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
@@ -65,7 +65,7 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 //TypeId = 18 宠家号, push fans active persons
 func (f *Focus) Do() error {
 	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 {
-		fmt.Println(f.jsonData.TypeId)
+		// fmt.Println(f.jsonData.TypeId)
 		f.jsonData.Source = 3
 		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
 		err := fp.Do()
