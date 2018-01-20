@@ -26,6 +26,7 @@ type RedisEngine struct {
 	mongoConnInfo []string       //custom @todo need to multi
 	mysqlInfo     []string       //the result format like tools.GetMysqlDsn return value,pass to task
 	coroutinNum   int
+	daemon        int
 	taskArgs      []string //somethin you want to give task
 	workFun       func(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error
 }
@@ -35,6 +36,7 @@ func NewRedisEngine(queueName string,
 	mongoConnInfo []string,
 	mysqlInfo []string,
 	coroutinNum int,
+	daemon int,
 	workFun func(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error,
 	taskArgs ...string,
 ) (*RedisEngine, error) {
@@ -56,6 +58,7 @@ func NewRedisEngine(queueName string,
 	r.coroutinNum = coroutinNum
 	r.workFun = workFun
 	r.taskArgs = taskArgs
+	r.daemon = daemon
 
 	return r, nil
 
@@ -206,12 +209,7 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 		//get task
 		raw, err := redisConn.LPop(r.queueName).Result()
 		if err != nil {
-			isHold := 1
-			if len(r.taskArgs) > 1 {
-				isHold, _ = strconv.Atoi(r.taskArgs[1])
-			}
-			fmt.Println(isHold)
-			if isHold == 0 {
+			if r.daemon == 0 {
 				return
 			}
 			//there is no more job,sleep a while

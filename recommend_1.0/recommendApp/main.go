@@ -107,7 +107,7 @@ func main() {
 		pushAllActiveUserToRedis(c.queueName)
 
 		logger.Info("start work")
-		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, jobFuc, c.elkDsn, "0")
+		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 0, jobFuc, c.elkDsn)
 		if err != nil {
 			logger.Error("[NewRedisEngine] ", err)
 		}
