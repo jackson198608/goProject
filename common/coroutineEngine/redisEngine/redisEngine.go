@@ -210,6 +210,7 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 		raw, err := redisConn.LPop(r.queueName).Result()
 		if err != nil {
 			if r.daemon == 0 {
+				c <- result
 				return
 			}
 			//there is no more job,sleep a while
@@ -246,7 +247,7 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 	if result.err != nil {
 		fmt.Println("[error] coroutine exit with error: ", result.err)
 	}
-
+	c <- result
 	return
 
 }
