@@ -73,11 +73,18 @@ func (f *Recommend) parseJson() (*job.RecommendJsonColumn, error) {
 	}
 
 	jsonC.Uid, _ = js.Get("uid").Int()
-	jsonC.Created, _ = js.Get("time").String()
+	jsonC.Created, _ = js.Get("create").String()
 	jsonC.Infoid, _ = js.Get("infoid").Int()
-	jsonC.Title, _ = js.Get("event_info").Get("title").String()
-	jsonC.Content, _ = js.Get("event_info").Get("content").String()
-	jsonC.Imagenums, _ = js.Get("event_info").Get("image_num").Int()
+	jsonC.Type, _ = js.Get("type").Int()
+	jsonC.Title, _ = js.Get("title").String()
+	jsonC.Description, _ = js.Get("description").String()
+	jsonC.Images, _ = js.Get("image").String()
+	jsonC.Rauth, _ = js.Get("rauth").String()
+	jsonC.Imagenums, _ = js.Get("image_num").Int()
+	jsonC.QstType, _ = js.Get("qst_type").Int()
+	jsonC.AdType, _ = js.Get("ad_type").Int()
+	jsonC.AdUrl, _ = js.Get("ad_url").String()
+	jsonC.Rauth, _ = js.Get("rauth").String()
 	jsonC.Action, _ = js.Get("action").Int() //行为 -1 删除 0 插入 1 修改
 
 	return &jsonC, nil
