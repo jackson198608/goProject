@@ -206,6 +206,14 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 		//get task
 		raw, err := redisConn.LPop(r.queueName).Result()
 		if err != nil {
+			isHold := 1
+			if len(r.taskArgs) > 1 {
+				isHold, _ = strconv.Atoi(r.taskArgs[1])
+			}
+			fmt.Println(isHold)
+			if isHold == 0 {
+				return
+			}
 			//there is no more job,sleep a while
 			time.Sleep(sleepTime * time.Second)
 			continue
