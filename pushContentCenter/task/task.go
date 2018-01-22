@@ -6,6 +6,7 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/club"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/focus"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/recommend"
 	mgo "gopkg.in/mgo.v2"
 	"strings"
 )
@@ -64,6 +65,13 @@ func (t *Task) Do() error {
 		} else {
 			return nil
 		}
+	case "recommend":
+		err := t.ChannelRecommend()
+		if err != nil {
+			return err
+		} else {
+			return nil
+		}
 
 	}
 	return nil
@@ -83,6 +91,16 @@ func (t *Task) ChannelFocus() error {
 // club channel's invoke function
 func (t *Task) ChannelClub() error {
 	c := club.NewClub(t.MysqlXorm, t.MongoConn, t.Jobstr)
+	err := c.Do()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// recommend channel's invoke function
+func (t *Task) ChannelRecommend() error {
+	c := recommend.NewRecommend(t.MysqlXorm, t.MongoConn, t.Jobstr)
 	err := c.Do()
 	if err != nil {
 		return err

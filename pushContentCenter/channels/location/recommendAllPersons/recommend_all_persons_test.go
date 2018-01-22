@@ -1,4 +1,4 @@
-package allPersons
+package recommendAllPersons
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 		return nil, nil
 	}
 
-	mongoConn := "192.168.86.192:27017"
+	mongoConn := "192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		fmt.Println("[error] connect mongodb err")
@@ -39,24 +39,24 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	// return engine, session
 }
 
-func jsonData() *job.FocusJsonColumn {
-	var jsonData job.FocusJsonColumn
+func jsonData() *job.RecommendJsonColumn {
+	var jsonData job.RecommendJsonColumn
 	jsonData.Uid = 2060500
-	jsonData.TypeId = 1
-	jsonData.Created = "2017-10-23 22:54"
-	jsonData.Tid = 0
-	jsonData.Bid = 36
-	jsonData.Infoid = 234567
+	jsonData.Type = 1
+	jsonData.Created = 1516598106
+	jsonData.Infoid = 4435514
 	jsonData.Title = "所有活跃用户推送title"
-	jsonData.Content = "所有活跃用户推送正文正文"
-	jsonData.Forum = "36club"
+	jsonData.Description = "所有活跃用户推送正文正文"
+	jsonData.Images = ""
 	jsonData.Imagenums = 0
 	jsonData.Tag = 0
-	jsonData.Qsttype = 0
-	jsonData.Fid = 0
-	jsonData.Source = 2
-	jsonData.Status = 1
+	jsonData.Tags = ""
+	jsonData.QstType = 0
+	jsonData.AdType = 0
+	jsonData.AdUrl = ""
+	jsonData.Channel = 1
 	jsonData.Action = 0
+	jsonData.Rauth = ""
 	return &jsonData
 }
 
@@ -65,7 +65,7 @@ var m map[int]bool
 func init() {
 	m = make(map[int]bool)
 
-	mongoConn := "192.168.86.192:27017"
+	mongoConn := "192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		// return m
@@ -83,32 +83,16 @@ func init() {
 	}
 }
 
-// func TestGetPersons(t *testing.T) {
-// 	mysqlXorm, mongoConn := testConn()
-// 	jsonData := jsonData()
-// 	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
-// 	fmt.Println(f.getPersons(2))
-// }
-
 func TestPushPerson(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
+	f := NewRecommendAllPersons(mysqlXorm, mongoConn, jsonData, &m)
 	fmt.Println(f.pushPerson(881050))
 }
-
-// func TestPushPersons(t *testing.T) {
-// 	mysqlXorm, mongoConn := testConn()
-// 	jsonData := jsonData()
-// 	var persons = []int{2060500, 2060400}
-
-// 	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
-// 	fmt.Println(f.pushPersons(persons))
-// }
 
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
+	f := NewRecommendAllPersons(mysqlXorm, mongoConn, jsonData, &m)
 	fmt.Println(f.Do())
 }
