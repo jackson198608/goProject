@@ -147,7 +147,7 @@ func getDoRedisEngine(jobType string) *redisEngine.RedisEngine {
 	redisInfo := redis.Options{
 		Addr: c.redisConn,
 	}
-	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.numloops, jobFunc, c.saveDir, c.host, c.is_abuyun, jobType)
+	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.numloops, 1, jobFunc, c.saveDir, c.host, c.is_abuyun, jobType)
 	if err != nil {
 		logger.Error("[NewRedisEngine] ", err)
 	}

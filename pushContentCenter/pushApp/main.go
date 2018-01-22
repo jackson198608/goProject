@@ -49,7 +49,7 @@ func main() {
 			Addr: c.redisConn,
 		}
 		logger.Info("start work")
-		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, jobFuc)
+		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 1, jobFuc)
 		if err != nil {
 			logger.Error("[NewRedisEngine] ", err)
 		}
