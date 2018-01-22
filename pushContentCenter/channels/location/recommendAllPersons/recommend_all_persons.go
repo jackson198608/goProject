@@ -96,6 +96,7 @@ func (f *RecommendAllPersons) insertPerson(c *mgo.Collection, person int) error 
 	//新增数据
 	var data RecommendData.UserRecommendX
 	data = RecommendData.UserRecommendX{bson.NewObjectId(),
+		f.jsonData.Pid,
 		f.jsonData.Uid,
 		person,
 		f.jsonData.Type,

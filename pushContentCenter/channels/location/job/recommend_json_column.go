@@ -3,6 +3,7 @@ package job
 //json column
 type RecommendJsonColumn struct {
 	Infoid        int
+	Pid           int
 	Uid           int
 	Ruid          int
 	Type          int

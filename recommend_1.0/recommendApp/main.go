@@ -11,6 +11,7 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -68,7 +69,7 @@ func getAllActiveUsers(mongoConn string) []int {
 	return user
 }
 
-func pushAllActiveUserToRedis(queueName string) bool {
+func pushAllActiveUserToRedis(queueName string, channel string) bool {
 	rc := createClient()
 	realTasks := getAllActiveUsers(c.mongoConn)
 	if len(realTasks) == 0 {
@@ -82,7 +83,7 @@ func pushAllActiveUserToRedis(queueName string) bool {
 
 	logger.Info("this is int task", realTasks)
 	for i := 0; i < len(realTasks); i++ {
-		err := rc.RPush(queueName, realTasks[i]).Err()
+		err := rc.RPush(queueName, strconv.Itoa(realTasks[i])+"|"+channel).Err()
 		if err != nil {
 			logger.Error("insert redis error", err)
 			return false
@@ -104,10 +105,33 @@ func main() {
 			Addr: c.redisConn,
 		}
 		//生产任务
-		pushAllActiveUserToRedis(c.queueName)
+		pushAllActiveUserToRedis(c.queueName, "follow")
 
 		logger.Info("start work")
 		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 0, jobFuc, c.elkDsn)
+		if err != nil {
+			logger.Error("[NewRedisEngine] ", err)
+		}
+
+		err = r.Do()
+		if err != nil {
+			logger.Error("[redisEngine Do] ", err)
+		}
+	case "content": //push content conter
+		var mongoConnInfo []string
+		mongoConnInfo = append(mongoConnInfo, c.mongoConn)
+		var mysqlInfo []string
+		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
+
+		redisInfo := redis.Options{
+			Addr: c.redisConn,
+		}
+		// queueName := "pushRandomRecommendTask"
+		//生产任务
+		pushAllActiveUserToRedis(c.queueName, "content")
+
+		logger.Info("start work")
+		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, jobFuc)
 		if err != nil {
 			logger.Error("[NewRedisEngine] ", err)
 		}
@@ -143,6 +167,7 @@ func help() {
 	fmt.Println("Options:")
 	// fmt.Println("  allindex\t\t\t\tThe index of all collections is deleted, and then a new index is created")
 	// fmt.Println("  singleindex_userId\t\t\tSpecify a collection to create an index")
-	fmt.Println("  recommend\t\t\t\t\trecommend data")
+	fmt.Println("  recommend\t\t\t\t\tRecommending related clubs and unconcerned users")
+	fmt.Println("  content\t\t\t\t\tRecommending a selection of content to the user")
 	fmt.Println("  --help\t\t\t\tshow this usage information")
 }
