@@ -20,7 +20,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 		return nil, nil
 	}
 
-	mongoConn := "192.168.86.192:27017"
+	mongoConn := "192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		fmt.Println("[error] connect mongodb err")
@@ -36,7 +36,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 
 func TestParseJson(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
-	jobStr := "{\"uid\":2060500,\"event_type\":2,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":2,\"fid\":36},\"tid\":0,\"status\":1,\"time\":1508469600}"
+	jobStr := "{\"uid\":2060500,\"recommend_type\":\"all\",\"type\":1,\"title\":\"subject\",\"description\":\"aaaaaa\",\"image_num\":0,\"image_num\":\"\",\"tags\":\"\",\"tag\":0,\"created\":1508469600,\"channel\":1}"
 	f := NewRecommend(mysqlXorm, mongoConn, jobStr)
 	f.parseJson()
 }
@@ -44,7 +44,7 @@ func TestParseJson(t *testing.T) {
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 
-	jobStr := "{\"uid\":881050,\"event_type\":1,\"event_info\":{\"title\":\"subject\",\"focus content\":\" focus  message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":1,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"action\":0,\"time\":\"2017-10-23 10:54:00\"}"
+	jobStr := "{\"uid\":2060500,\"recommend_type\":\"all\",\"type\":1,\"title\":\"subject\",\"description\":\"aaaaaa\",\"image_num\":0,\"image_num\":\"\",\"tags\":\"\",\"tag\":0,\"created\":1508469600,\"channel\":1}"
 	f := NewRecommend(mysqlXorm, mongoConn, jobStr)
 	fmt.Println(f.Do())
 }

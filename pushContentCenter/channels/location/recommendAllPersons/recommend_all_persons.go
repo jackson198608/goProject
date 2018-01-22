@@ -1,8 +1,9 @@
-package allPersons
+package recommendAllPersons
 
 import (
 	"errors"
 	// "fmt"
+	"github.com/donnie4w/go-logger/logger"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
@@ -14,18 +15,18 @@ import (
 type RecommendAllPersons struct {
 	mysqlXorm      []*xorm.Engine
 	mongoConn      []*mgo.Session
-	jsonData       *job.FocusJsonColumn
+	jsonData       *job.RecommendJsonColumn
 	activeUserData *map[int]bool
 }
 
 const count = 1000
 
-func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool) *AllPersons {
+func NewRecommendAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.RecommendJsonColumn, activeUserData *map[int]bool) *RecommendAllPersons {
 	if (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
 
-	f := new(AllPersons)
+	f := new(RecommendAllPersons)
 	if f == nil {
 		return nil
 	}
@@ -38,13 +39,13 @@ func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData 
 	return f
 }
 
-func (f *AllPersons) Do() error {
+func (f *RecommendAllPersons) Do() error {
 	//get all active user from hashmap
 	f.pushPersons(f.activeUserData)
 	return nil
 }
 
-func (f *AllPersons) pushPersons(persons *map[int]bool) error {
+func (f *RecommendAllPersons) pushPersons(persons *map[int]bool) error {
 	if persons == nil {
 		return errors.New("push to all active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
@@ -62,25 +63,18 @@ func (f *AllPersons) pushPersons(persons *map[int]bool) error {
 	return nil
 }
 
-func (f *AllPersons) pushPerson(person int) error {
+func (f *RecommendAllPersons) pushPerson(person int) error {
 	tableNameX := getTableNum(person)
-	c := f.mongoConn[0].DB("FansData").C(tableNameX)
+	c := f.mongoConn[0].DB("RecommendData").C(tableNameX)
 	if f.jsonData.Action == 0 {
-		// fmt.Println("insert " + strconv.Itoa(person))
+		logger.Info("recommend data push uid is ", person, ", type is ", f.jsonData.Type, ", infoid is ", f.jsonData.Infoid)
 		err := f.insertPerson(c, person)
-		if err != nil {
-			return err
-		}
-	} else if f.jsonData.Action == 1 {
-		//修改数据
-		// fmt.Println("update " + strconv.Itoa(person))
-		err := f.updatePerson(c, person)
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.Action == -1 {
 		//删除数据
-		// fmt.Println("remove " + strconv.Itoa(person))
+		logger.Info(" recommend data remove by uid is ", person, ", type is ", f.jsonData.Type, ", infoid is ", f.jsonData.Infoid)
 		err := f.removePerson(c, person)
 		if err != nil {
 			return err
@@ -94,43 +88,42 @@ func getTableNum(person int) string {
 	if tableNumX == 0 {
 		tableNumX = 100
 	}
-	// tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
+	tableNameX := "user_recommend_" + strconv.Itoa(tableNumX) //用户推荐表
 	return tableNameX
 }
 
-func (f *AllPersons) insertPerson(c *mgo.Collection, person int) error {
+func (f *RecommendAllPersons) insertPerson(c *mgo.Collection, person int) error {
 	//新增数据
-	// var data FansData.EventLog
-	// data = FansData.EventLog{bson.NewObjectId(),
-	// 	f.jsonData.Uid,
-	// 	f.jsonData.Created,
-	// 	f.jsonData.Infoid,
-	// 	f.jsonData.Status,
-	// 	f.jsonData.Content,
-	// 	f.jsonData.Title,
-	// 	f.jsonData.Imagenums,
-	// 	f.jsonData.Source}
-	// err := c.Insert(&data) //插入数据
-	// if err != nil {
-	// 	return err
-	// }
+	var data RecommendData.UserRecommendX
+	data = RecommendData.UserRecommendX{bson.NewObjectId(),
+		f.jsonData.Uid,
+		person,
+		f.jsonData.Type,
+		f.jsonData.Infoid,
+		f.jsonData.Title,
+		f.jsonData.Description,
+		f.jsonData.Created,
+		f.jsonData.Images,
+		f.jsonData.Imagenums,
+		f.jsonData.Tag,
+		f.jsonData.Tags,
+		f.jsonData.QstType,
+		f.jsonData.AdType,
+		f.jsonData.AdUrl,
+		f.jsonData.Channel,
+		f.jsonData.Rauth}
+	err := c.Insert(&data) //插入数据
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (f *AllPersons) updatePerson(c *mgo.Collection, person int) error {
-	//修改数据
-	// _, err := c.UpdateAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "created": f.jsonData.Created, "infoid": f.jsonData.Infoid}, bson.M{"$set": bson.M{"status": f.jsonData.Status}})
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
-}
-
-func (f *AllPersons) removePerson(c *mgo.Collection, person int) error {
+func (f *RecommendAllPersons) removePerson(c *mgo.Collection, person int) error {
 	//删除数据
-	// _, err := c.RemoveAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "created": f.jsonData.Created, "infoid": f.jsonData.Infoid, "tid": f.jsonData.Tid})
-	// if err != nil {
-	// 	return err
-	// }
+	_, err := c.RemoveAll(bson.M{"type": f.jsonData.Type, "created": f.jsonData.Created, "infoid": f.jsonData.Infoid, "channel": f.jsonData.Channel})
+	if err != nil {
+		return err
+	}
 	return nil
 }

@@ -12,7 +12,7 @@ import (
 
 const (
 	mongoConn = "192.168.5.22:27017,192.168.5.26:27017,192.168.5.200:27017"
-	//mongoConn = "192.168.86.192:27017" //@todo change online dsn
+	// mongoConn = "192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019" //@todo change online dsn
 )
 
 var m map[int]bool
@@ -30,6 +30,7 @@ func init() {
 }
 
 func NewRecommend(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string) *Recommend {
+	// fmt.Println("in recommend")
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
 		return nil
 	}
@@ -52,15 +53,16 @@ func NewRecommend(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr str
 	return f
 }
 
-//TypeId = 15 recommend, push all active persons
 func (f *Recommend) Do() error {
-
-	ap := recommendAllPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
-	err := ap.Do()
-	if err != nil {
-		return err
+	//推送所有用户
+	// fmt.Println(f.jsonData.RecommendType)
+	if f.jsonData.RecommendType == "all" {
+		ap := recommendAllPersons.NewRecommendAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
+		err := ap.Do()
+		if err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 
@@ -72,20 +74,24 @@ func (f *Recommend) parseJson() (*job.RecommendJsonColumn, error) {
 		return &jsonC, err
 	}
 
-	jsonC.Uid, _ = js.Get("uid").Int()
-	jsonC.Created, _ = js.Get("create").String()
-	jsonC.Infoid, _ = js.Get("infoid").Int()
-	jsonC.Type, _ = js.Get("type").Int()
-	jsonC.Title, _ = js.Get("title").String()
-	jsonC.Description, _ = js.Get("description").String()
-	jsonC.Images, _ = js.Get("image").String()
-	jsonC.Rauth, _ = js.Get("rauth").String()
-	jsonC.Imagenums, _ = js.Get("image_num").Int()
+	jsonC.Uid, _ = js.Get("uid").Int()       //发布内容uid
+	jsonC.Ruid, _ = js.Get("ruid").Int()     //推荐用户uid
+	jsonC.Infoid, _ = js.Get("infoid").Int() //内容ID
+	jsonC.Type, _ = js.Get("type").Int()     //内容类型 1帖子 6视频 8问答 13广告 18 宠家号文章 19宠家号视频
+	jsonC.Tag, _ = js.Get("tag").Int()       //热门话题ID
+	jsonC.Tags, _ = js.Get("tags").String()  //标签
 	jsonC.QstType, _ = js.Get("qst_type").Int()
 	jsonC.AdType, _ = js.Get("ad_type").Int()
 	jsonC.AdUrl, _ = js.Get("ad_url").String()
-	jsonC.Rauth, _ = js.Get("rauth").String()
-	jsonC.Action, _ = js.Get("action").Int() //行为 -1 删除 0 插入 1 修改
+	jsonC.Title, _ = js.Get("title").String()
+	jsonC.Description, _ = js.Get("description").String()
+	jsonC.Images, _ = js.Get("image").String()
+	jsonC.Imagenums, _ = js.Get("image_num").Int()
+	jsonC.Rauth, _ = js.Get("rauth").String() //认证信息
+	jsonC.Created, _ = js.Get("create").Int()
+	jsonC.Action, _ = js.Get("action").Int()                   //行为 -1 删除 0 插入
+	jsonC.Channel, _ = js.Get("channel").Int()                 //展示渠道 1精选 2视频 3游记 4宠家号
+	jsonC.RecommendType, _ = js.Get("recommend_type").String() //推送方式 all 全部用户
 
 	return &jsonC, nil
 }

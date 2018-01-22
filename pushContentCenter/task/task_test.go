@@ -32,7 +32,8 @@ func newtask() (*Task, error) {
 	sessions := []*mgo.Session{session}
 
 	// jobStr := "{\"uid\":881050,\"event_type\":1,\"event_info\":{\"title\":\"subject\",\"focus content\":\" focus  message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":1,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"action\":0,\"time\":\"2017-10-23 10:54:00\"}"
-	jobStr := "{\"uid\":2060501,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\" push to 36 message\",\"image_num\":\"image_num\",\"lastpost\":2,\"fid\":\"37,38,77\",\"lastposter\":\"0ssss\",\"status\":1,\"displayorder\":1,\"disgest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":0}"
+	// jobStr := "{\"uid\":2060501,\"type\":6,\"infoid\":2234567,\"typeid\":2,\"subject\":\"subject\",\"message\":\" push to 36 message\",\"image_num\":\"image_num\",\"lastpost\":2,\"fid\":\"37,38,77\",\"lastposter\":\"0ssss\",\"status\":1,\"displayorder\":1,\"disgest\":1,\"qst_type\":0,\"created\":1508469600,\"action\":0}"
+	jobStr := "{\"uid\":2060500,\"recommend_type\":\"all\",\"type\":1,\"title\":\"subject\",\"description\":\"aaaaaa\",\"image_num\":0,\"image_num\":\"\",\"tags\":\"\",\"tag\":0,\"created\":1508469600,\"channel\":1}"
 
 	t, err := NewTask(jobStr+"|club", engines, sessions)
 	return t, err
@@ -96,8 +97,23 @@ func TestChannelClub(t *testing.T) {
 	}
 
 	closetask(task)
-
 }
+func TestChannelRecommend(t *testing.T) {
+	task, err := newtask()
+	if task == nil {
+		t.Log("task create error", err)
+		t.Fail()
+	}
+
+	err = task.ChannelRecommend()
+	if err != nil {
+		t.Log("task do error", err)
+		t.Fail()
+	}
+
+	closetask(task)
+}
+
 func closetask(t *Task) {
 	for _, v := range t.MysqlXorm {
 		v.Close()
