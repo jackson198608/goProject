@@ -54,14 +54,28 @@ func (c *Content) Do() error {
 	return nil
 }
 
+//生成随机数
+func (c *Content) getRand() int {
+	seed := time.Now().Unix() + int64(c.Uid)
+	rand.Seed(seed)
+	rangeNum := rand.Intn(10)
+	if rangeNum == 0 {
+		rangeNum = 1
+	}
+	max := rangeNum * 10000
+	randid := rand.Intn(max)
+
+	return randid
+}
+
 func (c *Content) getContents() ([]*RecommendData.ContentChannel, error) {
 	var data []*RecommendData.ContentChannel
 	mc := c.mongoConn[0].DB("RecommendData").C("content_channel")
-	rand.Seed(time.Now().Unix())
-	randid := rand.Intn(100000)
-	err := mc.Find(&bson.M{"stick": 0, "channel": 1, "randid": bson.M{"$gt": randid}}).Limit(5).All(&data)
+	randid := c.getRand()
+	fmt.Println(randid)
+	err := mc.Find(&bson.M{"stick": 0, "channel": 1, "randid": bson.M{"$gt": randid}}).Sort("created").Limit(5).All(&data)
 	if len(data) == 0 {
-		err = mc.Find(&bson.M{"stick": 0, "channel": 1, "randid": bson.M{"$lt": randid}}).Limit(5).All(&data)
+		err = mc.Find(&bson.M{"stick": 0, "channel": 1, "randid": bson.M{"$lt": randid}}).Sort("created").Limit(5).All(&data)
 	}
 	if err != nil {
 		return nil, err
