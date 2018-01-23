@@ -28,7 +28,7 @@ func newtask() (*RedisEngine, error) {
 	//get mongo session
 	mgos := []string{mongoConn}
 
-	r, err := NewRedisEngine("test", &redisInfo, mgos, conns, 3, jobFunc)
+	r, err := NewRedisEngine("test", &redisInfo, mgos, conns, 3, 1, jobFunc)
 	if err != nil {
 		return nil, err
 	}

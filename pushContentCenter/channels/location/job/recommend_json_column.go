@@ -19,7 +19,7 @@ type RecommendJsonColumn struct {
 	Created       int
 	Action        int
 	Channel       int
-	Rauth         string //认证信息
+	VideoUrl      string //视频连接
 	Duration      int
 	RecommendType string
 }

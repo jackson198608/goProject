@@ -77,6 +77,7 @@ func (f *Recommend) parseJson() (*job.RecommendJsonColumn, error) {
 	jsonC.Uid, _ = js.Get("uid").Int()       //发布内容uid
 	jsonC.Ruid, _ = js.Get("ruid").Int()     //推荐用户uid
 	jsonC.Infoid, _ = js.Get("infoid").Int() //内容ID
+	jsonC.Pid, _ = js.Get("pid").Int()       //内容ID
 	jsonC.Type, _ = js.Get("type").Int()     //内容类型 1帖子 6视频 8问答 13广告 18 宠家号文章 19宠家号视频
 	jsonC.Tag, _ = js.Get("tag").Int()       //热门话题ID
 	jsonC.Tags, _ = js.Get("tags").String()  //标签
@@ -85,10 +86,10 @@ func (f *Recommend) parseJson() (*job.RecommendJsonColumn, error) {
 	jsonC.AdUrl, _ = js.Get("ad_url").String()
 	jsonC.Title, _ = js.Get("title").String()
 	jsonC.Description, _ = js.Get("description").String()
-	jsonC.Images, _ = js.Get("image").String()
+	jsonC.Images, _ = js.Get("images").String()
 	jsonC.Imagenums, _ = js.Get("image_num").Int()
-	jsonC.Rauth, _ = js.Get("rauth").String() //认证信息
-	jsonC.Created, _ = js.Get("create").Int()
+	jsonC.VideoUrl, _ = js.Get("video_url").String() //认证信息
+	jsonC.Created, _ = js.Get("created").Int()
 	jsonC.Action, _ = js.Get("action").Int()                   //行为 -1 删除 0 插入
 	jsonC.Channel, _ = js.Get("channel").Int()                 //展示渠道 1精选 2视频 3游记 4宠家号
 	jsonC.Duration, _ = js.Get("duration").Int()               //视频时长
