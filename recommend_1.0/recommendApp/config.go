@@ -17,8 +17,8 @@ type Config struct {
 
 func loadConfig() {
 	//@todo change online path
-	config := jconfig.LoadConfig("/etc/userRecommendConfig.json")
-	// config := jconfig.LoadConfig("/Users/Snow/recommendUserConfig.json")
+	// config := jconfig.LoadConfig("/etc/userRecommendConfig.json")
+	config := jconfig.LoadConfig("/Users/Snow/recommendUserConfig.json")
 	c.dbDsn = config.GetString("dbDsn")
 	c.dbName = config.GetString("dbName")
 	c.dbAuth = config.GetString("dbAuth")

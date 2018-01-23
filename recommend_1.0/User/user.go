@@ -566,6 +566,7 @@ func (u *User) insertClub(mc *mgo.Collection, elkClubBody *elkClubBody) error {
 	//新增数据
 	created := time.Now().Format("2006-01-02")
 	membernum, _ := strconv.Atoi(elkClubBody.membernum)
+	isFollow := u.isFollow(elkClubBody.Id)
 	var data RecommendData.Club
 	data = RecommendData.Club{bson.NewObjectId(),
 		u.Uid,
@@ -575,7 +576,8 @@ func (u *User) insertClub(mc *mgo.Collection, elkClubBody *elkClubBody) error {
 		elkClubBody.icon,
 		membernum,
 		1,
-		created}
+		created,
+		isFollow}
 	err := mc.Insert(&data) //插入数据
 	if err != nil {
 
@@ -606,11 +608,8 @@ func (u *User) insertUser(mc *mgo.Collection, elkUserBody *elkUserBody, dataType
 	return nil
 }
 
-func (u *User) isFollow(uid int) int {
-	follows := strings.Split(u.myData.follow_users, strconv.Itoa(uid))
-	fmt.Println(u.myData.follow_users)
-	fmt.Println(uid)
-	fmt.Println(follows)
+func (u *User) isFollow(fid int) int {
+	follows := strings.Split(u.myData.follow_clubs, strconv.Itoa(fid))
 	if len(follows) > 1 {
 		return 1
 	}
