@@ -91,6 +91,7 @@ func (f *Recommend) parseJson() (*job.RecommendJsonColumn, error) {
 	jsonC.Created, _ = js.Get("create").Int()
 	jsonC.Action, _ = js.Get("action").Int()                   //行为 -1 删除 0 插入
 	jsonC.Channel, _ = js.Get("channel").Int()                 //展示渠道 1精选 2视频 3游记 4宠家号
+	jsonC.Duration, _ = js.Get("duration").Int()               //视频时长
 	jsonC.RecommendType, _ = js.Get("recommend_type").String() //推送方式 all 全部用户
 
 	return &jsonC, nil

@@ -10,6 +10,7 @@ import (
 	"github.com/jackson198608/goProject/common/tools"
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
+	"gouminGitlab/common/orm/mongo/RecommendData"
 	"os"
 	"strconv"
 	"strings"
@@ -140,6 +141,11 @@ func main() {
 		if err != nil {
 			logger.Error("[redisEngine Do] ", err)
 		}
+	case "allindex": // all collection create index
+		err := RecommendData.AllCollectionsCreateIndex(c.mongoConn)
+		if err != nil {
+			logger.Error("all collections create index error! ", err)
+		}
 	case "--help":
 		help()
 	default:
@@ -165,7 +171,7 @@ func jobFuc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, task
 func help() {
 	fmt.Println("usage: pushApp [options]")
 	fmt.Println("Options:")
-	// fmt.Println("  allindex\t\t\t\tThe index of all collections is deleted, and then a new index is created")
+	fmt.Println("  allindex\t\t\t\tThe index of all collections is deleted, and then a new index is created")
 	// fmt.Println("  singleindex_userId\t\t\tSpecify a collection to create an index")
 	fmt.Println("  recommend\t\t\t\t\tRecommending related clubs and unconcerned users")
 	fmt.Println("  content\t\t\t\t\tRecommending a selection of content to the user")

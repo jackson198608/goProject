@@ -112,7 +112,8 @@ func (f *RecommendAllPersons) insertPerson(c *mgo.Collection, person int) error 
 		f.jsonData.AdType,
 		f.jsonData.AdUrl,
 		f.jsonData.Channel,
-		f.jsonData.Rauth}
+		f.jsonData.Rauth,
+		f.jsonData.Duration}
 	err := c.Insert(&data) //插入数据
 	if err != nil {
 		return err
