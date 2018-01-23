@@ -105,7 +105,7 @@ func (e *HtmlInfo) changeIpByAbuyun() (int, *http.Header, string, error) {
 	}
 	var h http.Header = make(http.Header)
 	h.Set("Host", e.host)
-	statusCode, responseHeader, body, err := e.abuyun.SendRequest(e.url, h, true)
+	statusCode, responseHeader, body, err := e.abuyun.SendRequest(e.url, h, "", true)
 	return statusCode, responseHeader, body, err
 }
 
