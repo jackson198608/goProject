@@ -20,5 +20,6 @@ type RecommendJsonColumn struct {
 	Action        int
 	Channel       int
 	Rauth         string //认证信息
+	Duration      int
 	RecommendType string
 }

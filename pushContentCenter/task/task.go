@@ -118,7 +118,6 @@ func (t *Task) parseRaw() error {
 	rawSlice := []byte(t.Raw)
 	rawLen := len(rawSlice)
 	lastIndex := strings.LastIndex(t.Raw, "|")
-
 	t.Jobstr = string(rawSlice[0:lastIndex])
 	t.JobType = string(rawSlice[lastIndex+1 : rawLen])
 

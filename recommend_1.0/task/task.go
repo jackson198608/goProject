@@ -36,6 +36,7 @@ func NewTask(raw string, mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, tas
 	t.Raw = raw
 	t.MysqlXorm = mysqlXorm
 	t.MongoConn = mongoConn
+	t.elkDsn = taskarg[0]
 
 	//create private member
 	err := t.parseRaw()

@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"fmt"
 	"github.com/bitly/go-simplejson"
 	"github.com/donnie4w/go-logger/logger"
@@ -11,7 +12,6 @@ import (
 	"gouminGitlab/common/orm/mongo/RecommendData"
 	"net/http"
 	// "reflect"
-	"errors"
 	"strconv"
 	"strings"
 	"time"
