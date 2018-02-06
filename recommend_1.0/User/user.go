@@ -96,7 +96,7 @@ func (u *User) Do() error {
 
 func (u *User) getMyData() error {
 	uidStr := strconv.Itoa(u.Uid)
-	query := u.getUserQueries(uidStr, 1)
+	query := u.getUserQueries(uidStr, 1, 1)
 	user, _ := u.getUser(query)
 	if user != nil {
 		data := *user
@@ -203,20 +203,21 @@ func (u *User) getRecommendClub() error {
 	followNum := 0
 	if len(u.notRecommendFid) != 0 {
 		followNum, _ = u.followClubs()
+		logger.Info("[club] user followNum is ", strconv.Itoa(followNum), " by uid ", strconv.Itoa(u.Uid))
 	}
 	if followNum < 6 {
 		speciesNum, _ := u.recommendClubBySpecies() //犬种
 		logger.Info("[club] recommend speciesNum is ", strconv.Itoa(speciesNum), " by uid ", strconv.Itoa(u.Uid))
-		if speciesNum < 6 {
+		if followNum+speciesNum < 6 {
 			addressNum, _ := u.recommendClubByAddress() //地域
 			logger.Info("[club] recommend addressNum is ", strconv.Itoa(addressNum), " by uid ", strconv.Itoa(u.Uid))
-			if addressNum+speciesNum < 6 {
+			if followNum+addressNum+speciesNum < 6 {
 				fidNum, _ := u.recommendClubByFid(159) //训练
 				logger.Info("[club] recommend fidNum is ", strconv.Itoa(fidNum), "by fid is 159 by uid ", strconv.Itoa(u.Uid))
-				if addressNum+speciesNum+fidNum < 6 {
+				if followNum+addressNum+speciesNum+fidNum < 6 {
 					fid1Num, _ := u.recommendClubByFid(10) //巧手
 					logger.Info("[club] recommend fid1Num is ", strconv.Itoa(fid1Num), "by fid is 10 by uid ", strconv.Itoa(u.Uid))
-					if addressNum+speciesNum+fidNum+fid1Num < 6 {
+					if followNum+addressNum+speciesNum+fidNum+fid1Num < 6 {
 						FupNum, _ := u.recommendClubByFup(2) //综合
 						logger.Info("[club] recommend FupNum is ", strconv.Itoa(FupNum), " by uid ", strconv.Itoa(u.Uid))
 
@@ -229,15 +230,17 @@ func (u *User) getRecommendClub() error {
 }
 
 func (u *User) getRecommendUser() error {
-	speciesNum, _ := u.recommendUserBySpecies() //相同犬种
-	ageNum, _ := u.recommendUserByAge()         //相同年龄
+	speciesNum, _ := u.recommendUserBySpecies(0, 5) //相同犬种
+	ageNum, _ := u.recommendUserByAge()             //相同年龄
 	logger.Info("[user] recommend speciesNum is ", strconv.Itoa(speciesNum), " by uid ", strconv.Itoa(u.Uid))
 	logger.Info("[user] recommend ageNum is ", strconv.Itoa(ageNum), " by uid ", strconv.Itoa(u.Uid))
 	if ageNum+speciesNum < 8 {
-		addressNum, _ := u.recommendUserByAddress()
+		num := 8 - ageNum + speciesNum
+		addressNum, _ := u.recommendUserByAddress(num)
 		logger.Info("[user] recommend addressNum is ", strconv.Itoa(addressNum), " by uid ", strconv.Itoa(u.Uid))
 		if addressNum+speciesNum+ageNum < 8 {
-			nextSpeciesNum, _ := u.recommendUserBySpecies() //相同犬种
+			num := 8 - addressNum + speciesNum + ageNum
+			nextSpeciesNum, _ := u.recommendUserBySpecies(1, num) //相同犬种
 			logger.Info("[user] recommend nextSpeciesNum is ", strconv.Itoa(nextSpeciesNum), " by uid ", strconv.Itoa(u.Uid))
 		}
 	}
@@ -245,7 +248,7 @@ func (u *User) getRecommendUser() error {
 }
 
 //根据犬种推荐用户
-func (u *User) recommendUserBySpecies() (int, error) {
+func (u *User) recommendUserBySpecies(isFirst int, num int) (int, error) {
 	if u.species != "" {
 		speciesItems := strings.Split(u.species, ";")
 		speciesKeyword := ""
@@ -253,7 +256,11 @@ func (u *User) recommendUserBySpecies() (int, error) {
 			speciesKeyword += `\"` + speciesItems[s] + `\"` + ","
 		}
 		speciesKeyword = string(speciesKeyword[0 : len(speciesKeyword)-1])
-		query := u.getUserQueries(speciesKeyword, 3) //获取根据犬种查询条件
+		getType := 3
+		if isFirst == 0 {
+			getType = 4
+		}
+		query := u.getUserQueries(speciesKeyword, getType, num) //获取根据犬种查询条件
 		fmt.Println("species query:")
 		fmt.Println(query)
 		user, err := u.getUser(query)
@@ -274,9 +281,9 @@ func (u *User) recommendUserBySpecies() (int, error) {
 }
 
 //根据地域推荐用户
-func (u *User) recommendUserByAddress() (int, error) {
+func (u *User) recommendUserByAddress(num int) (int, error) {
 	if u.address != "" {
-		query := u.getUserQueries(u.address, 0) //获取根据地址查询条件
+		query := u.getUserQueries(u.address, 0, num) //获取根据地址查询条件
 		fmt.Println("address query:")
 		fmt.Println(query)
 		user, err := u.getUser(query)
@@ -305,7 +312,7 @@ func (u *User) recommendUserByAge() (int, error) {
 			ageKeyword += `\"` + ageItems[s] + `\"` + ","
 		}
 		ageKeyword = string(ageKeyword[0 : len(ageKeyword)-1])
-		query := u.getUserQueries(ageKeyword, 3) //获取根据年龄查询条件
+		query := u.getUserQueries(ageKeyword, 3, 3) //获取根据年龄查询条件
 		fmt.Println("age query:")
 		fmt.Println(query)
 		user, err := u.getUser(query)
@@ -463,7 +470,7 @@ func (u *User) pushClubRecommend(club *[]elkClubBody) error {
 
 //-----  base function  ---
 
-func (u *User) getUserQueries(keyword string, getType int) string {
+func (u *User) getUserQueries(keyword string, getType int, size int) string {
 	query := ""
 	mustNotQuery := ""
 	filterQuery := ""
@@ -473,18 +480,22 @@ func (u *User) getUserQueries(keyword string, getType int) string {
 	}
 	filterQuery += string(mustNotQuery[0 : len(mustNotQuery)-1])
 	filterQuery += "]}},"
+	sizeStr := strconv.Itoa(size)
 	// 达人数据
 	if getType == 2 {
 		query = "{\"query\": {\"query_string\":{\"query\":\"1\",\"fields\":[\"is_welluser\"]}},\"sort\": { \"lastlogintime\": { \"order\": \"desc\" }}}"
 	} else if getType == 3 {
 		//相同品种或年龄
-		query = "{\"size\" : 5,\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"pets\"]}}," + filterQuery + "\"sort\": { \"lastlogintime\": { \"order\": \"desc\" }}}"
+		query = "{\"size\" : " + sizeStr + ",\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"pets\"]}}," + filterQuery + "\"sort\": { \"lastlogintime\": { \"order\": \"desc\" }}}"
 	} else if getType == 1 {
 		//我的数据
 		query = "{\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"id\"]}}}"
+	} else if getType == 4 {
+		//补偿机制 相同品种
+		query = "{\"size\" : " + sizeStr + ",\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"pets\"]}}," + filterQuery + "\"sort\": { \"lastlogintime\": { \"order\": \"desc\" }}}"
 	} else {
 		//地域相近
-		query = "{\"size\" : 3,\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"address\"]}}," + filterQuery + "\"sort\": { \"lastlogintime\": { \"order\": \"desc\" }}}"
+		query = "{\"size\" : " + sizeStr + ",\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"address\"]}}," + filterQuery + "\"sort\": { \"lastlogintime\": { \"order\": \"desc\" }}}"
 	}
 	return query
 }
@@ -553,7 +564,7 @@ func (u *User) getClubQueries(keyword string, fup int, fid int, followIds string
 	filterQuery += "]}}"
 	//综合版区
 	if followIds != "" {
-		query := "{\"size\" : 6,\"query\": {\"bool\": {\"must\": {\"terms\": {\"id\": [" + followIds + "]}}}}}"
+		query = "{\"size\" : 6,\"query\": {\"bool\": {\"must\": {\"terms\": {\"id\": [" + followIds + "]}}}}}"
 	} else if fup == 2 {
 		fupStr := strconv.Itoa(fup)
 		query = "{\"size\" : 4,\"query\": {\"query_string\":{\"query\":\"" + fupStr + "\",\"fields\":[\"fup\"]}}," + filterQuery + ",\"sort\": { \"todayposts\": { \"order\": \"desc\" }}}"
@@ -563,7 +574,6 @@ func (u *User) getClubQueries(keyword string, fup int, fid int, followIds string
 	} else {
 		query = "{\"size\" : 6,\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"name\",\"description\"]}}," + filterQuery + ",\"sort\": { \"todayposts\": { \"order\": \"desc\" }}}"
 	}
-
 	return query
 }
 

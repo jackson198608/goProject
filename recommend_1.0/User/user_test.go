@@ -17,7 +17,7 @@ const elkDsn = "210.14.154.117:8986"     //"192.168.86.5:9200"
 
 func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	dbAuth := "dog123:dog123"
-	dbDsn := "192.168.0.110:3306" //"210.14.154.117:33068"
+	dbDsn := "192.168.86.193:3307" //"210.14.154.117:33068"
 	dbName := "new_dog123"
 	dataSourceName := dbAuth + "@tcp(" + dbDsn + ")/" + dbName + "?charset=utf8mb4"
 	engine, err := xorm.NewEngine("mysql", dataSourceName)
@@ -99,7 +99,14 @@ func TestRecommendUserBySpecies(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	uid := "2060500"
 	c := NewUser(mysqlXorm, mongoConn, uid, elkDsn)
-	fmt.Println(c.recommendUserBySpecies())
+	fmt.Println(c.recommendUserBySpecies(0, 5))
+}
+
+func TestfollowClubs(t *testing.T) {
+	mysqlXorm, mongoConn := testConn()
+	uid := "2060500"
+	c := NewUser(mysqlXorm, mongoConn, uid, elkDsn)
+	fmt.Println(c.followClubs())
 }
 
 //{"size" : 5,"query": {"query_string":{"query":"\"法国斗牛\",\"金毛\"","fields":["pets"]}},"filter" : {"bool":{"must_not":{"term":{"id":2060500}}}},"sort": { "lastlogintime": { "order": "desc" }}}
