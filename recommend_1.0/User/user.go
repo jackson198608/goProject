@@ -235,11 +235,11 @@ func (u *User) getRecommendUser() error {
 	logger.Info("[user] recommend speciesNum is ", strconv.Itoa(speciesNum), " by uid ", strconv.Itoa(u.Uid))
 	logger.Info("[user] recommend ageNum is ", strconv.Itoa(ageNum), " by uid ", strconv.Itoa(u.Uid))
 	if ageNum+speciesNum < 8 {
-		num := 8 - ageNum + speciesNum
+		num := 8 - ageNum - speciesNum
 		addressNum, _ := u.recommendUserByAddress(num)
 		logger.Info("[user] recommend addressNum is ", strconv.Itoa(addressNum), " by uid ", strconv.Itoa(u.Uid))
 		if addressNum+speciesNum+ageNum < 8 {
-			num := 8 - addressNum + speciesNum + ageNum
+			num := 8 - addressNum - speciesNum - ageNum
 			nextSpeciesNum, _ := u.recommendUserBySpecies(1, num) //相同犬种
 			logger.Info("[user] recommend nextSpeciesNum is ", strconv.Itoa(nextSpeciesNum), " by uid ", strconv.Itoa(u.Uid))
 		}
@@ -556,23 +556,25 @@ func (u *User) getClubQueries(keyword string, fup int, fid int, followIds string
 	query := ""
 	mustNotQuery := ""
 	filterQuery := ""
-	filterQuery += "\"filter\":{\"bool\":{\"must_not\":["
-	for m, _ := range u.notRecommendFid {
-		mustNotQuery += "{\"term\":{\"id\":" + strconv.Itoa(u.notRecommendFid[m]) + "}},"
+	if len(u.notRecommendFid) > 0 {
+		filterQuery += "\"filter\":{\"bool\":{\"must_not\":["
+		for m, _ := range u.notRecommendFid {
+			mustNotQuery += "{\"term\":{\"id\":" + strconv.Itoa(u.notRecommendFid[m]) + "}},"
+		}
+		filterQuery += string(mustNotQuery[0 : len(mustNotQuery)-1])
+		filterQuery += "]}},"
 	}
-	filterQuery += string(mustNotQuery[0 : len(mustNotQuery)-1])
-	filterQuery += "]}}"
 	//综合版区
 	if followIds != "" {
 		query = "{\"size\" : 6,\"query\": {\"bool\": {\"must\": {\"terms\": {\"id\": [" + followIds + "]}}}}}"
 	} else if fup == 2 {
 		fupStr := strconv.Itoa(fup)
-		query = "{\"size\" : 4,\"query\": {\"query_string\":{\"query\":\"" + fupStr + "\",\"fields\":[\"fup\"]}}," + filterQuery + ",\"sort\": { \"todayposts\": { \"order\": \"desc\" }}}"
+		query = "{\"size\" : 4,\"query\": {\"query_string\":{\"query\":\"" + fupStr + "\",\"fields\":[\"fup\"]}}," + filterQuery + "\"sort\": { \"todayposts\": { \"order\": \"desc\" }}}"
 	} else if fid != 0 {
 		fidStr := strconv.Itoa(fid)
 		query = "{\"query\": {\"query_string\":{\"query\":\"" + fidStr + "\",\"fields\":[\"id\"]}}}"
 	} else {
-		query = "{\"size\" : 6,\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"name\",\"description\"]}}," + filterQuery + ",\"sort\": { \"todayposts\": { \"order\": \"desc\" }}}"
+		query = "{\"size\" : 6,\"query\": {\"query_string\":{\"query\":\"" + keyword + "\",\"fields\":[\"name\",\"description\"]}}," + filterQuery + "\"sort\": { \"todayposts\": { \"order\": \"desc\" }}}"
 	}
 	return query
 }
