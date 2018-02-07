@@ -5,9 +5,10 @@ import (
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
+	"github.com/jackson198608/goProject/common/tools"
 	"github.com/jackson198608/goProject/pushContentCenter/task"
 	mgo "gopkg.in/mgo.v2"
-	redis "gopkg.in/redis.v4"
+	// redis "gopkg.in/redis.v4"
 	"gouminGitlab/common/orm/mongo/ClubData"
 	"os"
 	// "strconv"
@@ -45,9 +46,7 @@ func main() {
 		var mysqlInfo []string
 		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 
-		redisInfo := redis.Options{
-			Addr: c.redisConn,
-		}
+		redisInfo := tools.FormatRedisOption(c.redisConn)
 		logger.Info("start work")
 		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 1, jobFuc)
 		if err != nil {
