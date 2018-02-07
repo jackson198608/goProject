@@ -30,19 +30,16 @@ func init() {
 	loadConfig()
 }
 
-func createClient() *redis.Client {
-	client := redis.NewClient(&redis.Options{
-		Addr:     c.redisConn,
-		Password: "",
-		DB:       0,
-	})
-
-	// 通过 cient.Ping() 来检查是否成功连接到了 redis 服务器
-	_, err := client.Ping().Result()
-	if err != nil {
-		logger.Error("redis connect error", err)
+func formatRedisOption() redis.ClusterOptions {
+	var redisStr []string
+	redisConns := strings.Split(c.redisConn, ",")
+	for i, _ := range redisConns {
+		redisStr = append(redisStr, redisConns[i])
 	}
-	return client
+	redisInfo := redis.ClusterOptions{
+		Addrs: redisStr,
+	}
+	return redisInfo
 }
 
 //全部活跃用户
@@ -71,7 +68,12 @@ func getAllActiveUsers(mongoConn string) []int {
 }
 
 func pushAllActiveUserToRedis(queueName string, channel string) bool {
-	rc := createClient()
+	redisInfo := formatRedisOption()
+	rc, _ := tools.GetClusterClient(&redisInfo)
+	if rc == nil {
+		fmt.Println("error")
+		return false
+	}
 	realTasks := getAllActiveUsers(c.mongoConn)
 	if len(realTasks) == 0 {
 		logger.Error("active user data is empty")
@@ -102,9 +104,8 @@ func main() {
 		var mysqlInfo []string
 		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 
-		redisInfo := redis.Options{
-			Addr: c.redisConn,
-		}
+		redisInfo := formatRedisOption()
+
 		//生产任务
 		pushAllActiveUserToRedis(c.queueName, "follow")
 
@@ -124,10 +125,7 @@ func main() {
 		var mysqlInfo []string
 		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 
-		redisInfo := redis.Options{
-			Addr: c.redisConn,
-		}
-		// queueName := "pushRandomRecommendTask"
+		redisInfo := formatRedisOption()
 		//生产任务
 		pushAllActiveUserToRedis(c.queueName, "content")
 

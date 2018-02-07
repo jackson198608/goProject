@@ -22,9 +22,9 @@ type coroutineResult struct {
 
 type RedisEngine struct {
 	queueName     string
-	redisInfo     *redis.Options //require
-	mongoConnInfo []string       //custom @todo need to multi
-	mysqlInfo     []string       //the result format like tools.GetMysqlDsn return value,pass to task
+	redisInfo     *redis.ClusterOptions //require
+	mongoConnInfo []string              //custom @todo need to multi
+	mysqlInfo     []string              //the result format like tools.GetMysqlDsn return value,pass to task
 	coroutinNum   int
 	daemon        int
 	taskArgs      []string //somethin you want to give task
@@ -32,7 +32,7 @@ type RedisEngine struct {
 }
 
 func NewRedisEngine(queueName string,
-	redisInfo *redis.Options,
+	redisInfo *redis.ClusterOptions,
 	mongoConnInfo []string,
 	mysqlInfo []string,
 	coroutinNum int,
@@ -65,9 +65,8 @@ func NewRedisEngine(queueName string,
 }
 
 // create redis connection and return it to the caller
-func redisConnect(redisInfo *redis.Options) (*redis.Client, error) {
-	client := redis.NewClient(redisInfo)
-	_, err := client.Ping().Result()
+func redisConnect(redisInfo *redis.ClusterOptions) (*redis.ClusterClient, error) {
+	client, err := tools.GetClusterClient(redisInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +277,7 @@ func (r *RedisEngine) closeMgoConn(mgoConns []*mgo.Session) {
 
 //if trytimes < tryTimeLimit ,just push it back to redis
 //if push fail ,it will return error
-func (r *RedisEngine) pushFails(redisConn *redis.Client, realraw string, tryTimes int) error {
+func (r *RedisEngine) pushFails(redisConn *redis.ClusterClient, realraw string, tryTimes int) error {
 	//@todo check params
 	backRaw := realraw + "_" + strconv.Itoa(tryTimes+1)
 	redisConn.RPush(r.queueName, backRaw)
