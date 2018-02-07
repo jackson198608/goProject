@@ -9,7 +9,6 @@ import (
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
 	"github.com/jackson198608/goProject/common/tools"
 	mgo "gopkg.in/mgo.v2"
-	redis "gopkg.in/redis.v4"
 	"gouminGitlab/common/orm/mongo/RecommendData"
 	"os"
 	"strconv"
@@ -28,18 +27,6 @@ var c Config = Config{
 
 func init() {
 	loadConfig()
-}
-
-func formatRedisOption() redis.ClusterOptions {
-	var redisStr []string
-	redisConns := strings.Split(c.redisConn, ",")
-	for i, _ := range redisConns {
-		redisStr = append(redisStr, redisConns[i])
-	}
-	redisInfo := redis.ClusterOptions{
-		Addrs: redisStr,
-	}
-	return redisInfo
 }
 
 //全部活跃用户
@@ -68,7 +55,7 @@ func getAllActiveUsers(mongoConn string) []int {
 }
 
 func pushAllActiveUserToRedis(queueName string, channel string) bool {
-	redisInfo := formatRedisOption()
+	redisInfo := tools.FormatRedisOption(c.redisConn)
 	rc, _ := tools.GetClusterClient(&redisInfo)
 	if rc == nil {
 		fmt.Println("error")
@@ -104,7 +91,7 @@ func main() {
 		var mysqlInfo []string
 		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 
-		redisInfo := formatRedisOption()
+		redisInfo := tools.FormatRedisOption(c.redisConn)
 
 		//生产任务
 		pushAllActiveUserToRedis(c.queueName, "follow")
@@ -125,7 +112,7 @@ func main() {
 		var mysqlInfo []string
 		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 
-		redisInfo := formatRedisOption()
+		redisInfo := tools.FormatRedisOption(c.redisConn)
 		//生产任务
 		pushAllActiveUserToRedis(c.queueName, "content")
 
