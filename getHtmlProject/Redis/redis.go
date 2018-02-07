@@ -5,7 +5,7 @@ import (
 	redis "gopkg.in/redis.v4"
 )
 
-func PushTaskData(client *redis.Client, queueName string, tasks interface{}) bool {
+func PushTaskData(client *redis.ClusterClient, queueName string, tasks interface{}) bool {
 	switch realTasks := tasks.(type) {
 	case []string:
 		logger.Info("this is string task", realTasks)

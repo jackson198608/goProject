@@ -19,7 +19,7 @@ type RedisEngine struct {
 	connstr       string
 	mongoConn     string
 	jobType       string
-	client        *redis.Client
+	client        *redis.ClusterClient
 	taskNum       int
 	numForOneLoop int
 	taskNewArgs   []string
@@ -58,15 +58,12 @@ func NewRedisEngine(
 }
 
 func (t *RedisEngine) connect() error {
-	t.client = redis.NewClient(&redis.Options{
-		Addr:     t.connstr,
-		Password: "", // no password set
-		DB:       0,  //e.db use default DB
-	})
-	_, err := t.client.Ping().Result()
+	redisInfo := tools.FormatRedisOption(t.connstr)
+	rc, err := tools.GetClusterClient(&redisInfo)
 	if err != nil {
 		return errors.New("[Error] redis connect error")
 	}
+	t.client = rc
 	return nil
 }
 

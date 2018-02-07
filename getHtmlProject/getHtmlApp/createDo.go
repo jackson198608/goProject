@@ -7,6 +7,7 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
+	"github.com/jackson198608/goProject/common/tools"
 	"github.com/jackson198608/goProject/getHtmlProject/HTMLlinkCreater"
 	"github.com/jackson198608/goProject/getHtmlProject/Redis"
 	"github.com/jackson198608/goProject/getHtmlProject/Task"
@@ -64,13 +65,9 @@ func setAbuyun() *abuyunHttpClient.AbuyunProxy {
 	return abuyun
 }
 
-func connect() (*redis.Client, error) {
-	client := redis.NewClient(&redis.Options{
-		Addr:     c.redisConn,
-		Password: "", // no password set
-		DB:       0,  //e.db use default DB
-	})
-	_, err := client.Ping().Result()
+func connect() (*redis.ClusterClient, error) {
+	redisInfo := tools.FormatRedisOption(c.redisConn)
+	client, err := tools.GetClusterClient(&redisInfo)
 	if err != nil {
 		return nil, errors.New("[Error] redis connect error")
 	}
@@ -144,9 +141,10 @@ func getDoRedisEngine(jobType string) *redisEngine.RedisEngine {
 	var mysqlInfo []string
 	mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 
-	redisInfo := redis.Options{
-		Addr: c.redisConn,
-	}
+	// redisInfo := redis.Options{
+	// 	Addr: c.redisConn,
+	// }
+	redisInfo := tools.FormatRedisOption(c.redisConn)
 	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.numloops, 1, jobFunc, c.saveDir, c.host, c.is_abuyun, jobType)
 	if err != nil {
 		logger.Error("[NewRedisEngine] ", err)

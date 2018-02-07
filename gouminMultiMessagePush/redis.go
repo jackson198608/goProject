@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/jackson198608/goProject/common/tools"
 	redis "gopkg.in/redis.v4"
 	"strconv"
 	"strings"
@@ -34,20 +35,16 @@ func putFailOneBack(i int) {
 
 }
 
-func connect(conn string) (client *redis.Client) {
-	client = redis.NewClient(&redis.Options{
-		Addr:     conn,
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-	_, err := client.Ping().Result()
+func connect(conn string) (client *redis.ClusterClient) {
+	redisInfo := tools.FormatRedisOption(conn)
+	client, err := tools.GetClusterClient(&redisInfo)
 	if err != nil {
 		fmt.Println("[Error] redis connect error")
 	}
 	return client
 }
 
-func testLlen(client *redis.Client) {
+func testLlen(client *redis.ClusterClient) {
 	len := (*client).LLen(redisQueueName).Val()
 	if int(len) > numForOneLoop {
 		taskNum = numForOneLoop
@@ -56,7 +53,7 @@ func testLlen(client *redis.Client) {
 	}
 }
 
-func croutinePopRedisMultiData(c chan int, client *redis.Client, i int) {
+func croutinePopRedisMultiData(c chan int, client *redis.ClusterClient, i int) {
 	fmt.Println("[notice] pop mcMulti")
 	redisStr := (*client).LPop("mcMulti").Val()
 	if redisStr == "" {
@@ -76,7 +73,7 @@ func croutinePopRedisMultiData(c chan int, client *redis.Client, i int) {
 	c <- 1
 }
 
-func lopMulti(client *redis.Client) {
+func lopMulti(client *redis.ClusterClient) {
 	c := make(chan int, taskNum)
 	for i := 0; i < taskNum; i++ {
 		go croutinePopRedisMultiData(c, client, i)
@@ -87,7 +84,7 @@ func lopMulti(client *redis.Client) {
 	}
 }
 
-func croutinePopRedisSingleData(c chan int, client *redis.Client, i int) {
+func croutinePopRedisSingleData(c chan int, client *redis.ClusterClient, i int) {
 	redisStr := (*client).LPop("mcSingle").Val()
 	if redisStr == "" {
 		fmt.Println("[notice] got nothing")
@@ -106,7 +103,7 @@ func croutinePopRedisSingleData(c chan int, client *redis.Client, i int) {
 	c <- 1
 }
 
-func lopSingle(client *redis.Client) {
+func lopSingle(client *redis.ClusterClient) {
 	c := make(chan int, taskNum)
 	for i := 0; i < taskNum; i++ {
 		go croutinePopRedisSingleData(c, client, i)
@@ -117,7 +114,7 @@ func lopSingle(client *redis.Client) {
 	}
 }
 
-func croutinePopRedisInsertData(c chan int, client *redis.Client, i int) {
+func croutinePopRedisInsertData(c chan int, client *redis.ClusterClient, i int) {
 	redisStr := (*client).LPop("mcInsert").Val()
 	if redisStr == "" {
 		fmt.Println("[notice] got nothing")
@@ -136,7 +133,7 @@ func croutinePopRedisInsertData(c chan int, client *redis.Client, i int) {
 	c <- 1
 }
 
-func lopInsert(client *redis.Client) {
+func lopInsert(client *redis.ClusterClient) {
 	c := make(chan int, taskNum)
 	for i := 0; i < taskNum; i++ {
 		go croutinePopRedisInsertData(c, client, i)

@@ -2,22 +2,22 @@ package main
 
 import (
 	"fmt"
+	"github.com/jackson198608/goProject/common/tools"
 	redis "gopkg.in/redis.v4"
 )
 
-func conn(conn string) (client *redis.Client) {
-	client = redis.NewClient(&redis.Options{
-		Addr:     conn,
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
+func conn(conn string) (client *redis.ClusterClient) {
+	redisInfo := tools.FormatRedisOption(conn)
+	client, err := tools.GetClusterClient(&redisInfo)
+	if err != nil {
+		fmt.Println("[Error] redis connect error")
+	}
+	// fmt.Println(pong, err)
 	// Output: PONG <nil>
 	return client
 }
 
-func testRpush(client *redis.Client) {
+func testRpush(client *redis.ClusterClient) {
 	var iosRedisString string = `0|fb71306452499efc778cc77d1be6614b8e1753e79b7acd8348ce6cb47abd4dc2|{"aps":{"alert":"task","sound":"default","badge":1,"type":6,"mark":""}}`
 
 	var mongoString string = `{"uid":1895167,"type":1,"makr":281,"isnew":0,"from":0,"channel":1,"channel_types":2,"title":"狗狗的寂寞都市之殇","content":"小短腿在家漂移，屁股差点没甩掉了~","image":"/messagepush/day_161020/20161020_7a50e50.jpg","url_type":1,"url":"4346101","created":"2016-10-20 14:12:28","modified":"0000-00-00 00:00:00"}`
