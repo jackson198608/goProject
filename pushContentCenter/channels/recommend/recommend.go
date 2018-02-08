@@ -3,6 +3,7 @@ package recommend
 import (
 	// "fmt"
 	"github.com/bitly/go-simplejson"
+	"github.com/donnie4w/go-logger/logger"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
@@ -44,6 +45,8 @@ func NewRecommend(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr str
 	f.mongoConn = mongoConn
 	f.jobstr = jobStr
 
+	logger.Info("[new recommend] jobStr is ", f.jobstr)
+
 	//@todo pass params
 	jsonColumn, err := f.parseJson()
 	if err != nil {
@@ -57,6 +60,7 @@ func (f *Recommend) Do() error {
 	//推送所有用户
 	// fmt.Println(f.jsonData.RecommendType)
 	if f.jsonData.RecommendType == "all" {
+		logger.Info("[recommend do] jsonData is ", f.jsonData)
 		ap := recommendAllPersons.NewRecommendAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
 		err := ap.Do()
 		if err != nil {

@@ -44,7 +44,7 @@ func jsonData() *job.RecommendJsonColumn {
 	jsonData.Uid = 2060500
 	jsonData.Type = 1
 	jsonData.Created = 1516598106
-	jsonData.Infoid = 4435514
+	jsonData.Infoid = 3399348
 	jsonData.Title = "所有活跃用户推送title"
 	jsonData.Description = "所有活跃用户推送正文正文"
 	jsonData.Images = ""
@@ -56,7 +56,6 @@ func jsonData() *job.RecommendJsonColumn {
 	jsonData.AdUrl = ""
 	jsonData.Channel = 1
 	jsonData.Action = 0
-	jsonData.Rauth = ""
 	return &jsonData
 }
 
@@ -95,4 +94,20 @@ func TestDo(t *testing.T) {
 	jsonData := jsonData()
 	f := NewRecommendAllPersons(mysqlXorm, mongoConn, jsonData, &m)
 	fmt.Println(f.Do())
+}
+
+func TestRemoveInfoByTables(t *testing.T) {
+	mysqlXorm, mongoConn := testConn()
+	jsonData := jsonData()
+	f := NewRecommendAllPersons(mysqlXorm, mongoConn, jsonData, &m)
+	fmt.Println(f.removeInfoByTables())
+}
+
+func TestRemoveinfo(t *testing.T) {
+	mysqlXorm, mongoConn := testConn()
+	jsonData := jsonData()
+	tableNameX := "user_recommend_100"
+	c := mongoConn[0].DB("RecommendData").C(tableNameX)
+	f := NewRecommendAllPersons(mysqlXorm, mongoConn, jsonData, &m)
+	fmt.Println(f.removeInfo(c))
 }
