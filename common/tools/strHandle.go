@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func getUserNameFromEmail(email string) string {
+func GetUserNameFromEmail(email string) string {
 	//check params
 	if email == "" {
 		return ""

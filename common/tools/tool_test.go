@@ -5,6 +5,6 @@ import (
 )
 
 func TestUserNameFromEmail(t *testing.T) {
-	name := getUserNameFromEmail("zhoupengyuan@goumin.com")
+	name := GetUserNameFromEmail("zhoupengyuan@goumin.com")
 	t.Log(name)
 }
