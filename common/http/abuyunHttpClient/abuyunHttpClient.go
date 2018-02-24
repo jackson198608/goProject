@@ -61,8 +61,8 @@ func (p *AbuyunProxy) Close() {
 }
 
 // todo: make customHeader to be pointer
-func (p *AbuyunProxy) SendRequest(targetUrl string, customHeader http.Header, requestBody string, switchip bool) (int, *http.Header, string, error) {
-	request, err := http.NewRequest("GET", targetUrl, bytes.NewBuffer([]byte(requestBody)))
+func (p *AbuyunProxy) SendRequestPro(method string, targetUrl string, customHeader http.Header, requestBody string, switchip bool) (int, *http.Header, string, error) {
+	request, err := http.NewRequest(method, targetUrl, bytes.NewBuffer([]byte(requestBody)))
 	if err != nil {
 		return 0, nil, "", err
 	}
@@ -98,4 +98,16 @@ func (p *AbuyunProxy) SendRequest(targetUrl string, customHeader http.Header, re
 
 	}
 
+}
+
+// this is for send get request
+func (p *AbuyunProxy) SendRequest(targetUrl string, customHeader http.Header, requestBody string, switchip bool) (int, *http.Header, string, error) {
+	statusCode, responseHeader, body, err := p.SendRequestPro("GET", targetUrl, customHeader, requestBody, switchip)
+	return statusCode, responseHeader, body, err
+}
+
+// this is for send get request
+func (p *AbuyunProxy) SendPostRequest(targetUrl string, customHeader http.Header, requestBody string, switchip bool) (int, *http.Header, string, error) {
+	statusCode, responseHeader, body, err := p.SendRequestPro("POST", targetUrl, customHeader, requestBody, switchip)
+	return statusCode, responseHeader, body, err
 }
