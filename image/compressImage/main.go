@@ -7,6 +7,7 @@ import (
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
 	"github.com/jackson198608/goProject/common/tools"
 	"github.com/jackson198608/goProject/image/task"
+	"gopkg.in/gographics/imagick.v2/imagick"
 	mgo "gopkg.in/mgo.v2"
 	// "strings"
 )
@@ -23,6 +24,10 @@ func init() {
 func main() {
 	var mongoConnInfo []string
 	var mysqlInfo []string
+
+	//初始化ImageMagick资源
+	imagick.Initialize()
+	defer imagick.Terminate()
 
 	redisInfo := tools.FormatRedisOption(c.redisConn)
 	logger.Info("start work")

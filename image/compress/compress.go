@@ -70,8 +70,6 @@ func (c *Compress) Do() error {
 }
 
 func (c *Compress) resizeImage(filename string, width int, height int) error {
-	imagick.Initialize()
-	defer imagick.Terminate()
 	var err error
 
 	mw := imagick.NewMagickWand()
