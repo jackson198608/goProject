@@ -8,3 +8,5 @@
 	go get github.com/jackson198608/goProject/image/compressImage 
 
 
+# Dependency
+- libmagickcore-dev
