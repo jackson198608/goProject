@@ -79,7 +79,7 @@ func (t *Task) callbackPhp() error {
 	targetUrl := "http://" + t.phpServerIp + t.jsonData.callbackRoute
 	var h http.Header = make(http.Header)
 	h.Set("HOST", "lingdang.goumin.com")
-	statusCode, _, body, err := abuyun.SendRequest(targetUrl, h, "", true)
+	statusCode, _, body, err := abuyun.SendPostRequest(targetUrl, h, "", true)
 	if err != nil {
 		logger.Error("http request error", err)
 		return err
