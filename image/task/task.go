@@ -76,21 +76,22 @@ func (t *Task) Do() error {
 
 func (t *Task) callbackPhp() error {
 	abuyun := t.setAbuyun()
-	targetUrl := "http://" + t.phpServerIp + t.jsonData.callbackRoute
+	targetUrl := "http://" + t.phpServerIp + "/" + t.jsonData.callbackRoute
+
 	var h http.Header = make(http.Header)
-	h.Set("HOST", "lingdang.goumin.com")
-	statusCode, _, body, err := abuyun.SendPostRequest(targetUrl, h, "", true)
+	h.Set("HOST", "dev.lingdang.goumintest.com") //@todo change to online domain
+	statusCode, _, body, err := abuyun.SendPostRequest(targetUrl, h, t.jsonData.args, true)
+
 	if err != nil {
-		logger.Error("http request error", err)
+		logger.Error("http request error", err, "; task is ", t.Raw)
 		return err
 	}
 	if statusCode == 200 {
 		if body == "fail" {
-			logger.Error("callback php fail ")
+			logger.Error("callback php fail ; task is ", t.Raw)
 		}
 		return nil
 	}
-	logger.Error("callback php error ", err)
 	return err
 }
 
