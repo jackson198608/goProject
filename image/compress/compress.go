@@ -1,7 +1,6 @@
 package compress
 
 import (
-	"github.com/bitly/go-simplejson"
 	"github.com/donnie4w/go-logger/logger"
 	"gopkg.in/gographics/imagick.v2/imagick"
 	"strconv"
@@ -9,21 +8,15 @@ import (
 )
 
 type Compress struct {
-	jobstr   string
-	filename string
-	suffix   string
-	jsonData *JsonColumn
-}
-
-//json column
-type JsonColumn struct {
 	imgaePath string
 	width     int
 	height    int
+	filename  string
+	suffix    string
 }
 
-func NewCompress(jobStr string) *Compress {
-	if jobStr == "" {
+func NewCompress(imgaePath string, width int, height int) *Compress {
+	if imgaePath == "" || width == 0 || height == 0 {
 		return nil
 	}
 
@@ -32,39 +25,18 @@ func NewCompress(jobStr string) *Compress {
 		return nil
 	}
 
-	c.jobstr = jobStr
-	jsonColumn, err := c.parseJson()
-	if err != nil {
-		return nil
-	}
-	c.jsonData = jsonColumn
+	c.imgaePath = imgaePath
+	c.width = width
+	c.height = height
 
 	c.parsePath()
 	return c
 }
 
-//change json colum to object private member
-func (c *Compress) parseJson() (*JsonColumn, error) {
-	var jsonC JsonColumn
-	js, err := simplejson.NewJson([]byte(c.jobstr))
-	if err != nil {
-		return &jsonC, err
-	}
-
-	jsonC.imgaePath, _ = js.Get("path").String()
-	jsonC.width, _ = js.Get("width").Int()
-	jsonC.height, _ = js.Get("height").Int()
-
-	return &jsonC, nil
-}
-
 func (c *Compress) Do() error {
-	filename := c.jsonData.imgaePath
-	width := c.jsonData.width
-	height := c.jsonData.height
-	err := c.resizeImage(filename, width, height)
+	err := c.resizeImage(c.imgaePath, c.width, c.height)
 	if err == nil {
-		logger.Info("[sucess] compress image path is ", filename, " width is ", width, " height is ", height)
+		logger.Info("[sucess] compress image path is ", c.imgaePath, " width is ", c.width, " height is ", c.height)
 	}
 	return err
 }
@@ -106,12 +78,11 @@ func (c *Compress) resizeImage(filename string, width int, height int) error {
 }
 
 func (c *Compress) parsePath() error {
-	rawSlice := []byte(c.jsonData.imgaePath)
+	rawSlice := []byte(c.imgaePath)
 	rawLen := len(rawSlice)
-	lastIndex := strings.LastIndex(c.jsonData.imgaePath, ".")
+	lastIndex := strings.LastIndex(c.imgaePath, ".")
 	c.filename = string(rawSlice[0:lastIndex])
 	c.suffix = string(rawSlice[lastIndex+1 : rawLen])
 
 	return nil
-
 }
