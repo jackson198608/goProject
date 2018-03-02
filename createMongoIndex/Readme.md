@@ -1,2 +1,0 @@
-- 临时脚本
-- 用户给message_push_record_x 的所有表一次性创建索引
