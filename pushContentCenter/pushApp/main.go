@@ -8,7 +8,7 @@ import (
 	"github.com/jackson198608/goProject/common/tools"
 	"github.com/jackson198608/goProject/pushContentCenter/task"
 	mgo "gopkg.in/mgo.v2"
-	// redis "gopkg.in/redis.v4"
+	redis "gopkg.in/redis.v4"
 	"gouminGitlab/common/orm/mongo/ClubData"
 	"os"
 	// "strconv"
@@ -74,7 +74,7 @@ func main() {
 	}
 }
 
-func jobFuc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
+func jobFuc(job string,redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
 	if (mysqlConns == nil) || (mgoConns == nil) {
 		return errors.New("mysql or mongo conn error")
 	}
