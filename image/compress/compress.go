@@ -1,8 +1,10 @@
 package compress
 
 import (
+	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"gopkg.in/gographics/imagick.v2/imagick"
+	// "reflect"
 	"strconv"
 	"strings"
 )
@@ -16,7 +18,7 @@ type Compress struct {
 }
 
 func NewCompress(imgaePath string, width int, height int) *Compress {
-	if imgaePath == "" || width == 0 || height == 0 {
+	if imgaePath == "" || width == 0 {
 		return nil
 	}
 
@@ -52,7 +54,16 @@ func (c *Compress) resizeImage(filename string, width int, height int) error {
 		logger.Error(err)
 		return err
 	}
+
+	// Get original logo size
+	originalWidth := mw.GetImageWidth()
+	originalHeight := mw.GetImageHeight()
+
 	hWidth := uint(width)
+	if height == 0 {
+		ratio := float64(originalHeight) / float64(originalWidth)
+		height = int(float64(hWidth) * ratio)
+	}
 	hHeight := uint(height)
 
 	err = mw.ResizeImage(hWidth, hHeight, imagick.FILTER_LANCZOS, 1)
@@ -67,8 +78,7 @@ func (c *Compress) resizeImage(filename string, width int, height int) error {
 		return err
 	}
 	widthStr := strconv.Itoa(width)
-	heightStr := strconv.Itoa(height)
-	newimg := c.filename + "_" + widthStr + "_" + heightStr + "." + c.suffix
+	newimg := c.filename + "_" + widthStr + "." + c.suffix
 	err = mw.WriteImage(newimg)
 	if err != nil {
 		logger.Error(err)

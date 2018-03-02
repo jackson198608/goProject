@@ -88,7 +88,8 @@ func (t *Task) callbackPhp() error {
 	}
 	if statusCode == 200 {
 		if body == "fail" {
-			logger.Error("callback php fail ; task is ", t.Raw)
+			// logger.Error("callback php fail ; task is ", t.Raw)
+			return errors.New("callback php fail ; task is " + t.Raw)
 		}
 		return nil
 	}
