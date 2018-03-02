@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/go-xorm/xorm"
-	"github.com/jackson198608/goProject/Recommend_1.0/task"
+	"github.com/jackson198608/goProject/recommend_1.0/task"
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
 	"github.com/jackson198608/goProject/common/tools"
 	mgo "gopkg.in/mgo.v2"
+	redis "gopkg.in/redis.v4"
 	"gouminGitlab/common/orm/mongo/RecommendData"
 	"os"
 	"strconv"
@@ -138,7 +139,7 @@ func main() {
 	}
 }
 
-func jobFuc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
+func jobFuc(job string,redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
 	if (mysqlConns == nil) || (mgoConns == nil) {
 		return errors.New("mysql or mongo conn error")
 	}
