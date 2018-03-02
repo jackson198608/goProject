@@ -120,7 +120,7 @@ func createHtmlByUrl(jobType string) {
 	}
 }
 
-func jobFunc(redisStr string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
+func jobFunc(redisStr string,redisConn *redis.ClusterClient ,mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
 	var abuyun *abuyunHttpClient.AbuyunProxy
 	if taskarg[2] == "1" {
 		abuyun = setAbuyun()
