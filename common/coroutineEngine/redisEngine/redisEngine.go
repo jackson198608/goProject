@@ -28,7 +28,7 @@ type RedisEngine struct {
 	coroutinNum   int
 	daemon        int
 	taskArgs      []string //somethin you want to give task
-	workFun       func(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error
+	workFun       func(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error
 }
 
 func NewRedisEngine(queueName string,
@@ -37,7 +37,7 @@ func NewRedisEngine(queueName string,
 	mysqlInfo []string,
 	coroutinNum int,
 	daemon int,
-	workFun func(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error,
+	workFun func(job string, redisConn *redis.ClusterClient, tmysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error,
 	taskArgs ...string,
 ) (*RedisEngine, error) {
 	//check param
@@ -230,7 +230,7 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 		}
 
 		//if goint to here ,call the invoke
-		err = r.workFun(realraw, mysqlConns, mgoConns, r.taskArgs)
+		err = r.workFun(realraw, redisConn, mysqlConns, mgoConns, r.taskArgs)
 		if err != nil {
 			fmt.Println("[error]jobFunc get error ,but still can be retry", err)
 			err = r.pushFails(redisConn, realraw, trytimes)
