@@ -9,6 +9,7 @@ import (
 	"github.com/jackson198608/goProject/image/task"
 	"gopkg.in/gographics/imagick.v2/imagick"
 	mgo "gopkg.in/mgo.v2"
+	redis "gopkg.in/redis.v4"
 	// "strings"
 )
 
@@ -44,7 +45,7 @@ func main() {
 
 }
 
-func jobFuc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
+func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
 	t, err := task.NewTask(job, taskarg)
 	if err != nil {
 		return err
