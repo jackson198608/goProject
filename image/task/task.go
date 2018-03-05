@@ -77,9 +77,9 @@ func (t *Task) Do() error {
 func (t *Task) callbackPhp() error {
 	abuyun := t.setAbuyun()
 	targetUrl := "http://" + t.phpServerIp + "/" + t.jsonData.callbackRoute
-	logger.Info("targetUrl", targetUrl)
+	// logger.Info("targetUrl", targetUrl)
 	var h http.Header = make(http.Header)
-	h.Set("HOST", "dev.lingdang.goumintest.com") //@todo change to online domain
+	h.Set("HOST", "lingdang.goumin.com") //@todo change to online domain
 	statusCode, _, body, err := abuyun.SendPostRequest(targetUrl, h, t.jsonData.args, true)
 
 	if err != nil {
