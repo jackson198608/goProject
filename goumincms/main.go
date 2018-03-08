@@ -50,7 +50,7 @@ var c Config = Config{
 
 var diaryDomain = "http://c1.cdn.goumin.com/diary/"
 var askDomain = "http://c1.cdn.goumin.com/cms"
-var bbsDomain = "http://f1.cdn.goumin.com/attachments/"
+var bbsDomain = "http://img5.goumin.com/attachments/"
 var staticH5Url string = "http://m.goumin.com/bbs/"
 var doctorUrl = "http://s.goumin.com/"
 var mipBbsUrl = "http://m.goumin.com/mip/bbs/"
