@@ -64,7 +64,7 @@ func (t *Task) setAbuyun() *abuyunHttpClient.AbuyunProxy {
 // If the compression is successful, the callback PHP
 func (t *Task) Do() error {
 	c := compress.NewCompress(t.jsonData.imgaePath, t.jsonData.width, t.jsonData.height)
-	err := c.Do()
+	_, err := c.Do()
 	if err == nil {
 		err = t.callbackPhp()
 	}
