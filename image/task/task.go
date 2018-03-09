@@ -66,12 +66,25 @@ func (t *Task) Do() error {
 	c := compress.NewCompress(t.jsonData.imgaePath, t.jsonData.width, t.jsonData.height)
 	_, err := c.Do()
 	if err == nil {
-		err = t.callbackPhp()
+		err = t.callback()
 	}
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (t *Task) callback() error {
+	err := t.callbackPhp()
+	if err != nil {
+		for i := 0; i < 5; i++ {
+			err = t.callbackPhp()
+			if err == nil {
+				break
+			}
+		}
+	}
+	return err
 }
 
 func (t *Task) callbackPhp() error {
