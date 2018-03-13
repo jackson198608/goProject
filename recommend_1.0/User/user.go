@@ -474,7 +474,7 @@ func (u *User) getUserQueries(keyword string, getType int, size int) string {
 	query := ""
 	mustNotQuery := ""
 	filterQuery := ""
-	filterQuery += "\"filter\":{\"bool\":{\"must_not\":["
+	filterQuery += "\"post_filter\":{\"bool\":{\"must_not\":["
 	for m, _ := range u.notRecommendUid {
 		mustNotQuery += "{\"term\":{\"id\":" + strconv.Itoa(u.notRecommendUid[m]) + "}},"
 	}
@@ -505,7 +505,8 @@ func (u *User) getUser(query string) (*[]elkUserBody, error) {
 	abuyun := u.setAbuyun()
 	targetUrl := "http://" + u.elkDsn + "/user/user_info/_search?pretty"
 	var h http.Header = make(http.Header)
-	h.Set("a", "1")
+
+	h.Set("Content-Type", "application/json")
 	statusCode, _, body, err := abuyun.SendRequest(targetUrl, h, query, true)
 	if err != nil {
 		fmt.Println("http request error", err)
@@ -557,7 +558,7 @@ func (u *User) getClubQueries(keyword string, fup int, fid int, followIds string
 	mustNotQuery := ""
 	filterQuery := ""
 	if len(u.notRecommendFid) > 0 {
-		filterQuery += "\"filter\":{\"bool\":{\"must_not\":["
+		filterQuery += "\"post_filter\":{\"bool\":{\"must_not\":["
 		for m, _ := range u.notRecommendFid {
 			mustNotQuery += "{\"term\":{\"id\":" + strconv.Itoa(u.notRecommendFid[m]) + "}},"
 		}
@@ -581,16 +582,14 @@ func (u *User) getClubQueries(keyword string, fup int, fid int, followIds string
 
 func (u *User) getClub(query string) (*[]elkClubBody, error) {
 	abuyun := u.setAbuyun()
-	targetUrl := "http://" + u.elkDsn + "/club/club_info/_search?pretty"
-
+	targetUrl := "http://" + u.elkDsn + "/club/club_info/_search"
 	var h http.Header = make(http.Header)
-	h.Set("a", "1")
+	h.Set("Content-Type", "application/json")
 	statusCode, _, body, err := abuyun.SendRequest(targetUrl, h, query, true)
 	if err != nil {
 		fmt.Println("http request error", err)
 		return nil, err
 	}
-
 	if statusCode == 200 {
 		club, err := u.formatClub(body)
 		if err != nil {
