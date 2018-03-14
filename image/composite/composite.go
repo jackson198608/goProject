@@ -30,6 +30,7 @@ func (c *Composite) Do() error {
 	err := c.compositeImage(c.imgaePath, c.watermarkPath)
 	if err == nil {
 		logger.Info("[sucess] composite image path is ", c.imgaePath, " watermarkPath is ", c.watermarkPath)
+		return nil
 	}
 	return err
 }
