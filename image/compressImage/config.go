@@ -5,10 +5,11 @@ import (
 )
 
 type Config struct {
-	redisConn   string
-	coroutinNum int
-	queueName   string
-	phpServerIp string
+	redisConn     string
+	coroutinNum   int
+	queueName     string
+	phpServerIp   string
+	watermarkPath string
 }
 
 func loadConfig() {
@@ -19,4 +20,5 @@ func loadConfig() {
 	c.coroutinNum = config.GetInt("coroutinNum")
 	c.queueName = config.GetString("queueName")
 	c.phpServerIp = config.GetString("phpServerIp")
+	c.watermarkPath = config.GetString("watermarkPath")
 }

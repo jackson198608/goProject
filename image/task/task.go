@@ -5,6 +5,7 @@ import (
 	"github.com/bitly/go-simplejson"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
+	"github.com/jackson198608/goProject/image/composite"
 	"github.com/jackson198608/goProject/image/compress"
 	"net/http"
 )
@@ -12,6 +13,7 @@ import (
 type Task struct {
 	Raw         string //the data get from redis queue
 	phpServerIp string
+	waterPath   string
 	jsonData    *JsonColumn
 }
 
@@ -45,6 +47,7 @@ func NewTask(raw string, taskarg []string) (*Task, error) {
 	t.jsonData = jsonColumn
 
 	t.phpServerIp = taskarg[0]
+	t.waterPath = taskarg[1]
 
 	return t, nil
 
@@ -64,14 +67,35 @@ func (t *Task) setAbuyun() *abuyunHttpClient.AbuyunProxy {
 // If the compression is successful, the callback PHP
 func (t *Task) Do() error {
 	c := compress.NewCompress(t.jsonData.imgaePath, t.jsonData.width, t.jsonData.height)
-	_, err := c.Do()
+	path, err := c.Do()
 	if err == nil {
+		watermarkPath := t.watermarkImage()
+		cp := composite.NewComposite(path, watermarkPath)
+		compositeErr := cp.Do()
+		if compositeErr != nil {
+			for i := 0; i < 5; i++ {
+				compositeErr := cp.Do()
+				if compositeErr == nil {
+					break
+				}
+			}
+		}
 		err = t.callback()
 	}
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (t *Task) watermarkImage() string {
+	if t.jsonData.width <= 220 {
+		return t.waterPath + "220.png"
+	} else if t.jsonData.width > 220 && t.jsonData.width <= 340 {
+		return t.waterPath + "340.png"
+	} else {
+		return t.waterPath + "720.png"
+	}
 }
 
 func (t *Task) callback() error {
@@ -90,7 +114,6 @@ func (t *Task) callback() error {
 func (t *Task) callbackPhp() error {
 	abuyun := t.setAbuyun()
 	targetUrl := "http://" + t.phpServerIp + "/" + t.jsonData.callbackRoute
-	// logger.Info("targetUrl", targetUrl)
 	var h http.Header = make(http.Header)
 	h.Set("HOST", "lingdang.goumin.com") //@todo change to online domain
 	statusCode, _, body, err := abuyun.SendPostRequest(targetUrl, h, t.jsonData.args, true)

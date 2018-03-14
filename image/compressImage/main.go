@@ -17,7 +17,8 @@ var c Config = Config{
 	"127.0.0.1:6379", //redis info
 	1,                //thread num
 	"imageCompressTaskList", //queue name
-	"127.0.0.1"}             //php server ip
+	"127.0.0.1",             //php server ip
+	"/Users/Snow/img/watermark/"}
 
 func init() {
 	loadConfig()
@@ -33,7 +34,7 @@ func main() {
 
 	redisInfo := tools.FormatRedisOption(c.redisConn)
 	logger.Info("start work")
-	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 1, jobFuc, c.phpServerIp)
+	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 1, jobFuc, c.phpServerIp, c.watermarkPath)
 	if err != nil {
 		logger.Error("[NewRedisEngine] ", err)
 	}
