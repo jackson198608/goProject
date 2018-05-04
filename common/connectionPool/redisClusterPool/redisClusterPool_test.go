@@ -9,26 +9,34 @@ import (
 
 const conum = 100
 
-var redisClusterPool *redisPool
+var rp *redisPool
 var redisConn = "192.168.86.193:6380,192.168.86.193:6381,192.168.86.193:6382,192.168.86.193:6383,192.168.86.193:6384,192.168.86.193:6385"
 
 func TestIndex(t *testing.T) {
-	redisClusterPool = createPool()
-	// fmt.Println(redisClusterPool)
-	for i := 0; i < 100; i++ {
-		go work(i)
+	rp = createPool()
+	if rp == nil {
+		fmt.Println("create redis pool error")
 	}
+	// fmt.Println(redisClusterPool)
+	c := make(chan int, 100)
+	for i := 0; i < 100; i++ {
+		go work(i, c)
+	}
+
+	for i := 0; i < 100; i++ {
+		<-c
+	}
+
 }
 
-func work(i int) {
+func work(i int, c chan int) {
 	for {
-		fmt.Println("i:", i)
-		connection, err := redisClusterPool.GetConnection()
-		fmt.Println("connection:", connection)
+		connection, err := rp.GetConnection()
 		if err != nil {
 			fmt.Println("work redis connection err", err)
 		}
 		if connection == nil {
+			fmt.Println("get no connection")
 			time.Sleep(10 * time.Microsecond)
 			continue
 		} else {
@@ -37,18 +45,19 @@ func work(i int) {
 			if err != nil {
 				fmt.Println("lpush err", err)
 			}
-			redisClusterPool.PutConnection(connection)
+			rp.PutConnection(connection)
 		}
 	}
+	c <- 1
 }
 
 func createPool() *redisPool {
 	redisInfo := tools.FormatRedisOption(redisConn)
-	redisClusterPool, err := NewRedisPool(&redisInfo, conum)
+	rp, err := NewRedisPool(&redisInfo, conum)
 	if err != nil {
 		fmt.Println("new redis pool err", err)
-		return redisClusterPool
+		return nil
 		//to do
 	}
-	return redisClusterPool
+	return rp
 }
