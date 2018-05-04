@@ -6,7 +6,6 @@ import (
 	queue "github.com/oleiade/lane"
 	redis "gopkg.in/redis.v4"
 	"gouminGitlab/common/tools"
-	"reflect"
 	"sync"
 )
 
@@ -38,10 +37,10 @@ func (r *redisPool) initPool() error {
 	r.poolQueue = queue.NewQueue()
 	for i := 0; i < r.num; i++ {
 		connection, err := r.createOneConnection()
-		fmt.Println(i, connection, reflect.TypeOf(connection))
+		// fmt.Println(i, connection, reflect.TypeOf(connection))
 		if err != nil {
 			//@todo something
-			fmt.Println("err create connection")
+			fmt.Println("err create connection", err)
 		} else {
 			r.poolQueue.Enqueue(connection)
 		}
@@ -81,6 +80,6 @@ func (r *redisPool) GetConnection() (*redis.ClusterClient, error) {
 func (r *redisPool) PutConnection(connection *redis.ClusterClient) error {
 	r.lock.Lock()
 	r.poolQueue.Enqueue(connection)
-	r.lock.RLock()
+	r.lock.Unlock()
 	return nil
 }

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const conum = 100
+const conum = 10
 
 var rp *redisPool
 var redisConn = "192.168.86.193:6380,192.168.86.193:6381,192.168.86.193:6382,192.168.86.193:6383,192.168.86.193:6384,192.168.86.193:6385"
@@ -18,12 +18,12 @@ func TestIndex(t *testing.T) {
 		fmt.Println("create redis pool error")
 	}
 	// fmt.Println(redisClusterPool)
-	c := make(chan int, 100)
-	for i := 0; i < 100; i++ {
+	c := make(chan int, 10)
+	for i := 0; i < 10; i++ {
 		go work(i, c)
 	}
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		<-c
 	}
 
@@ -31,6 +31,7 @@ func TestIndex(t *testing.T) {
 
 func work(i int, c chan int) {
 	for {
+		fmt.Println("work i ", i)
 		connection, err := rp.GetConnection()
 		if err != nil {
 			fmt.Println("work redis connection err", err)
@@ -46,6 +47,7 @@ func work(i int, c chan int) {
 				fmt.Println("lpush err", err)
 			}
 			rp.PutConnection(connection)
+			time.Sleep(5000 * time.Microsecond)
 		}
 	}
 	c <- 1
