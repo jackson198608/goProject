@@ -41,6 +41,7 @@ func (r *redisPool) initPool() error {
 		if err != nil {
 			//@todo something
 			fmt.Println("err create connection", err)
+			return err
 		} else {
 			r.poolQueue.Enqueue(connection)
 		}
