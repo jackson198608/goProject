@@ -4,21 +4,22 @@ import (
 	"errors"
 	"fmt"
 	queue "github.com/oleiade/lane"
+	log "github.com/thinkboy/log4go"
 	redis "gopkg.in/redis.v4"
 	"gouminGitlab/common/tools"
 	"sync"
 )
 
-type redisPool struct {
+type RedisPool struct {
 	redisInfo *redis.ClusterOptions
 	num       int
 	poolQueue *queue.Queue
 	lock      sync.RWMutex
 }
 
-func NewRedisPool(redisInfo *redis.ClusterOptions, num int) (*redisPool, error) {
+func NewRedisPool(redisInfo *redis.ClusterOptions, num int) (*RedisPool, error) {
 	//@todo check params
-	redisPool := new(redisPool)
+	redisPool := new(RedisPool)
 	if redisPool == nil {
 		return redisPool, errors.New("create memory error.can not create it")
 	}
@@ -33,7 +34,7 @@ func NewRedisPool(redisInfo *redis.ClusterOptions, num int) (*redisPool, error) 
 
 }
 
-func (r *redisPool) initPool() error {
+func (r *RedisPool) initPool() error {
 	r.poolQueue = queue.NewQueue()
 	for i := 0; i < r.num; i++ {
 		connection, err := r.createOneConnection()
@@ -49,7 +50,7 @@ func (r *redisPool) initPool() error {
 	return nil
 }
 
-func (r *redisPool) createOneConnection() (*redis.ClusterClient, error) {
+func (r *RedisPool) createOneConnection() (*redis.ClusterClient, error) {
 	client, err := tools.GetClusterClient(r.redisInfo)
 	if err != nil {
 		return nil, err
@@ -57,7 +58,7 @@ func (r *redisPool) createOneConnection() (*redis.ClusterClient, error) {
 	return client, nil
 }
 
-func (r *redisPool) Close() error {
+func (r *RedisPool) Close() error {
 	for i := 0; i < r.poolQueue.Size(); i++ {
 		connection := r.poolQueue.Dequeue()
 		connection.(*redis.ClusterClient).Close()
@@ -66,7 +67,7 @@ func (r *redisPool) Close() error {
 	return nil
 }
 
-func (r *redisPool) GetConnection() (*redis.ClusterClient, error) {
+func (r *RedisPool) GetConnection() (*redis.ClusterClient, error) {
 	r.lock.Lock()
 	if r.poolQueue.Size() == 0 {
 		r.lock.Unlock()
@@ -78,13 +79,25 @@ func (r *redisPool) GetConnection() (*redis.ClusterClient, error) {
 
 }
 
-func (r *redisPool) TellMeOneIsBroken() {
-		for(
-				client:=redisConnext
-		)
+func (r *RedisPool) TellMeOneIsBroken() {
+	for {
+		connection, err := r.createOneConnection()
+		if err != nil {
+			log.Error("put connection to enqueue error", err)
+			continue
+		}
+		err = r.PutConnection(connection)
+		if err != nil {
+			log.Error("put connection to enqueue error", err)
+			continue
+		} else {
+			break
+		}
+	}
+
 }
 
-func (r *redisPool) PutConnection(connection *redis.ClusterClient) error {
+func (r *RedisPool) PutConnection(connection *redis.ClusterClient) error {
 	r.lock.Lock()
 	r.poolQueue.Enqueue(connection)
 	r.lock.Unlock()
