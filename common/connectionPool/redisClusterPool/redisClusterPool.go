@@ -78,6 +78,12 @@ func (r *redisPool) GetConnection() (*redis.ClusterClient, error) {
 
 }
 
+func (r *redisPool) TellMeOneIsBroken() {
+		for(
+				client:=redisConnext
+		)
+}
+
 func (r *redisPool) PutConnection(connection *redis.ClusterClient) error {
 	r.lock.Lock()
 	r.poolQueue.Enqueue(connection)
