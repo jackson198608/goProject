@@ -69,6 +69,7 @@ func (r *RedisPool) Close() error {
 
 func (r *RedisPool) GetConnection() (*redis.ClusterClient, error) {
 	r.lock.Lock()
+	fmt.Println("poolQueue size = ", r.poolQueue.Size())
 	if r.poolQueue.Size() == 0 {
 		r.lock.Unlock()
 		return nil, errors.New("there is no more connection can be use ,please wait")
