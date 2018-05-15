@@ -10,6 +10,8 @@ import (
 	"sync"
 )
 
+var loopnum = 3
+
 type RedisPool struct {
 	redisInfo *redis.ClusterOptions
 	num       int
@@ -81,7 +83,7 @@ func (r *RedisPool) GetConnection() (*redis.ClusterClient, error) {
 }
 
 func (r *RedisPool) TellMeOneIsBroken() {
-	for {
+	for i := 0; i < loopnum; i++ {
 		connection, err := r.createOneConnection()
 		if err != nil {
 			log.Error("put connection to enqueue error", err)
