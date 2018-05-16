@@ -8,6 +8,7 @@ import (
 	redis "gopkg.in/redis.v4"
 	"gouminGitlab/common/tools"
 	"sync"
+	"time"
 )
 
 var loopnum = 3
@@ -87,6 +88,7 @@ func (r *RedisPool) TellMeOneIsBroken() {
 		connection, err := r.createOneConnection()
 		if err != nil {
 			log.Error("put connection to enqueue error", err)
+			time.Sleep(10 * time.Millisecond)
 			continue
 		}
 		err = r.PutConnection(connection)
