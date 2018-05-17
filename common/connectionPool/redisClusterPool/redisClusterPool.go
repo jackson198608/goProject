@@ -85,9 +85,16 @@ func (r *RedisPool) GetConnection() (*redis.ClusterClient, error) {
 
 func (r *RedisPool) TellMeOneIsBroken() {
 	for i := 0; i < loopnum; i++ {
+		fmt.Println("tell me times ", i)
 		connection, err := r.createOneConnection()
 		if err != nil {
-			log.Error("put connection to enqueue error", err)
+			log.Error("create connection to enqueue error", err)
+			time.Sleep(10 * time.Millisecond)
+			continue
+		}
+		_, err1 := connection.Ping().Result()
+		if err1 != nil {
+			log.Error("again create new connection to enqueue error", err)
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}
@@ -104,7 +111,29 @@ func (r *RedisPool) TellMeOneIsBroken() {
 
 func (r *RedisPool) PutConnection(connection *redis.ClusterClient) error {
 	r.lock.Lock()
-	r.poolQueue.Enqueue(connection)
+	nums := r.num - r.poolQueue.Size()
+	for i := 0; i < nums; i++ {
+		r.CreateNumsConnnection(connection)
+	}
 	r.lock.Unlock()
 	return nil
+}
+
+func (r *RedisPool) CreateNumsConnnection(connection *redis.ClusterClient) {
+	if connection != nil {
+		_, err := connection.Ping().Result()
+		if err == nil {
+			r.poolQueue.Enqueue(connection)
+		} else {
+			connection, err := r.createOneConnection()
+			if err == nil {
+				r.poolQueue.Enqueue(connection)
+			}
+		}
+	} else {
+		connection, err := r.createOneConnection()
+		if err == nil {
+			r.poolQueue.Enqueue(connection)
+		}
+	}
 }
