@@ -4,11 +4,13 @@ import (
 	// "fmt"
 	"github.com/donnie4w/go-logger/logger"
 	"gopkg.in/gographics/imagick.v2/imagick"
+	"strings"
 )
 
 type Composite struct {
 	imgaePath     string
 	watermarkPath string
+	suffix        string
 }
 
 func NewComposite(imgaePath string, watermarkPath string) *Composite {
@@ -23,6 +25,8 @@ func NewComposite(imgaePath string, watermarkPath string) *Composite {
 
 	c.imgaePath = imgaePath
 	c.watermarkPath = watermarkPath
+
+	c.parsePath()
 	return c
 }
 
@@ -38,6 +42,7 @@ func (c *Composite) Do() error {
 func (c *Composite) compositeImage(filename string, watermarkPath string) error {
 	dest := imagick.NewMagickWand()
 	src := imagick.NewMagickWand()
+	nw := imagick.NewMagickWand()
 
 	//背景图
 	if err := dest.ReadImage(filename); err != nil {
@@ -58,7 +63,38 @@ func (c *Composite) compositeImage(filename string, watermarkPath string) error 
 	destWidth := int(dest.GetImageWidth()) - srcWidth
 	destHeight := int(dest.GetImageHeight()) - srcHeight
 	// This does the src (overlay) over the dest (background)
-	dest.CompositeImage(src, imagick.COMPOSITE_OP_OVER, destWidth, destHeight)
-	dest.WriteImage(filename)
+
+	if c.suffix == "gif" {
+		dest = dest.CoalesceImages()
+
+		for i := 0; i < int(dest.GetNumberImages()); i++ {
+			dest.SetIteratorIndex(i)
+			tw := dest.GetImage()
+
+			tw.CompositeImage(src, imagick.COMPOSITE_OP_OVER, destWidth, destHeight)
+			tw.WriteImage(filename)
+
+			nw.AddImage(tw)
+			tw.Destroy()
+		}
+		dest.ResetIterator()
+		dest.Destroy()
+		dest = nw.CompareImageLayers(imagick.IMAGE_LAYER_COMPARE_ANY)
+		// -loop 0
+		dest.SetOption("loop", "0")
+		dest.WriteImages(filename, true)
+	}else {
+		dest.CompositeImage(src, imagick.COMPOSITE_OP_OVER, destWidth, destHeight)
+		dest.WriteImage(filename)
+	}
+	return nil
+}
+
+func (c *Composite) parsePath() error {
+	rawSlice := []byte(c.imgaePath)
+	rawLen := len(rawSlice)
+	lastIndex := strings.LastIndex(c.imgaePath, ".")
+	c.suffix = string(rawSlice[lastIndex+1 : rawLen])
+
 	return nil
 }

@@ -78,6 +78,7 @@ func (c *Compress) resizeImage(filename string, width int, height int) (string, 
 
 	mw := imagick.NewMagickWand()
 
+	nw := imagick.NewMagickWand()
 	err = mw.ReadImage(filename)
 
 	if err != nil {
@@ -95,25 +96,54 @@ func (c *Compress) resizeImage(filename string, width int, height int) (string, 
 		height = int(float64(hWidth) * ratio)
 	}
 	hHeight := uint(height)
-
-	err = mw.ResizeImage(hWidth, hHeight, imagick.FILTER_LANCZOS, 1)
-	if err != nil {
-		logger.Error(err)
-		return newimg, err
-	}
-
-	err = mw.SetImageCompressionQuality(80)
-	if err != nil {
-		logger.Error(err)
-		return newimg, err
-	}
 	widthStr := strconv.Itoa(width)
 	newimg = c.filename + "_" + widthStr + "." + c.suffix
-	err = mw.WriteImage(newimg)
+
+	if c.suffix == "gif" {
+		mw = mw.CoalesceImages()
+
+		for i := 0; i < int(mw.GetNumberImages()); i++ {
+			mw.SetIteratorIndex(i)
+			tw := mw.GetImage()
+			err = tw.ResizeImage(hWidth, hHeight, imagick.FILTER_LANCZOS, 1)
+			if err != nil {
+				logger.Error(err)
+				return newimg, err
+			}
+			err = mw.SetImageCompressionQuality(80)
+			if err != nil {
+				logger.Error(err)
+				return newimg, err
+			}
+			nw.AddImage(tw)
+			tw.Destroy()
+		}
+		mw.ResetIterator()
+		mw.Destroy()
+		mw = nw.CompareImageLayers(imagick.IMAGE_LAYER_COMPARE_ANY)
+		// -loop 0
+		mw.SetOption("loop", "0")
+		mw.WriteImages(newimg, true)
+	} else {
+		err = mw.ResizeImage(hWidth, hHeight, imagick.FILTER_LANCZOS, 1)
+		if err != nil {
+			logger.Error(err)
+			return newimg, err
+		}
+
+		err = mw.SetImageCompressionQuality(80)
+		if err != nil {
+			logger.Error(err)
+			return newimg, err
+		}
+		err = mw.WriteImage(newimg)
+	}
+
 	if err != nil {
 		logger.Error(err)
 		return newimg, err
 	}
+	mw.Destroy()
 	return newimg, nil
 }
 
