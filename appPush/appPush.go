@@ -32,10 +32,18 @@ func (w Worker) Push(p12bytes []byte) (result bool) {
 	phoneType := w.t.phoneType
 	if phoneType == 0 {
 		result = w.iosPush(p12bytes)
-	} else {
+	} else if phoneType == 1 {
 		result = w.androidPush()
+	} else {
+		//wx program
+		result = w.wxProgramPush()
 	}
 	return result
+}
+
+func (w Worker) wxProgramPush() (result bool) {
+	//调用channel 请求微信
+
 }
 
 func (w Worker) iosPush(p12bytes []byte) (result bool) {

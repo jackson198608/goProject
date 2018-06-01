@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/jackson198608/gotest/appPush"
+	"github.com/jackson198608/goProject/appPush"
 )
 
 func doPush(c chan int, i int) {
