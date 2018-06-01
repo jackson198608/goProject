@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/jackson198608/gotest/appPush"
+	"gouminGitlab/common/weixin/accessToken"
 	"io/ioutil"
 	"os"
 	"time"
@@ -12,6 +13,7 @@ var c Config = Config{5, 100, "192.168.86.68:6380,192.168.86.68:6381,192.168.86.
 var numForOneLoop int = c.currentNum
 var p12Bytes []byte
 var timeout time.Duration = c.httpTimeOut
+var weixinAccessToken *accessToken.Token
 
 /*
 type of job
@@ -38,6 +40,11 @@ func Init() {
 	loadConfig()
 
 	appPush.Init(timeout)
+	initAccessToken()
+}
+
+func initAccessToken() {
+	//@todo
 }
 
 func getRedisQueueName() {

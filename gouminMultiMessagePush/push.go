@@ -6,6 +6,7 @@ import (
 
 func doPush(c chan int, i int) {
 	t := appPush.NewTask(tasks[i].pushStr)
+	t.accessToken = weixinAccessToken
 	if t != nil {
 		w := appPush.NewWorker(t)
 		result := w.Push(p12Bytes)
