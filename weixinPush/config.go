@@ -13,8 +13,7 @@ type Config struct {
 
 func loadConfig() {
 	//@todo change online path
-	config := jconfig.LoadConfig("/etc/go/weixinPushConfig.json")
-	// config := jconfig.LoadConfig("/Users/Snow/pushContentCenterConfig.json")
+	config := jconfig.LoadConfig("/etc/weixinPushConfig.json")
 	c.redisConn = config.GetString("redisConn")
 	c.coroutinNum = config.GetInt("coroutinNum")
 	c.queueName = config.GetString("queueName")
