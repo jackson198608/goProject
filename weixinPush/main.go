@@ -4,16 +4,16 @@ import (
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/common/tools"
-	"gopkg.in/redis.v4"
+	redis "gopkg.in/redis.v4"
 	"github.com/go-xorm/xorm"
 	"gopkg.in/mgo.v2"
-	//"errors"
 	"github.com/jackson198608/goProject/weixinPush/task"
 	"gouminGitlab/common/weixin/accessToken/accesstokenManager"
+	"sync"
 	"errors"
 )
 
-var weixinAccessTokens * accesstokenManager.Manager
+//var weixinAccessTokens * accesstokenManager.Manager
 
 var c Config = Config{
 	"127.0.0.1:6379",       //redis info
@@ -21,6 +21,12 @@ var c Config = Config{
 	"weixinPush",    //queuename
 	"appSecret",  // app and secret of every program
 	}
+
+var weixinAccessTokens * accesstokenManager.Manager
+
+type wx struct {
+	once sync.Once
+}
 
 func init() {
 	loadConfig()
@@ -56,6 +62,10 @@ func jobFuc(job string,redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine
 	if err != nil {
 		return err
 	}
+	w := new(wx)
+	w.once.Do(func() {
+		weixinAccessTokens.GetTokens(redisConn)
+	})
 
 	err = t.Do(weixinAccessTokens)
 	if err != nil {
@@ -63,3 +73,4 @@ func jobFuc(job string,redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine
 	}
 	return err
 }
+

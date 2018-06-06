@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
 	"github.com/donnie4w/go-logger/logger"
+	"encoding/json"
+	"errors"
 )
 
 type Task struct {
@@ -39,7 +41,8 @@ func (p *Task) SendRequest() error {
 	//请求微信
 	err := p.requestWeixin(p.AccessToken,p.TaskJson)
 	if err != nil {
-		logger.Error("[request weixin fail] ", err, p.AppId, p.TaskJson)
+		logger.Error("[request weixin fail] error: ", err, " -appid:",p.AppId, " -jobStr:",p.TaskJson)
+		return err
 	}
 	return nil
 }
@@ -55,6 +58,13 @@ func (p *Task)requestWeixin(accesstoken string,messqge string) error{
 		return err
 	}
 	if statusCode == 200 {
+		var result map[string]interface{}
+		if err:=json.Unmarshal([]byte(body),&result);err==nil{
+			errcode := result["errcode"]
+			if errcode != float64(0) {
+				return errors.New(body)
+			}
+		}
 		logger.Info("request weixin success",body)
 	}
 	return nil

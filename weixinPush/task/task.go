@@ -63,9 +63,9 @@ func (t *Task) Do(wxTokens *accesstokenManager.Manager) error {
 	program.AccessToken = tokenValue
 	err := program.SendRequest()
 	if err != nil {
-		logger.Info("request weixin fail",err,t.Appid,t.Jobstr)
+		logger.Info("request weixin fail",err)
 	}else{
-		logger.Info("request weixn success",t.Appid)
+		logger.Info("request weixn success")
 	}
 	return nil
 }
