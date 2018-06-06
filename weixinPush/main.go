@@ -24,9 +24,12 @@ var c Config = Config{
 
 var weixinAccessTokens * accesstokenManager.Manager
 
-type wx struct {
-	once sync.Once
-}
+var w sync.Once
+
+//type wx struct {
+//	once sync.Once
+//	weixinAccessTokens * accesstokenManager.Manager
+//}
 
 func init() {
 	loadConfig()
@@ -62,8 +65,7 @@ func jobFuc(job string,redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine
 	if err != nil {
 		return err
 	}
-	w := new(wx)
-	w.once.Do(func() {
+	w.Do(func() {
 		weixinAccessTokens.GetTokens(redisConn)
 	})
 
