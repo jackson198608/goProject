@@ -8,12 +8,12 @@ import (
 	"github.com/go-xorm/xorm"
 	"gopkg.in/mgo.v2"
 	"github.com/jackson198608/goProject/weixinPush/task"
-	"gouminGitlab/common/weixin/accessToken/accesstokenManager"
+	//"gouminGitlab/common/weixin/accessToken/accesstokenManager"
 	"sync"
-	"errors"
+	"gouminGitlab/common/weixin/accessToken"
+	"strings"
 )
 
-//var weixinAccessTokens * accesstokenManager.Manager
 
 var c Config = Config{
 	"127.0.0.1:6379",       //redis info
@@ -22,24 +22,13 @@ var c Config = Config{
 	"appSecret",  // app and secret of every program
 	}
 
-var weixinAccessTokens * accesstokenManager.Manager
+//var weixinAccessTokens * accesstokenManager.Manager
 
 var w sync.Once
 
-//type wx struct {
-//	once sync.Once
-//	weixinAccessTokens * accesstokenManager.Manager
-//}
 
 func init() {
 	loadConfig()
-	initWeixinaccessToken()
-}
-func initWeixinaccessToken() {
-	weixinAccessTokens = accesstokenManager.NewManager(c.appSecret)
-	if weixinAccessTokens == nil{
-		errors.New("weixinAccessTokens is empty")
-	}
 }
 
 func main() {
@@ -65,14 +54,38 @@ func jobFuc(job string,redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine
 	if err != nil {
 		return err
 	}
-	w.Do(func() {
-		weixinAccessTokens.GetTokens(redisConn)
-	})
 
-	err = t.Do(weixinAccessTokens)
+	token := getToken(t.Appid,c.appSecret,redisConn)
+
+	err = t.Do(redisConn,token)
 	if err != nil {
 		return err
 	}
 	return err
+}
+
+func getToken(appid string,appSecret string,redisConn *redis.ClusterClient) string {
+	//获取配置里面的appsecret(appid、secret)
+	appids := make(map[string]string)
+	a := strings.Split(appSecret,",")
+	for i:=0; i<len(a);i++  {
+		appid := strings.Split(a[i],":")[0]
+		secret := strings.Split(a[i],":")[1]
+		appids[appid] = secret
+	}
+	secret := appids[appid]
+	var token = ""
+	i := 0
+	for i <= 3 {
+		w.Do(func() {
+			accesstoken := accessToken.NewAccessToken(appid, secret, redisConn)
+			token = accesstoken.GetToken(redisConn)
+		})
+		if token != "" {
+			break
+		}
+		i++
+	}
+	return token
 }
 

@@ -7,15 +7,24 @@ import (
 	"github.com/donnie4w/go-logger/logger"
 	"encoding/json"
 	"errors"
+	redis "gopkg.in/redis.v4"
+	//"gouminGitlab/common/weixin/accessToken"
+	"time"
 )
 
 type Task struct {
 	AppId string
+	Secret string
 	TaskJson string  //发送的内容
 	AccessToken string
+	//Redisconn *redis.ClusterClient
 }
 
 const _sendUrl = "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?"
+const accesstoken_key = "card_access_token_"
+const pushKey  = "weixinPush"
+
+const _tokenUrl = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&"
 
 
 /**
@@ -62,12 +71,38 @@ func (p *Task)requestWeixin(accesstoken string,messqge string) error{
 		if err:=json.Unmarshal([]byte(body),&result);err==nil{
 			errcode := result["errcode"]
 			if errcode != float64(0) {
+				//if accesstoken 失效
+				if errcode == float64(40001) { //40001:accesstoken 失效导致请求微信失败
+					//删除缓存,并把该失败任务重新添加到任务中
+					//cacheErr := p.delAccessTokenCache(redisConn)
+					//logger.Info("update cache",cacheErr)
+				}
 				return errors.New(body)
 			}
 		}
 		logger.Info("request weixin success",body)
 	}
 	return nil
+}
+/**
+accesstoken失效，检查缓存是否过期，如果没有过期，删除缓存，并重建重建任务
+ */
+func (p *Task)delAccessTokenCache(redisConn *redis.ClusterClient) error{
+	accesstokenKey := accesstoken_key+p.AppId
+	cache := redisConn.Get(accesstokenKey).Val()
+	if cache != "" {
+		delerror := redisConn.Del(accesstokenKey).Err()
+		if delerror == nil {
+			time.Sleep(1*time.Second)
+			newTask := p.AppId+"|"+p.TaskJson
+			err := redisConn.LPush(pushKey,newTask).Err()
+			if err != nil {
+				return err
+			}
+		}
+
+	}
+	return  nil
 }
 
 /**
