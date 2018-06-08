@@ -79,7 +79,19 @@ func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engin
 	if err != nil {
 		return err
 	}
+
+	for {
+		if isWorkTime(){
+			break
+		}
+		time.Sleep(10*time.Minute)
+	}
+
 	return err
+}
+
+func isWorkTime() bool{
+	return true
 }
 
 func getToken(appid string, redisConn *redis.ClusterClient) string {
