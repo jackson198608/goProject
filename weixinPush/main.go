@@ -25,7 +25,7 @@ var c Config = Config{
 	1,                //thread num
 	"weixinPush",     //queuename
 	"appSecret",      // app and secret of every program
-	"noworkTime",      //非工作时间，该时间段内不取任务
+	"workTime",      //工作时间，该时间段内取任务
 }
 
 //var weixinAccessTokens * accesstokenManager.Manager
@@ -94,11 +94,11 @@ func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engin
 
 func isWorkTime() bool{
 	//该时间段内不发送任务
-	nowork := c.noworkTime
+	work := c.workTime
 
-	rawSlice := []byte(nowork)
+	rawSlice := []byte(work)
 	rawLen := len(rawSlice)
-	lastIndex := strings.LastIndex(nowork, "|")
+	lastIndex := strings.LastIndex(work, "|")
 	start,err := strconv.Atoi(string(rawSlice[0:lastIndex]))
 	if err != nil {
 		start = int(8)
@@ -107,8 +107,8 @@ func isWorkTime() bool{
 	if err1 != nil {
 		end = int(22)
 	}
-	nowtime := time.Now().Hour()
-	if nowtime >= start && nowtime < end {
+	wtime := time.Now().Hour()
+	if wtime >= start && wtime < end {
 		return true
 	}
 

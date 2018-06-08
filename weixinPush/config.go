@@ -9,7 +9,7 @@ type Config struct {
 	coroutinNum int
 	queueName   string
 	appSecret  string
-	noworkTime     string
+	workTime     string
 }
 
 func loadConfig() {
@@ -19,5 +19,5 @@ func loadConfig() {
 	c.coroutinNum = config.GetInt("coroutinNum")
 	c.queueName = config.GetString("queueName")
 	c.appSecret = config.GetString("appSecret")
-	c.noworkTime = config.GetString("noworkTime")
+	c.workTime = config.GetString("workTime")
 }
