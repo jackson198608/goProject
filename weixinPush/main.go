@@ -17,6 +17,7 @@ import (
 	"time"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
 	"fmt"
+	"strconv"
 )
 
 var c Config = Config{
@@ -24,6 +25,7 @@ var c Config = Config{
 	1,                //thread num
 	"weixinPush",     //queuename
 	"appSecret",      // app and secret of every program
+	"noworkTime",      //非工作时间，该时间段内不取任务
 }
 
 //var weixinAccessTokens * accesstokenManager.Manager
@@ -91,7 +93,26 @@ func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engin
 }
 
 func isWorkTime() bool{
-	return true
+	//该时间段内不发送任务
+	nowork := c.noworkTime
+
+	rawSlice := []byte(nowork)
+	rawLen := len(rawSlice)
+	lastIndex := strings.LastIndex(nowork, "|")
+	start,err := strconv.Atoi(string(rawSlice[0:lastIndex]))
+	if err != nil {
+		start = int(8)
+	}
+	end,err1 := strconv.Atoi(string(rawSlice[lastIndex+1 : rawLen]))
+	if err1 != nil {
+		end = int(22)
+	}
+	nowtime := time.Now().Hour()
+	if nowtime >= start && nowtime < end {
+		return true
+	}
+
+	return false
 }
 
 func getToken(appid string, redisConn *redis.ClusterClient) string {
