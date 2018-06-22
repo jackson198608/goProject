@@ -54,12 +54,7 @@ func NewTask(raw string, taskarg []string) (*Task, error) {
 	t.jsonData = jsonColumn
 
 	t.phpServerIp = taskarg[0]
-	if t.jsonData.watermark != "" { //如果任务重存在新的水印图片，用任务中的水印图
-		t.waterPath = t.jsonData.watermark
-	}else{
-		t.waterPath = taskarg[1]
-	}
-
+	t.waterPath = taskarg[1]
 
 	return t, nil
 
@@ -152,12 +147,16 @@ func (t *Task) channelComposite(path string, watermarkPath string) error {
 }
 
 func (t *Task) watermarkImage() string {
-	if t.jsonData.width <= 220 {
-		return t.waterPath + "220.png"
-	} else if t.jsonData.width > 220 && t.jsonData.width <= 340 {
-		return t.waterPath + "340.png"
+	if t.jsonData.watermark != "" {
+		return t.waterPath + t.jsonData.watermark
 	} else {
-		return t.waterPath + "720.png"
+		if t.jsonData.width <= 220 {
+			return t.waterPath + "220.png"
+		} else if t.jsonData.width > 220 && t.jsonData.width <= 340 {
+			return t.waterPath + "340.png"
+		} else {
+			return t.waterPath + "720.png"
+		}
 	}
 }
 
