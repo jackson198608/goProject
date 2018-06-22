@@ -28,6 +28,7 @@ type JsonColumn struct {
 	height    int
 	callback  string
 	args      string
+	watermark string
 }
 
 //job: redisQueue pop string
@@ -53,7 +54,12 @@ func NewTask(raw string, taskarg []string) (*Task, error) {
 	t.jsonData = jsonColumn
 
 	t.phpServerIp = taskarg[0]
-	t.waterPath = taskarg[1]
+	if t.jsonData.watermark != "" { //如果任务重存在新的水印图片，用任务中的水印图
+		t.waterPath = t.jsonData.watermark
+	}else{
+		t.waterPath = taskarg[1]
+	}
+
 
 	return t, nil
 
@@ -203,6 +209,7 @@ func (t *Task) parseJson() (*JsonColumn, error) {
 	jsonC.height, _ = js.Get("height").Int()
 	jsonC.callback, _ = js.Get("callback").String()
 	jsonC.args, _ = js.Get("args").String()
+	jsonC.watermark,_ = js.Get("watermark").String()
 	return &jsonC, nil
 }
 
