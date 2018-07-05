@@ -1,4 +1,4 @@
-package fansPersons
+package cardFansPersons
 
 import (
 	"fmt"
@@ -20,8 +20,15 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 		fmt.Println(err)
 		return nil, nil
 	}
+	dbName1 := "card"
+	dataSourceName1 := dbAuth + "@tcp(" + dbDsn + ")/" + dbName1 + "?charset=utf8mb4"
+	engine1, err := xorm.NewEngine("mysql", dataSourceName1)
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil
+	}
 
-	mongoConn := "192.168.86.192:27017"
+	mongoConn := "192.168.86.193:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		fmt.Println("[error] connect mongodb err")
@@ -30,6 +37,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 
 	var engineAry []*xorm.Engine
 	engineAry = append(engineAry, engine)
+	engineAry = append(engineAry, engine1)
 	var sessionAry []*mgo.Session
 	sessionAry = append(sessionAry, session)
 	Init()
@@ -40,21 +48,17 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 func jsonData() *job.FocusJsonColumn {
 	var jsonData job.FocusJsonColumn
 	jsonData.Uid = 881050
-	jsonData.TypeId = 1
+	jsonData.TypeId = 30
 	jsonData.Created = "2017-10-23 22:54"
-	jsonData.Tid = 0
-	jsonData.Bid = 36
 	jsonData.Infoid = 234567
-	jsonData.Title = "粉丝推送title"
-	jsonData.Content = "粉丝推送正文正文"
-	jsonData.Forum = "36club"
+	jsonData.Title = "星球传记tite"
+	jsonData.Content = "传记推送正文正文"
 	jsonData.Imagenums = 0
-	jsonData.Tag = 0
-	jsonData.Qsttype = 0
-	jsonData.Fid = 0
 	jsonData.Source = 2
 	jsonData.Status = -1
 	jsonData.Action = 0
+	jsonData.PetType = 1
+	jsonData.PetId = 71
 	return &jsonData
 }
 
@@ -63,7 +67,7 @@ var m map[int]bool
 func Init() {
 	m = make(map[int]bool)
 
-	mongoConn := "192.168.86.192:27017"
+	mongoConn := "192.168.86.193:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		// return m
@@ -84,8 +88,7 @@ func Init() {
 func TestGetPersons(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, &m)
+	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m)
 	fmt.Println(f.getPersons(1))
 }
 
@@ -93,7 +96,7 @@ func TestPushPerson(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
 
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, &m)
+	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m)
 	fmt.Println(f.pushPerson(881050))
 }
 
@@ -101,6 +104,6 @@ func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
 
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, &m)
+	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m)
 	fmt.Println(f.Do())
 }

@@ -1,20 +1,18 @@
-package fansPersons
+package cardFansPersons
 
 import (
-	"errors"
-	// "fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
-	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-	"gouminGitlab/common/orm/mongo/FansData"
-	"gouminGitlab/common/orm/mysql/new_dog123"
-	// "reflect"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	"strconv"
+	"gouminGitlab/common/orm/mongo/FansData"
+	"gopkg.in/mgo.v2/bson"
+	"github.com/pkg/errors"
+	"gouminGitlab/common/orm/mysql/card"
+	"fmt"
 )
 
-type FansPersons struct {
+type CardFansPersons struct {
 	mysqlXorm      []*xorm.Engine //@todo to be []
 	mongoConn      []*mgo.Session //@todo to be []
 	jsonData       *job.FocusJsonColumn
@@ -23,12 +21,12 @@ type FansPersons struct {
 
 const count = 1000
 
-func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool) *FansPersons {
+func NewCardFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool) *CardFansPersons {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
 
-	f := new(FansPersons)
+	f := new(CardFansPersons)
 	if f == nil {
 		return nil
 	}
@@ -41,11 +39,12 @@ func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData
 	return f
 }
 
-func (f *FansPersons) Do() error {
+func (f *CardFansPersons) Do() error {
 	startId := 0
 	for {
 		//获取粉丝用户
 		currentPersionList := f.getPersons(startId)
+		fmt.Println(currentPersionList)
 		if currentPersionList == nil {
 			return nil
 		}
@@ -61,7 +60,7 @@ func (f *FansPersons) Do() error {
 	return nil
 }
 
-func (f *FansPersons) pushPersons(follows *[]new_dog123.Follow) (int, error) {
+func (f *CardFansPersons) pushPersons(follows *[]card.HaremCard) (int, error) {
 	if follows == nil {
 		return 0, errors.New("push to fans active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
@@ -71,12 +70,12 @@ func (f *FansPersons) pushPersons(follows *[]new_dog123.Follow) (int, error) {
 	var endId int
 	for _, person := range persons {
 		//check key in actice user
-		_, ok := active_user[person.FollowId]
+		_, ok := active_user[person.Uid]
 		if ok {
-			err := f.pushPerson(person.FollowId)
+			err := f.pushPerson(person.Uid)
 			if err != nil {
 				for i := 0; i < 5; i++ {
-					err := f.pushPerson(person.FollowId)
+					err := f.pushPerson(person.Uid)
 					if err == nil {
 						break
 					}
@@ -98,25 +97,25 @@ func getTableNum(person int) string {
 	return tableNameX
 }
 
-func (f *FansPersons) pushPerson(person int) error {
+func (f *CardFansPersons) pushPerson(person int) error {
 	tableNameX := getTableNum(person)
 	c := f.mongoConn[0].DB("FansData").C(tableNameX)
 	if f.jsonData.Action == 0 {
-		// fmt.Println("insert" + strconv.Itoa(person))
+		//fmt.Println("insert" + strconv.Itoa(person))
 		err := f.insertPerson(c, person)
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.Action == 1 {
 		//修改数据
-		// fmt.Println("update" + strconv.Itoa(person))
+		//fmt.Println("update" + strconv.Itoa(person))
 		err := f.updatePerson(c, person)
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.Action == -1 {
 		//删除数据
-		// fmt.Println("remove" + strconv.Itoa(person))
+		//fmt.Println("remove" + strconv.Itoa(person))
 		err := f.removePerson(c, person)
 		if err != nil {
 			return err
@@ -125,19 +124,20 @@ func (f *FansPersons) pushPerson(person int) error {
 	return nil
 }
 
-//get fans persons by uid
-func (f *FansPersons) getPersons(startId int) *[]new_dog123.Follow {
+//get fans persons by pet_id
+func (f *CardFansPersons) getPersons(startId int) *[]card.HaremCard {
 	// var persons []int
-	var follows []new_dog123.Follow
-	err := f.mysqlXorm[0].Where("user_id=? and id>? and fans_active=1", f.jsonData.Uid, startId).Asc("id").Limit(count).Find(&follows)
+	var follows []card.HaremCard
+	err := f.mysqlXorm[1].Where("pet_id=? and type=? and id>?", f.jsonData.PetId, f.jsonData.PetType, startId).Asc("id").Limit(count).Find(&follows)
 	if err != nil {
+		fmt.Println(err)
 		return nil
 	}
 
 	return &follows
 }
 
-func (f *FansPersons) insertPerson(c *mgo.Collection, person int) error {
+func (f *CardFansPersons) insertPerson(c *mgo.Collection, person int) error {
 	//新增数据
 	var data FansData.EventLog
 	data = FansData.EventLog{bson.NewObjectId(),
@@ -157,8 +157,8 @@ func (f *FansPersons) insertPerson(c *mgo.Collection, person int) error {
 		f.jsonData.Tag,
 		f.jsonData.Qsttype,
 		f.jsonData.Source,
-		f.jsonData.PetId,
-		f.jsonData.PetType}
+	f.jsonData.PetId,
+	f.jsonData.PetType}
 	err := c.Insert(&data) //插入数据
 	if err != nil {
 		return err
@@ -166,7 +166,7 @@ func (f *FansPersons) insertPerson(c *mgo.Collection, person int) error {
 	return nil
 }
 
-func (f *FansPersons) updatePerson(c *mgo.Collection, person int) error {
+func (f *CardFansPersons) updatePerson(c *mgo.Collection, person int) error {
 	_, err := c.UpdateAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "created": f.jsonData.Created, "infoid": f.jsonData.Infoid}, bson.M{"$set": bson.M{"status": f.jsonData.Status}})
 	if err != nil {
 		return err
@@ -174,7 +174,7 @@ func (f *FansPersons) updatePerson(c *mgo.Collection, person int) error {
 	return nil
 }
 
-func (f *FansPersons) removePerson(c *mgo.Collection, person int) error {
+func (f *CardFansPersons) removePerson(c *mgo.Collection, person int) error {
 	_, err := c.RemoveAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "created": f.jsonData.Created, "infoid": f.jsonData.Infoid, "tid": f.jsonData.Tid})
 	if err != nil {
 		return err

@@ -121,10 +121,13 @@ func (f *BreedPersons) insertPerson(c *mgo.Collection, person int) error {
 		f.jsonData.Content,
 		f.jsonData.Title,
 		f.jsonData.Imagenums,
+		f.jsonData.ImageInfo,
 		f.jsonData.Forum,
 		f.jsonData.Tag,
 		f.jsonData.Qsttype,
-		f.jsonData.Source}
+		f.jsonData.Source,
+		f.jsonData.PetId,
+		f.jsonData.PetType}
 	err := c.Insert(&data) //插入数据
 	if err != nil {
 		return err

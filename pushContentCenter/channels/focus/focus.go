@@ -11,13 +11,14 @@ import (
 	"github.com/jackson198608/goProject/common/tools"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/fansPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
-	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2"
 	"strings"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/location/cardFansPersons"
 )
 
 const (
-	mongoConn = "192.168.5.22:27017,192.168.5.26:27017,192.168.5.200:27017"
-	// mongoConn = "192.168.86.193:27017,192.168.86.193:270178,192.168.86.193:27019" //@todo change online dsn
+	//mongoConn = "192.168.5.22:27017,192.168.5.26:27017,192.168.5.200:27017"
+	mongoConn = "192.168.86.193:27017,192.168.86.193:270178,192.168.86.193:27019" //@todo change online dsn
 )
 
 var m map[int]bool
@@ -64,6 +65,7 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 //TypeId = 15 recommend video, push all active persons
 //TypeId = 18 宠家号文章, push fans active persons
 //TypeId = 19 宠家号视频, push fans active persons
+//TypeId = 30 星球传记(事迹), push fans active persons
 func (f *Focus) Do() error {
 	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 || f.jsonData.TypeId == 19 {
 		// fmt.Println(f.jsonData.TypeId)
@@ -106,6 +108,12 @@ func (f *Focus) Do() error {
 		if err != nil {
 			return err
 		}
+	} else if f.jsonData.TypeId == 30 {
+		cfp := cardFansPersons.NewCardFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
+		err := cfp.Do()
+		if err != nil {
+			return err
+		}
 	} else {
 		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
 		err := ap.Do()
@@ -134,11 +142,14 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.Content, _ = js.Get("event_info").Get("content").String()
 	jsonC.Forum, _ = js.Get("event_info").Get("forum").String()
 	jsonC.Imagenums, _ = js.Get("event_info").Get("image_num").Int()
+	jsonC.ImageInfo, _ = js.Get("event_info").Get("image_info").String()
 	jsonC.Tag, _ = js.Get("event_info").Get("tag").Int()
 	jsonC.Qsttype, _ = js.Get("event_info").Get("qst_type").Int()
 	jsonC.Fid, _ = js.Get("event_info").Get("fid").Int()
 	jsonC.Source, _ = js.Get("event_info").Get("source").Int()
 	jsonC.Status, _ = js.Get("status").Int()
+	jsonC.PetId, _ = js.Get("pet_id").Int() //星球卡片id
+	jsonC.PetType, _ = js.Get("pet_type").Int() // 宠物类型 1猫 2狗
 	jsonC.Action, _ = js.Get("action").Int() //行为 -1 删除 0 插入 1 修改
 
 	return &jsonC, nil

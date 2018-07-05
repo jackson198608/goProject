@@ -20,7 +20,15 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 		return nil, nil
 	}
 
-	mongoConn := "192.168.86.192:27017"
+	dbName1 := "card"
+	dataSourceName1 := dbAuth + "@tcp(" + dbDsn + ")/" + dbName1 + "?charset=utf8mb4"
+	engine1, err := xorm.NewEngine("mysql", dataSourceName1)
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil
+	}
+
+	mongoConn := "192.168.86.193:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		fmt.Println("[error] connect mongodb err")
@@ -28,6 +36,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	}
 	var engineAry []*xorm.Engine
 	engineAry = append(engineAry, engine)
+	engineAry = append(engineAry, engine1)
 	var sessionAry []*mgo.Session
 	sessionAry = append(sessionAry, session)
 	return engineAry, sessionAry
@@ -36,15 +45,18 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 
 func TestParseJson(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
-	jobStr := "{\"uid\":2060500,\"event_type\":2,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":2,\"fid\":36},\"tid\":0,\"status\":1,\"time\":1508469600}"
+	//jobStr := "{\"uid\":2060500,\"event_type\":2,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":2,\"fid\":36},\"tid\":0,\"status\":1,\"time\":1508469600}"
+	jobStr := "{\"uid\":2060500,\"event_type\":30,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":2,\"fid\":36,\"pet_id\":71,\"pet_type\":1},\"tid\":0,\"status\":1,\"time\":1508469600}"
 	f := NewFocus(mysqlXorm, mongoConn, jobStr)
-	f.parseJson()
+	fmt.Println(f.parseJson())
 }
 
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 
 	jobStr := "{\"uid\":881050,\"event_type\":1,\"event_info\":{\"title\":\"subject\",\"focus content\":\" focus  message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":1,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"action\":0,\"time\":\"2017-10-23 10:54:00\"}"
+	//jobStr := "{\"uid\":2060500,\"event_type\":30,\"event_info\":{\"title\":\"subject\",\"content\":\"message\",\"image_num\":\"image_num\",\"forum\":\"forum->name\",\"tag\":0,\"source\":2,\"fid\":36},\"tid\":0,\"status\":1,\"pet_id\":71,\"pet_type\":1,\"time\":\"2017-10-23 10:54:00\"}"
+
 	f := NewFocus(mysqlXorm, mongoConn, jobStr)
 	fmt.Println(f.Do())
 }

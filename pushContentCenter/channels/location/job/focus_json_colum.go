@@ -13,9 +13,12 @@ type FocusJsonColumn struct {
 	Content   string
 	Title     string
 	Imagenums int
+	ImageInfo string
 	Forum     string
 	Tag       int
 	Qsttype   int
 	Source    int
 	Action    int
+	PetId     int  //星球卡片ID
+	PetType   int  //宠物类型 1猫 2狗
 }

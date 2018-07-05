@@ -7,8 +7,8 @@ import (
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
 	"github.com/jackson198608/goProject/common/tools"
 	"github.com/jackson198608/goProject/pushContentCenter/task"
-	mgo "gopkg.in/mgo.v2"
-	redis "gopkg.in/redis.v4"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/redis.v4"
 	"gouminGitlab/common/orm/mongo/ClubData"
 	"os"
 	// "strconv"
@@ -17,12 +17,13 @@ import (
 )
 
 var c Config = Config{
-	"192.168.86.193:3307",  //mysql dsn
-	"new_dog123",           //mysql dbName
-	"dog123:dog123",        //mysqldbAuth
-	"127.0.0.1:6379",       //redis info
-	1,                      //thread num
-	"pushContentCenter",    //queuename
+	"192.168.86.193:3307", //mysql dsn
+	"new_dog123",          //mysql dbName
+	"card",                //mysql dbName
+	"dog123:dog123",       //mysqldbAuth
+	"127.0.0.1:6379",      //redis info
+	1,                     //thread num
+	"pushContentCenter",   //queuename
 	"192.168.86.192:27017"} // mongo
 
 func init() {
@@ -45,6 +46,9 @@ func main() {
 		mongoConnInfo = append(mongoConnInfo, c.mongoConn)
 		var mysqlInfo []string
 		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
+		if c.dbName1 != "" {
+			mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName1+"?charset=utf8mb4")
+		}
 
 		redisInfo := tools.FormatRedisOption(c.redisConn)
 		logger.Info("start work")
@@ -74,7 +78,7 @@ func main() {
 	}
 }
 
-func jobFuc(job string,redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
+func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
 	if (mysqlConns == nil) || (mgoConns == nil) {
 		return errors.New("mysql or mongo conn error")
 	}
