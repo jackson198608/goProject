@@ -15,6 +15,7 @@ type FocusJsonColumn struct {
 	Imagenums int
 	ImageInfo string
 	VideoUrl  string
+	IsVideo   int
 	Forum     string
 	Tag       int
 	Qsttype   int

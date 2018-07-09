@@ -158,7 +158,8 @@ func (f *CardFansPersons) insertPerson(c *mgo.Collection, person int) error {
 		f.jsonData.Source,
 		f.jsonData.PetId,
 		f.jsonData.PetType,
-		f.jsonData.VideoUrl}
+		f.jsonData.VideoUrl,
+		f.jsonData.IsVideo}
 	err := c.Insert(&data) //插入数据
 	if err != nil {
 		return err

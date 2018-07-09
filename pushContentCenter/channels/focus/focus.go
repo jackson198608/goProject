@@ -144,6 +144,7 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.Imagenums, _ = js.Get("event_info").Get("image_num").Int()
 	jsonC.ImageInfo, _ = js.Get("event_info").Get("images").String()
 	jsonC.VideoUrl, _ = js.Get("event_info").Get("video_url").String()
+	jsonC.IsVideo, _ = js.Get("event_info").Get("is_video").String()
 	jsonC.Tag, _ = js.Get("event_info").Get("tag").Int()
 	jsonC.Qsttype, _ = js.Get("event_info").Get("qst_type").Int()
 	jsonC.Fid, _ = js.Get("event_info").Get("fid").Int()
