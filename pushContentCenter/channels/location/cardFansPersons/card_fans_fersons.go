@@ -44,7 +44,6 @@ func (f *CardFansPersons) Do() error {
 	for {
 		//获取粉丝用户
 		currentPersionList := f.getPersons(startId)
-		fmt.Println(currentPersionList)
 		if currentPersionList == nil {
 			return nil
 		}
@@ -157,8 +156,9 @@ func (f *CardFansPersons) insertPerson(c *mgo.Collection, person int) error {
 		f.jsonData.Tag,
 		f.jsonData.Qsttype,
 		f.jsonData.Source,
-	f.jsonData.PetId,
-	f.jsonData.PetType}
+		f.jsonData.PetId,
+		f.jsonData.PetType,
+		f.jsonData.VideoUrl}
 	err := c.Insert(&data) //插入数据
 	if err != nil {
 		return err

@@ -54,11 +54,13 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Title = "星球传记tite"
 	jsonData.Content = "传记推送正文正文"
 	jsonData.Imagenums = 0
+	jsonData.ImageInfo = "http://img.goumin.com"
 	jsonData.Source = 2
 	jsonData.Status = -1
 	jsonData.Action = 0
 	jsonData.PetType = 1
 	jsonData.PetId = 71
+	jsonData.VideoUrl= "http://img1.goumn.com"
 	return &jsonData
 }
 

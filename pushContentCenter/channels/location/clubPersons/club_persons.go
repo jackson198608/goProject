@@ -5,7 +5,7 @@ import (
 	// "fmt"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
-	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"gouminGitlab/common/orm/mongo/ActiveUser"
 	"gouminGitlab/common/orm/mongo/FansData"
@@ -152,7 +152,8 @@ func (f *ClubPersons) insertPerson(c *mgo.Collection, person int) error {
 		f.jsonData.Qsttype,
 		f.jsonData.Source,
 		f.jsonData.PetId,
-		f.jsonData.PetType}
+		f.jsonData.PetType,
+		f.jsonData.VideoUrl}
 	err := c.Insert(&data) //插入数据
 	if err != nil {
 		return err

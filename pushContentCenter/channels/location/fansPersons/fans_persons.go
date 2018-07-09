@@ -102,7 +102,7 @@ func (f *FansPersons) pushPerson(person int) error {
 	tableNameX := getTableNum(person)
 	c := f.mongoConn[0].DB("FansData").C(tableNameX)
 	if f.jsonData.Action == 0 {
-		// fmt.Println("insert" + strconv.Itoa(person))
+		//fmt.Println("insert" + strconv.Itoa(person))
 		err := f.insertPerson(c, person)
 		if err != nil {
 			return err
@@ -158,7 +158,8 @@ func (f *FansPersons) insertPerson(c *mgo.Collection, person int) error {
 		f.jsonData.Qsttype,
 		f.jsonData.Source,
 		f.jsonData.PetId,
-		f.jsonData.PetType}
+		f.jsonData.PetType,
+		f.jsonData.VideoUrl}
 	err := c.Insert(&data) //插入数据
 	if err != nil {
 		return err
