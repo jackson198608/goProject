@@ -109,7 +109,7 @@ func (f *FansPersons) pushPerson(person int) error {
 		}
 	} else if f.jsonData.Action == 1 {
 		//修改数据
-		// fmt.Println("update" + strconv.Itoa(person))
+		//fmt.Println("update" + strconv.Itoa(person))
 		err := f.updatePerson(c, person)
 		if err != nil {
 			return err
@@ -169,7 +169,7 @@ func (f *FansPersons) insertPerson(c *mgo.Collection, person int) error {
 }
 
 func (f *FansPersons) updatePerson(c *mgo.Collection, person int) error {
-	_, err := c.UpdateAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "created": f.jsonData.Created, "infoid": f.jsonData.Infoid}, bson.M{"$set": bson.M{"status": f.jsonData.Status}})
+	_, err := c.UpdateAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "infoid": f.jsonData.Infoid}, bson.M{"$set": bson.M{"status": f.jsonData.Status, "created": f.jsonData.Created}})
 	if err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func (f *FansPersons) updatePerson(c *mgo.Collection, person int) error {
 }
 
 func (f *FansPersons) removePerson(c *mgo.Collection, person int) error {
-	_, err := c.RemoveAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "created": f.jsonData.Created, "infoid": f.jsonData.Infoid, "tid": f.jsonData.Tid})
+	_, err := c.RemoveAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person,  "infoid": f.jsonData.Infoid, "tid": f.jsonData.Tid})
 	if err != nil {
 		return err
 	}

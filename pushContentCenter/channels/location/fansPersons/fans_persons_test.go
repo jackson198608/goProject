@@ -21,7 +21,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 		return nil, nil
 	}
 
-	mongoConn := "192.168.86.192:27017"
+	mongoConn := "192.168.86.193:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		fmt.Println("[error] connect mongodb err")
@@ -41,7 +41,7 @@ func jsonData() *job.FocusJsonColumn {
 	var jsonData job.FocusJsonColumn
 	jsonData.Uid = 881050
 	jsonData.TypeId = 1
-	jsonData.Created = "2017-10-23 22:54"
+	jsonData.Created = "2017-10-23 22:54:20"
 	jsonData.Tid = 0
 	jsonData.Bid = 36
 	jsonData.Infoid = 234567
@@ -53,8 +53,8 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Qsttype = 0
 	jsonData.Fid = 0
 	jsonData.Source = 2
-	jsonData.Status = -1
-	jsonData.Action = 0
+	jsonData.Status = 1
+	jsonData.Action = -1
 	return &jsonData
 }
 
