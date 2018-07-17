@@ -28,7 +28,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 		return nil, nil
 	}
 
-	mongoConn := "192.168.86.193:27017"
+	mongoConn := "192.168.86.80:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		fmt.Println("[error] connect mongodb err")
@@ -57,7 +57,7 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.ImageInfo = "http://img.goumin.com"
 	jsonData.Source = 2
 	jsonData.Status = -1
-	jsonData.Action = -1
+	jsonData.Action = 0
 	jsonData.PetType = 1
 	jsonData.PetId = 71
 	jsonData.VideoUrl= "http://img1.goumn.com"
@@ -70,7 +70,7 @@ var m map[int]bool
 func Init() {
 	m = make(map[int]bool)
 
-	mongoConn := "192.168.86.193:27017"
+	mongoConn := "192.168.86.80:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		// return m

@@ -56,7 +56,22 @@ func (f *CardFansPersons) Do() error {
 			break
 		}
 	}
+	f.pushMyself()
+
 	return nil
+}
+
+func (f *CardFansPersons) pushMyself() {
+	//推送给自己
+	err := f.pushPerson(f.jsonData.Uid)
+	if err != nil {
+		for i := 0; i < 5; i++ {
+			err := f.pushPerson(f.jsonData.Uid)
+			if err == nil {
+				break
+			}
+		}
+	}
 }
 
 func (f *CardFansPersons) pushPersons(follows *[]card.HaremCard) (int, error) {
@@ -83,7 +98,6 @@ func (f *CardFansPersons) pushPersons(follows *[]card.HaremCard) (int, error) {
 			endId = person.Id
 		}
 	}
-
 	return endId, nil
 }
 
@@ -132,7 +146,6 @@ func (f *CardFansPersons) getPersons(startId int) *[]card.HaremCard {
 		fmt.Println(err)
 		return nil
 	}
-
 	return &follows
 }
 
@@ -168,7 +181,7 @@ func (f *CardFansPersons) insertPerson(c *mgo.Collection, person int) error {
 }
 
 func (f *CardFansPersons) updatePerson(c *mgo.Collection, person int) error {
-	_, err := c.UpdateAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "infoid": f.jsonData.Infoid}, bson.M{"$set": bson.M{"content": f.jsonData.Content,"video_url":f.jsonData.VideoUrl,"pet_type":f.jsonData.PetType,"is_video":f.jsonData.IsVideo,"images":f.jsonData.ImageInfo, "created": f.jsonData.Created}})
+	_, err := c.UpdateAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "infoid": f.jsonData.Infoid}, bson.M{"$set": bson.M{"content": f.jsonData.Content, "video_url": f.jsonData.VideoUrl, "pet_type": f.jsonData.PetType, "is_video": f.jsonData.IsVideo, "images": f.jsonData.ImageInfo, "created": f.jsonData.Created}})
 	if err != nil {
 		return err
 	}
@@ -176,7 +189,7 @@ func (f *CardFansPersons) updatePerson(c *mgo.Collection, person int) error {
 }
 
 func (f *CardFansPersons) removePerson(c *mgo.Collection, person int) error {
-	_, err := c.RemoveAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person,  "infoid": f.jsonData.Infoid, "tid": f.jsonData.Tid})
+	_, err := c.RemoveAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "infoid": f.jsonData.Infoid, "tid": f.jsonData.Tid})
 	if err != nil {
 		return err
 	}
