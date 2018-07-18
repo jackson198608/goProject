@@ -14,11 +14,13 @@ import (
 	"gopkg.in/mgo.v2"
 	"strings"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/cardFansPersons"
+	"fmt"
+	"strconv"
 )
 
 const (
 	mongoConn = "192.168.5.22:27017,192.168.5.26:27017,192.168.5.200:27017"
-	//mongoConn = "192.168.86.193:27017,192.168.86.193:270178,192.168.86.193:27019" //@todo change online dsn
+	//mongoConn = "192.168.86.80:27017,192.168.86.81:27017,192.168.86.82:27017" //@todo change online dsn
 )
 
 var m map[int]bool
@@ -67,6 +69,7 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 //TypeId = 19 宠家号视频, push fans active persons
 //TypeId = 30 星球传记(事迹), push fans active persons
 func (f *Focus) Do() error {
+	fmt.Println(f.jsonData)
 	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 || f.jsonData.TypeId == 19 {
 		// fmt.Println(f.jsonData.TypeId)
 		f.jsonData.Source = 3
@@ -109,6 +112,7 @@ func (f *Focus) Do() error {
 			return err
 		}
 	} else if f.jsonData.TypeId == 30 {
+		fmt.Println("card json uid:" + strconv.Itoa(f.jsonData.Uid) + " infoid:" + strconv.Itoa(f.jsonData.Infoid))
 		cfp := cardFansPersons.NewCardFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
 		err := cfp.Do()
 		if err != nil {
@@ -150,9 +154,9 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.Fid, _ = js.Get("event_info").Get("fid").Int()
 	jsonC.Source, _ = js.Get("event_info").Get("source").Int()
 	jsonC.Status, _ = js.Get("status").Int()
-	jsonC.PetId, _ = js.Get("pet_id").Int() //星球卡片id
+	jsonC.PetId, _ = js.Get("pet_id").Int()     //星球卡片id
 	jsonC.PetType, _ = js.Get("pet_type").Int() // 宠物类型 1猫 2狗
-	jsonC.Action, _ = js.Get("action").Int() //行为 -1 删除 0 插入 1 修改
+	jsonC.Action, _ = js.Get("action").Int()    //行为 -1 删除 0 插入 1 修改
 
 	return &jsonC, nil
 }

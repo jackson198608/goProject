@@ -47,20 +47,20 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 
 func jsonData() *job.FocusJsonColumn {
 	var jsonData job.FocusJsonColumn
-	jsonData.Uid = 881050
+	jsonData.Uid = 2417364
 	jsonData.TypeId = 30
 	jsonData.Created = "2017-10-23 22:54:11"
-	jsonData.Infoid = 234567
-	jsonData.Title = "星球传记tite"
-	jsonData.Content = "传记推送正文正文111"
+	jsonData.Infoid = 56921
+	jsonData.Title = ""
+	jsonData.Content = "测首页"
 	jsonData.Imagenums = 0
-	jsonData.ImageInfo = "http://img.goumin.com"
+	jsonData.ImageInfo = "7916"
 	jsonData.Source = 2
 	jsonData.Status = -1
 	jsonData.Action = 0
-	jsonData.PetType = 1
-	jsonData.PetId = 71
-	jsonData.VideoUrl= "http://img1.goumn.com"
+	jsonData.PetType = 2
+	jsonData.PetId = 6351
+	jsonData.VideoUrl= ""
 	jsonData.IsVideo =  0
 	return &jsonData
 }

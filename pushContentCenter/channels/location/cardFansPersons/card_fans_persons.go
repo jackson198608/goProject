@@ -41,6 +41,8 @@ func NewCardFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, json
 
 func (f *CardFansPersons) Do() error {
 	startId := 0
+
+	f.pushMyself()
 	for {
 		//获取粉丝用户
 		currentPersionList := f.getPersons(startId)
@@ -56,7 +58,6 @@ func (f *CardFansPersons) Do() error {
 			break
 		}
 	}
-	f.pushMyself()
 
 	return nil
 }
@@ -114,21 +115,21 @@ func (f *CardFansPersons) pushPerson(person int) error {
 	tableNameX := getTableNum(person)
 	c := f.mongoConn[0].DB("FansData").C(tableNameX)
 	if f.jsonData.Action == 0 {
-		//fmt.Println("insert" + strconv.Itoa(person))
 		err := f.insertPerson(c, person)
 		if err != nil {
 			return err
 		}
+		fmt.Println("card fans - insert - " + strconv.Itoa(person))
 	} else if f.jsonData.Action == 1 {
 		//修改数据
-		//fmt.Println("update" + strconv.Itoa(person))
+		fmt.Println("card fans - update - " + strconv.Itoa(person))
 		err := f.updatePerson(c, person)
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.Action == -1 {
 		//删除数据
-		//fmt.Println("remove" + strconv.Itoa(person))
+		fmt.Println("card fans - remove - " + strconv.Itoa(person))
 		err := f.removePerson(c, person)
 		if err != nil {
 			return err
