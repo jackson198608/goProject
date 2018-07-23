@@ -47,7 +47,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 
 func jsonData() *job.FocusJsonColumn {
 	var jsonData job.FocusJsonColumn
-	jsonData.Uid = 2417364
+	jsonData.Uid = 2060500
 	jsonData.TypeId = 30
 	jsonData.Created = "2017-10-23 22:54:11"
 	jsonData.Infoid = 56921
@@ -57,9 +57,9 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.ImageInfo = "7916"
 	jsonData.Source = 2
 	jsonData.Status = -1
-	jsonData.Action = 0
-	jsonData.PetType = 2
-	jsonData.PetId = 6351
+	jsonData.Action = -1
+	jsonData.PetType = 1
+	jsonData.PetId = 71
 	jsonData.VideoUrl= ""
 	jsonData.IsVideo =  0
 	return &jsonData

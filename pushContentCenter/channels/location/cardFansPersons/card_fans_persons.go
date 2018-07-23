@@ -85,7 +85,12 @@ func (f *CardFansPersons) pushPersons(follows *[]card.HaremCard) (int, error) {
 	var endId int
 	for _, person := range persons {
 		//check key in actice user
-		_, ok := active_user[person.Uid]
+		var ok bool
+		if f.jsonData.Action == -1 {
+			ok = true
+		} else {
+			_, ok = active_user[person.Uid]
+		}
 		if ok {
 			err := f.pushPerson(person.Uid)
 			if err != nil {
@@ -145,7 +150,12 @@ func (f *CardFansPersons) getPersons(startId int) *[]card.HaremCard {
 	err := f.mysqlXorm[1].Where("pet_id=? and type=? and id>?", f.jsonData.PetId, f.jsonData.PetType, startId).Asc("id").Limit(count).Find(&follows)
 	if err != nil {
 		fmt.Println(err)
-		return nil
+		for i := 0; i < 5; i++ {
+			err := f.mysqlXorm[1].Where("pet_id=? and type=? and id>?", f.jsonData.PetId, f.jsonData.PetType, startId).Asc("id").Limit(count).Find(&follows)
+			if err == nil {
+				break
+			}
+		}
 	}
 	return &follows
 }
