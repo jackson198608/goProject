@@ -83,8 +83,12 @@ func saveHtmlUrl(jobType string, cat string) {
 	h := HTMLlinkCreater.NewHtmlLinkCreater(c.logLevel, jobType, c.dbAuth, c.dbDsn, c.dbName, c.sdbAuth, c.sdbDsn, c.sdbName)
 	page := 1
 	intIdStart, _ := strconv.Atoi(c.tidStart)
+	intIdEnd, _ := strconv.Atoi(c.tidEnd)
 	startId := intIdStart
 	endId := startId + 1000
+	if intIdEnd > 0 && endId > intIdEnd {
+		endId = intIdEnd
+	}
 	maxId := h.GetMaxId()
 	lastdate := ""
 	if cat == "update" {
@@ -101,6 +105,9 @@ func saveHtmlUrl(jobType string, cat string) {
 				break
 			}
 		} else {
+			if intIdEnd > 0 && startId >= intIdEnd {
+				break
+			}
 			if startId > maxId {
 				break
 			}
@@ -120,7 +127,7 @@ func createHtmlByUrl(jobType string) {
 	}
 }
 
-func jobFunc(redisStr string,redisConn *redis.ClusterClient ,mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
+func jobFunc(redisStr string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
 	var abuyun *abuyunHttpClient.AbuyunProxy
 	if taskarg[2] == "1" {
 		abuyun = setAbuyun()

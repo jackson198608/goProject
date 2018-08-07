@@ -178,7 +178,7 @@ func (h *HtmlLinkCreater) getAskTask(startId int, endId int) []string {
 func (h *HtmlLinkCreater) getThreadTask(startId int, endId int) []string {
 	var ids []string
 	var thread []ActiveRecord.PreForumThread
-	err := h.engine.In("displayorder", 0, 1).Where("tid>? and tid<=?", startId, endId).Cols("tid", "posttableid").Asc("tid").Find(&thread)
+	err := h.engine.In("displayorder", 0, 1).NotIn("fid", 62, 74, 7, 71).Where("tid>? and tid<=?", startId, endId).Cols("tid", "posttableid").Asc("tid").Find(&thread)
 	if err != nil {
 		logger.Error("get thread data ", err)
 		return nil
