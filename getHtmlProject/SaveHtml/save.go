@@ -54,10 +54,16 @@ func (e *HtmlInfo) CreateHtmlByUrl() error {
 	}
 	fmt.Println(statusCode, e.id)
 	if statusCode == 200 {
-		urlname := e.saveFileName()
-		status := e.saveContentToHtml(urlname, body)
-		if status == true {
-			logger.Info("save content to html: ", urlname)
+		bodyLen := len(body)
+		fmt.Println("bodylen:", bodyLen)
+		if bodyLen > 14873 { //没有访问权限页面大小
+			urlname := e.saveFileName()
+			status := e.saveContentToHtml(urlname, body)
+			if status == true {
+				logger.Info("save content to html: ", urlname)
+				return nil
+			}
+		} else {
 			return nil
 		}
 		return errors.New("save content html error")

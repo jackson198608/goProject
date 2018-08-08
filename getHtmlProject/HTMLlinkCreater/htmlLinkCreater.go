@@ -241,7 +241,7 @@ func (h *HtmlLinkCreater) getUpdateThreadData(page int, lastdate string) []strin
 	offset := (page - 1) * limit
 	date := formatDateToTime(lastdate)
 	var thread []ActiveRecord.PreForumThread
-	err := h.engine.In("displayorder", 0, 1).Where("lastpost>=?", date).Cols("tid", "posttableid").Asc("tid").Limit(limit, offset).Find(&thread)
+	err := h.engine.In("displayorder", 0, 1).NotIn("fid", 62, 74, 7, 71).Where("lastpost>=?", date).Cols("tid", "posttableid").Asc("tid").Limit(limit, offset).Find(&thread)
 	if err != nil {
 		return nil
 	}
