@@ -52,13 +52,13 @@ func idToUrl(jobType string, idstr []string) []string {
 	return urls
 }
 
-const proxyServer = "http-pro.abuyun.com:9010"
-const proxyUser = "HK71T41EZ21304GP"
-const proxyPasswd = "75FE0C4E23EEA0E7"
+// const proxyServer = "http-pro.abuyun.com:9010"
+// const proxyUser = "HK71T41EZ21304GP"
+// const proxyPasswd = "75FE0C4E23EEA0E7"
 
-// const proxyServer = ""
-// const proxyUser = ""
-// const proxyPasswd = ""
+const proxyServer = ""
+const proxyUser = ""
+const proxyPasswd = ""
 
 func setAbuyun() *abuyunHttpClient.AbuyunProxy {
 	var abuyun *abuyunHttpClient.AbuyunProxy = abuyunHttpClient.NewAbuyunProxy(proxyServer, proxyUser, proxyPasswd)
@@ -152,7 +152,7 @@ func getDoRedisEngine(jobType string) *redisEngine.RedisEngine {
 	// 	Addr: c.redisConn,
 	// }
 	redisInfo := tools.FormatRedisOption(c.redisConn)
-	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.numloops, 1, jobFunc, c.saveDir, c.host, c.is_abuyun, jobType)
+	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.numloops, 1, jobFunc, c.saveDir, c.host, c.is_abuyun, jobType, c.domain)
 	if err != nil {
 		logger.Error("[NewRedisEngine] ", err)
 	}

@@ -22,20 +22,29 @@ type HtmlInfo struct {
 	host      string
 	is_abuyun string
 	jobType   string
+	domain    string
 }
 
 func NewHtml(logLevel int, queueName string, id int, url string, taskNewArgs []string, abuyun *abuyunHttpClient.AbuyunProxy) *HtmlInfo {
 	logger.SetLevel(logger.LEVEL(logLevel))
 	e := new(HtmlInfo)
 	e.id = id
-	e.url = url
 	e.queueName = queueName
 	e.saveDir = taskNewArgs[0]   // 0:saveDir
 	e.host = taskNewArgs[1]      //1:host
 	e.is_abuyun = taskNewArgs[2] //是否使用阿布云 0:不使用,1:使用
 	e.jobType = taskNewArgs[3]   //抓取数据类型
+	e.domain = taskNewArgs[4]    //ip地址 210.14.154.118
 	e.abuyun = abuyun
+	e.url = e.replaceUrl(url)
 	return e
+}
+
+func (e *HtmlInfo) replaceUrl(url string) string {
+	fmt.Println("host", url, e.domain)
+	newUrl := strings.Replace(url, "bbs.goumin.com", e.domain, 1)
+	fmt.Println("new url", newUrl)
+	return newUrl
 }
 
 //get content by url
@@ -49,8 +58,8 @@ func (e *HtmlInfo) CreateHtmlByUrl() error {
 		statusCode, _, body, err = e.changeIpByAbuyun() //使用阿布云
 	}
 	if err != nil {
-		logger.Error("change ip abuyun error", err)
-		return errors.New("change ip abuyun error")
+		logger.Error("change ip abuyun error ", err)
+		return errors.New("change ip abuyun error ")
 	}
 	fmt.Println(statusCode, e.id)
 	if statusCode == 200 {
@@ -85,6 +94,7 @@ func (e *HtmlInfo) configHost() (int, string, error) {
 		logger.Error("get url error")
 		return 0, "", err
 	}
+	// req.Header.Add("Host", e.host)
 	req.Host = e.host
 	resp, err := client.Do(req)
 	// resp, err := http.DefaultClient.Do(req)
