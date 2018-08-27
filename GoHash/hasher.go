@@ -4,6 +4,7 @@ import (
 	"hash/crc32"
 	"sort"
 	"strconv"
+	"github.com/donnie4w/go-logger/logger"
 )
 
 type UInt32Slice []uint32
@@ -80,3 +81,22 @@ func (m *Map) Get(key string) string {
 	return m.hashMap[m.keys[idx]]
 }
 
+/**
+prefix：表前缀  table_num分表的数量  info:基准值（按照帖子主键分表，则是tid）
+ */
+func CreateHash(prefix string,table_num int,info string) string{
+	targets := make([]string,table_num)
+	for i:=0;i<table_num ;i++  {
+		name := prefix+strconv.Itoa(i)
+		targets[i] = name
+	}
+	h := NewHasher(64,nil)
+	h.Add(targets)
+	v := h.Get(info)
+	if v == "" {
+		logger.Info("create hash fail prefix:",prefix," table_num:",table_num," info:",info)
+		return "0"
+	}
+	return v
+
+}
