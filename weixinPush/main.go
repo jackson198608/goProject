@@ -139,6 +139,7 @@ func generateToken(appid string, redisConn *redis.ClusterClient) string {
 	secret := appids[appid]
 	//using appid and secret to get token and set back into redis
 	target := _tokenUrl + "appid=" + appid + "&secret=" + secret
+	logger.Error("[generateToken] target:", target)
 	var h http.Header = make(http.Header)
 	abuyun := getAbuyun()
 	defer abuyun.Close()
