@@ -50,7 +50,7 @@ func (p *Task) SendRequest() error {
 	//请求微信
 	err := p.requestWeixin(p.AccessToken,p.TaskJson)
 	if err != nil {
-		logger.Error("[request weixin fail] error: ", err, " -appid:",p.AppId, " -jobStr:",p.TaskJson)
+		logger.Error("[request weixin fail] error: ", err, " -accessToken:",p.AccessToken, " -appid:",p.AppId, " -jobStr:",p.TaskJson)
 		return err
 	}
 	return nil
