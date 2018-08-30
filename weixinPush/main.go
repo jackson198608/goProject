@@ -122,12 +122,11 @@ func getToken(appid string, redisConn *redis.ClusterClient) string {
 	var token string
 
 	//check it the token exist
-	if !redisConn.Exists(key).Val() {
+	token = redisConn.Get(key).Val()
+	if token == "" {
 		w.Do(func() {
 			token = generateToken(appid, redisConn)
 		})
-	} else {
-		token = redisConn.Get(key).Val()
 	}
 
 	return token
