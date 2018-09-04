@@ -33,6 +33,7 @@ const _tokenUrl = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_cre
 const accesstoken_key = "card_access_token_"
 
 var w sync.Once
+var lockToken sync.Mutex
 
 var appids map[string]string
 
@@ -124,9 +125,12 @@ func getToken(appid string, redisConn *redis.ClusterClient) string {
 	//check it the token exist
 	token = redisConn.Get(key).Val()
 	if token == "" {
-		w.Do(func() {
+		lockToken.Lock()
+		token = redisConn.Get(key).Val()
+		if token == "" {
 			token = generateToken(appid, redisConn)
-		})
+		}
+		lockToken.Unlock()
 	}
 
 	return token
