@@ -6,11 +6,11 @@
 package scheduler
 
 import (
-    "github.com/jackson198608/gotest/go_spider/core/common/request"
+	"github.com/jackson198608/goProject/go_spider/core/common/request"
 )
 
 type Scheduler interface {
-    Push(requ *request.Request)
-    Poll() *request.Request
-    Count() int
+	Push(requ *request.Request)
+	Poll() *request.Request
+	Count() int
 }

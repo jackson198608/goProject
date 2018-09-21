@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/jackson198608/gotest/go_spider/core/common/page"
+	"github.com/jackson198608/goProject/go_spider/core/common/page"
 	//"time"
 	"fmt"
 	"strconv"

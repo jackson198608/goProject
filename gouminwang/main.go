@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/jackson198608/gotest/go_spider/core/pipeline"
-	"github.com/jackson198608/gotest/go_spider/core/spider"
+	"github.com/jackson198608/goProject/go_spider/core/pipeline"
+	"github.com/jackson198608/goProject/go_spider/core/spider"
 	"log"
 	"os"
 	"strconv"
@@ -13,13 +13,13 @@ import (
 
 // var dbDsn string = "192.168.5.86:3306"
 
-var dbAuth string = "root:goumin123"
+var dbAuth string = "dog123:dog123"
 
-var dbDsn string = "127.0.0.1:3306"
+var dbDsn string = "192.168.86.194:3307"
 
 var dbName string = "big_data_mall"
 
-var redisConn string = "192.168.86.68:6379"
+var redisConn string = "192.168.86.80:6380,192.168.86.80:6381,192.168.86.81:6380,192.168.86.81:6381,192.168.86.82:6380,192.168.86.82:6381"
 
 var redisQueueName string = "threadInfo"
 

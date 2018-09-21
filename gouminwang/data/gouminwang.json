@@ -1,0 +1,1 @@
+{"dbDsn":"192.168.86.194:3307","dbName":"new_dog123","dbMessageName":"message","dbAuth":"dog123:dog123","redisConn":"192.168.86.80:6380,192.168.86.80:6381,192.168.86.81:6380,192.168.86.81:6381,192.168.86.82:6380,192.168.86.82:6381","coroutineNum":10,"queueName":"messageData","saveFile":"/tmp/delmessagedata.log"}
