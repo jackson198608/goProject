@@ -58,9 +58,9 @@ func getArticleContent(query *goquery.Document, content *string) {
 			*content = strings.Replace(*content, "&amp;tp=webp", "", -1)
 			*content = strings.Replace(*content, "&tp=webp", "", -1)
 			// *content = strings.Replace(*content, "data-src", "src", -1)
-			*content = strings.Replace(*content, "http://mmbiz.qpic.cn", imgUrl+"/mmbiz.qpic.cn", -1)
-			*content = strings.Replace(*content, "https://mmbiz.qpic.cn", imgUrl+"/mmbiz.qpic.cn", -1)
-			*content = strings.Replace(*content, "https://mmbiz.qlogo.cn", imgUrl+"/mmbiz.qlogo.cn", -1)
+			*content = strings.Replace(*content, "http://mmbiz.qpic.cn", c.imgUrl+"/mmbiz.qpic.cn", -1)
+			*content = strings.Replace(*content, "https://mmbiz.qpic.cn", c.imgUrl+"/mmbiz.qpic.cn", -1)
+			*content = strings.Replace(*content, "https://mmbiz.qlogo.cn", c.imgUrl+"/mmbiz.qlogo.cn", -1)
 			re, _ := regexp.Compile("\\<script[\\S\\s]+?\\</script\\>")
 			*content = re.ReplaceAllString(*content, "")
 			re, _ = regexp.Compile("\\<style[\\S\\s]+?\\</style\\>")
@@ -231,7 +231,7 @@ func saveImage(p *page.Page) bool {
 	// realurl := strings.Split(url, "imageUrl=")
 	// fmt.Println(realurl[0])
 	abPath := getPathFromUrl(url)
-	fullPath := saveDir + abPath
+	fullPath := c.saveDir + abPath
 	fullDirPath := path.Dir(fullPath)
 	fmt.Println(fullPath)
 	err := os.MkdirAll(fullDirPath, 0777)
