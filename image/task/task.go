@@ -24,15 +24,16 @@ type Task struct {
 
 //json column
 type JsonColumn struct {
-	imgaePath   string
-	width       int
-	height      int
-	callback    string
-	args        string
-	watermark   string
-	gravityType string
-	offsetX     int
-	offsetY     int
+	imgaePath      string
+	width          int
+	height         int
+	callback       string
+	args           string
+	watermark      string
+	gravityType    string
+	offsetX        int
+	offsetY        int
+	afterImagePath string
 }
 
 //job: redisQueue pop string
@@ -123,7 +124,7 @@ func (t *Task) channelAll() error {
 }
 
 func (t *Task) channelCompress() (string, error) {
-	c := compress.NewCompress(t.jsonData.imgaePath, t.jsonData.width, t.jsonData.height)
+	c := compress.NewCompress(t.jsonData.imgaePath, t.jsonData.width, t.jsonData.height, t.jsonData.afterImagePath)
 	path, err := c.Do()
 	if err == nil {
 		if t.jsonData.callback != "" {
@@ -219,6 +220,7 @@ func (t *Task) parseJson() (*JsonColumn, error) {
 	jsonC.gravityType, _ = js.Get("gravity").String()
 	jsonC.offsetX, _ = js.Get("x").Int()
 	jsonC.offsetY, _ = js.Get("y").Int()
+	jsonC.afterImagePath, _ = js.Get("afterPath").String()
 	return &jsonC, nil
 }
 
