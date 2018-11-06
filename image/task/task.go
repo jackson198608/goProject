@@ -10,6 +10,7 @@ import (
 	"github.com/jackson198608/goProject/image/compress"
 	"net/http"
 	"strings"
+	"os"
 )
 
 type Task struct {
@@ -23,12 +24,15 @@ type Task struct {
 
 //json column
 type JsonColumn struct {
-	imgaePath string
-	width     int
-	height    int
-	callback  string
-	args      string
-	watermark string
+	imgaePath   string
+	width       int
+	height      int
+	callback    string
+	args        string
+	watermark   string
+	gravityType string
+	offsetX     int
+	offsetY     int
 }
 
 //job: redisQueue pop string
@@ -92,7 +96,7 @@ func (t *Task) Do() error {
 		break
 	case "composite":
 		watermarkPath := t.watermarkImage()
-		err := t.channelComposite(t.jsonData.imgaePath, watermarkPath)
+		err := t.channelComposite(t.jsonData.imgaePath, watermarkPath, t.jsonData.gravityType, t.jsonData.offsetX, t.jsonData.offsetY)
 		if err != nil {
 			return err
 		} else {
@@ -108,7 +112,7 @@ func (t *Task) channelAll() error {
 	fmt.Println(err)
 	if err == nil {
 		watermarkPath := t.watermarkImage()
-		err = t.channelComposite(path, watermarkPath)
+		err = t.channelComposite(path, watermarkPath, t.jsonData.gravityType, t.jsonData.offsetX, t.jsonData.offsetY)
 		if err != nil {
 			return err
 		}
@@ -132,8 +136,8 @@ func (t *Task) channelCompress() (string, error) {
 	return path, nil
 }
 
-func (t *Task) channelComposite(path string, watermarkPath string) error {
-	cp := composite.NewComposite(path, watermarkPath)
+func (t *Task) channelComposite(path string, watermarkPath string, gravityType string, offsetX int, offsetY int) error {
+	cp := composite.NewComposite(path, watermarkPath, gravityType, offsetX, offsetY)
 	compositeErr := cp.Do()
 	if compositeErr != nil {
 		for i := 0; i < 5; i++ {
@@ -148,6 +152,9 @@ func (t *Task) channelComposite(path string, watermarkPath string) error {
 
 func (t *Task) watermarkImage() string {
 	if t.jsonData.watermark != "" {
+		if (Exist(t.jsonData.watermark)) {
+			return t.jsonData.watermark
+		}
 		return t.waterPath + t.jsonData.watermark
 	} else {
 		if t.jsonData.width <= 220 {
@@ -208,7 +215,10 @@ func (t *Task) parseJson() (*JsonColumn, error) {
 	jsonC.height, _ = js.Get("height").Int()
 	jsonC.callback, _ = js.Get("callback").String()
 	jsonC.args, _ = js.Get("args").String()
-	jsonC.watermark,_ = js.Get("watermark").String()
+	jsonC.watermark, _ = js.Get("watermark").String()
+	jsonC.gravityType, _ = js.Get("gravity").String()
+	jsonC.offsetX, _ = js.Get("x").Int()
+	jsonC.offsetY, _ = js.Get("y").Int()
 	return &jsonC, nil
 }
 
@@ -230,4 +240,11 @@ func (t *Task) parseRaw() error {
 		t.JobType = "compress"
 	}
 	return nil
+}
+
+// 检查文件或目录是否存在
+// 如果由 filename 指定的文件或目录存在则返回 true，否则返回 false
+func Exist(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil || os.IsExist(err)
 }
