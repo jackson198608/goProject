@@ -11,14 +11,15 @@ import (
 )
 
 type Compress struct {
-	imgaePath string
-	width     int
-	height    int
-	filename  string
-	suffix    string
+	imgaePath      string
+	width          int
+	height         int
+	filename       string
+	suffix         string
+	afterImagePath string
 }
 
-func NewCompress(imgaePath string, width int, height int) *Compress {
+func NewCompress(imgaePath string, width int, height int, afterImagePath string) *Compress {
 	if imgaePath == "" || width == 0 {
 		return nil
 	}
@@ -31,6 +32,7 @@ func NewCompress(imgaePath string, width int, height int) *Compress {
 	c.imgaePath = imgaePath
 	c.width = width
 	c.height = height
+	c.afterImagePath = afterImagePath
 
 	c.parsePath()
 	return c
@@ -97,7 +99,13 @@ func (c *Compress) resizeImage(filename string, width int, height int) (string, 
 	}
 	hHeight := uint(height)
 	widthStr := strconv.Itoa(width)
-	newimg = c.filename + "_" + widthStr + "." + c.suffix
+
+	//没有自定义压缩后的存储路径
+	if c.afterImagePath == "" {
+		newimg = c.filename + "_" + widthStr + "." + c.suffix
+	} else {
+		newimg = c.afterImagePath
+	}
 
 	if c.suffix == "gif" {
 		mw = mw.CoalesceImages()
