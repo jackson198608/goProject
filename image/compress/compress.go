@@ -33,6 +33,7 @@ func NewCompress(imgaePath string, width int, height int, afterImagePath string)
 	c.width = width
 	c.height = height
 	c.afterImagePath = afterImagePath
+	logger.Info("NewCompress afterImagePath: ", c.afterImagePath)
 
 	c.parsePath()
 	return c
@@ -101,6 +102,7 @@ func (c *Compress) resizeImage(filename string, width int, height int) (string, 
 	widthStr := strconv.Itoa(width)
 
 	//没有自定义压缩后的存储路径
+	logger.Info("resizeImage afterImagePath: ", c.afterImagePath)
 	if c.afterImagePath == "" {
 		newimg = c.filename + "_" + widthStr + "." + c.suffix
 	} else {

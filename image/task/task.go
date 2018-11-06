@@ -57,6 +57,7 @@ func NewTask(raw string, taskarg []string) (*Task, error) {
 		return t, nil
 	}
 	t.jsonData = jsonColumn
+	logger.Info("task jsonData: ", t.jsonData)
 
 	t.phpServerIp = taskarg[0]
 	t.waterPath = taskarg[1]
@@ -124,6 +125,7 @@ func (t *Task) channelAll() error {
 }
 
 func (t *Task) channelCompress() (string, error) {
+	logger.Info("channel afterImagePath: ", t.jsonData.afterImagePath)
 	c := compress.NewCompress(t.jsonData.imgaePath, t.jsonData.width, t.jsonData.height, t.jsonData.afterImagePath)
 	path, err := c.Do()
 	if err == nil {
