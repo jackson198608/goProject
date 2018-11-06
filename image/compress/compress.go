@@ -108,6 +108,7 @@ func (c *Compress) resizeImage(filename string, width int, height int) (string, 
 	} else {
 		newimg = c.afterImagePath
 	}
+	logger.Info("resizeImage newimg: ", newimg)
 
 	if c.suffix == "gif" {
 		mw = mw.CoalesceImages()
