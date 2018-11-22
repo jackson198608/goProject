@@ -42,6 +42,10 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 			qArticleList(p, num)
 		}
 
+	} else if strArr[0] == "openArticleList" {
+		logger.Println("[info] find open article list by tag : ", tag, p.GetRequest().Url)
+		oqArticleList()
+
 	} else if strArr[0] == "shopImage" {
 		logger.Println("[info]find articleimage list by tag : ", tag, p.GetRequest().Url)
 		saveImage(p)
