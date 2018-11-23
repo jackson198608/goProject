@@ -111,29 +111,7 @@ func (r *RedisPool) TellMeOneIsBroken() {
 
 func (r *RedisPool) PutConnection(connection *redis.ClusterClient) error {
 	r.lock.Lock()
-	nums := r.num - r.poolQueue.Size()
-	for i := 0; i < nums; i++ {
-		r.CreateNumsConnnection(connection)
-	}
+	r.poolQueue.Enqueue(connection)
 	r.lock.Unlock()
 	return nil
-}
-
-func (r *RedisPool) CreateNumsConnnection(connection *redis.ClusterClient) {
-	if connection != nil {
-		_, err := connection.Ping().Result()
-		if err == nil {
-			r.poolQueue.Enqueue(connection)
-		} else {
-			connection, err := r.createOneConnection()
-			if err == nil {
-				r.poolQueue.Enqueue(connection)
-			}
-		}
-	} else {
-		connection, err := r.createOneConnection()
-		if err == nil {
-			r.poolQueue.Enqueue(connection)
-		}
-	}
 }
