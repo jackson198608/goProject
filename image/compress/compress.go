@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"path/filepath"
 )
 
 type Compress struct {
@@ -50,15 +51,31 @@ func (c *Compress) exists(path string) (bool, error) {
 	return true, err
 }
 
+
+func (c *Compress) getFileSize(filename string) int64 {
+	var result int64
+	filepath.Walk(filename, func(path string, f os.FileInfo, err error) error {
+		result = f.Size()
+		return nil
+	})
+	return result
+}
+
 func (c *Compress) Do() (string, error) {
 	path, err := c.resizeImage(c.imgaePath, c.width, c.height)
 
 	if err == nil {
+		isOk := 0
 		status, err := c.exists(path)
 		if status {
-			logger.Info("[sucess] compress image path is ", c.imgaePath, " width is ", c.width, " height is ", c.height)
-		} else {
-			//如果压缩后，图片不存在，则再尝试5次压缩
+			fileSize := c.getFileSize(path)
+			if fileSize > 0 {
+				isOk = 1
+				logger.Info("[sucess] compress image path is ", c.imgaePath, " width is ", c.width, " height is ", c.height," filesize is ",fileSize)
+			}
+		}
+		if(isOk==0){
+			//如果压缩后，图片不存在 或 文件大小为0 ，则再尝试5次压缩
 			for i := 0; i < 5; i++ {
 				path, err = c.resizeImage(c.imgaePath, c.width, c.height)
 				if err == nil {
@@ -148,7 +165,7 @@ func (c *Compress) resizeImage(filename string, width int, height int) (string, 
 	}
 
 	if err != nil {
-		logger.Error(err)
+		logger.Error("compress error : ",err)
 		return newimg, err
 	}
 	mw.Destroy()

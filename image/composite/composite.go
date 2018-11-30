@@ -17,7 +17,9 @@ type Composite struct {
 }
 
 func NewComposite(imgaePath string, watermarkPath string, gravityType string, offsetX int, offsetY int) *Composite {
+	logger.Info("in composite")
 	if imgaePath == "" || watermarkPath == "" {
+		logger.Info("composite imgaePath is ",imgaePath," watermarkPath is ",watermarkPath)
 		return nil
 	}
 
@@ -37,6 +39,7 @@ func NewComposite(imgaePath string, watermarkPath string, gravityType string, of
 }
 
 func (c *Composite) Do() error {
+	logger.Info("do composite", c.imgaePath," ", c.watermarkPath)
 	err := c.compositeImage(c.imgaePath, c.watermarkPath)
 	if err == nil {
 		logger.Info("[sucess] composite image path is ", c.imgaePath, " watermarkPath is ", c.watermarkPath)

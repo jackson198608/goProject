@@ -2,7 +2,6 @@ package task
 
 import (
 	"errors"
-	"fmt"
 	"github.com/bitly/go-simplejson"
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
@@ -48,6 +47,8 @@ func NewTask(raw string, taskarg []string) (*Task, error) {
 		return nil, errors.New("there is no space to create struct")
 	}
 
+	logger.Info("raw : ", raw)
+
 	//pass params
 	t.Raw = raw
 	t.parseRaw()
@@ -78,6 +79,7 @@ func (t *Task) setAbuyun() *abuyunHttpClient.AbuyunProxy {
 // public interface for task
 // If the compression is successful, the callback PHP
 func (t *Task) Do() error {
+	logger.Info("jobType ", t.JobType)
 	switch t.JobType {
 	case "all":
 		err := t.channelAll()
@@ -110,14 +112,15 @@ func (t *Task) Do() error {
 
 func (t *Task) channelAll() error {
 	path, err := t.channelCompress()
-	fmt.Println(err)
 	if err == nil {
 		watermarkPath := t.watermarkImage()
 		err = t.channelComposite(path, watermarkPath, t.jsonData.gravityType, t.jsonData.offsetX, t.jsonData.offsetY)
 		if err != nil {
+			logger.Error("channelComposite error is ", err )
 			return err
 		}
 	} else {
+		logger.Error("channelCompress error is ", err )
 		return err
 	}
 	return nil
@@ -180,6 +183,7 @@ func (t *Task) callback() error {
 			}
 		}
 	}
+	logger.Info("callback php err: ",err)
 	return err
 }
 
@@ -197,7 +201,7 @@ func (t *Task) callbackPhp() error {
 	if statusCode == 200 {
 		if body == "fail" {
 			return errors.New("callback php fail ; task is " + t.Raw)
-		} else if body == "sucess" {
+		} else if body == "sucess" || body == "success" {
 			logger.Error("callback php sucess ; task is ", t.Raw)
 		}
 		return nil
