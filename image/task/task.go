@@ -141,8 +141,10 @@ func (t *Task) channelComposite(path string, watermarkPath string, gravityType s
 	cp := composite.NewComposite(path, watermarkPath, gravityType, offsetX, offsetY)
 	compositeErr := cp.Do()
 	if compositeErr != nil {
+		logger.Info("composite error: ",compositeErr)
 		for i := 0; i < 5; i++ {
 			compositeErr := cp.Do()
+			logger.Info(" try ",i, ", composite error: ",compositeErr)
 			if compositeErr == nil {
 				break
 			}

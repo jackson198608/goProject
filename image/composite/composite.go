@@ -67,8 +67,14 @@ func (c *Composite) compositeImage(filename string, watermarkPath string) error 
 		c.compositeGifImage(filename, src, dest, destWidth, destHeight);
 	} else {
 		c.setGravityType(dest)
-		dest.CompositeImage(src, imagick.COMPOSITE_OP_OVER, destWidth, destHeight)
-		dest.WriteImage(filename)
+		ciErr := dest.CompositeImage(src, imagick.COMPOSITE_OP_OVER, destWidth, destHeight)
+		if ciErr != nil {
+			return ciErr
+		}
+		writeErr := dest.WriteImage(filename)
+		if writeErr != nil {
+			return writeErr
+		}
 	}
 	return nil
 }
