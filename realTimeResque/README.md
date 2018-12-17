@@ -3,7 +3,7 @@
 
 # Installation
 
-	go get github.com/jackson198608/goProject/image/task
+	go get github.com/jackson198608/goProject/realTimeResque
 
 # Quick Start
 - refer to task_test
