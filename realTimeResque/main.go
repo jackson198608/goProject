@@ -13,7 +13,7 @@ import (
 var c Config = Config{
 	"127.0.0.1:6379", //redis info
 	1,                //thread num
-	"imageCompressTaskList", //queue name
+	"real-time-queue", //queue name
 	"127.0.0.1"}            //php server ip
 
 func init() {
