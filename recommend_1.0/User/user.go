@@ -7,9 +7,7 @@ import (
 	"github.com/donnie4w/go-logger/logger"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
-	mgo "gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-	"gouminGitlab/common/orm/mongo/RecommendData"
+	"gopkg.in/mgo.v2"
 	"net/http"
 	// "reflect"
 	"strconv"
@@ -337,10 +335,9 @@ func (u *User) recommendUserByAge() (int, error) {
 
 // 存储用户数据
 func (u *User) pushUserRecommend(user *[]elkUserBody, dateType int) error {
-	mc := u.mongoConn[0].DB("RecommendData").C("recommend_user")
 	userItems := *user
 	for i, _ := range userItems {
-		err := u.insertUser(mc, &userItems[i], dateType)
+		err := u.insertUser(&userItems[i], dateType)
 		if err != nil {
 			return err
 		}
@@ -460,10 +457,10 @@ func (u *User) recommendClubByFup(fup int) (int, error) {
 }
 
 func (u *User) pushClubRecommend(club *[]elkClubBody) error {
-	mc := u.mongoConn[0].DB("RecommendData").C("recommend_club")
+	//mc := u.mongoConn[0].DB("RecommendData").C("recommend_club")
 	clubItems := *club
 	for i, _ := range clubItems {
-		err := u.insertClub(mc, &clubItems[i])
+		err := u.insertClub(&clubItems[i])
 		if err != nil {
 			return err
 		}
@@ -585,7 +582,7 @@ func (u *User) getClubQueries(keyword string, fup int, fid int, followIds string
 
 func (u *User) getClub(query string) (*[]elkClubBody, error) {
 	abuyun := u.setAbuyun()
-	targetUrl := "http://" + u.elkDsn + "/club/club_info/_search"
+	targetUrl := u.elkDsn + "/club/club_info/_search"
 	var h http.Header = make(http.Header)
 	h.Set("Content-Type", "application/json")
 	statusCode, _, body, err := abuyun.SendRequest(targetUrl, h, query, true)
@@ -625,13 +622,27 @@ func (u *User) formatClub(body string) (*[]elkClubBody, error) {
 	return &club, nil
 }
 
-func (u *User) insertClub(mc *mgo.Collection, elkClubBody *elkClubBody) error {
+func (u *User) insertClub(elkClubBody *elkClubBody) error {
 	//新增数据
 	created := time.Now().Format("2006-01-02")
 	membernum, _ := strconv.Atoi(elkClubBody.membernum)
 	isFollow := u.isFollow(elkClubBody.Id)
-	var data RecommendData.Club
-	data = RecommendData.Club{bson.NewObjectId(),
+	//var data RecommendData.Club
+	//data = RecommendData.Club{bson.NewObjectId(),
+	//	u.Uid,
+	//	elkClubBody.Id,
+	//	elkClubBody.name,
+	//	elkClubBody.description,
+	//	elkClubBody.icon,
+	//	membernum,
+	//	1,
+	//	created,
+	//	isFollow}
+	//err := mc.Insert(&data) //插入数据
+	var _id = "R_"+ created+"_" + strconv.Itoa(u.Uid) + "_"+ strconv.Itoa(elkClubBody.Id)
+	var data elasticsearch.RecommendClubData
+	data = elasticsearch.RecommendClubData{
+		_id,
 		u.Uid,
 		elkClubBody.Id,
 		elkClubBody.name,
@@ -641,16 +652,16 @@ func (u *User) insertClub(mc *mgo.Collection, elkClubBody *elkClubBody) error {
 		1,
 		created,
 		isFollow}
-	err := mc.Insert(&data) //插入数据
+	rc := elasticsearch.NewRecommendClub(u.nodes)
+	err:=rc.Create(&data)
 	if err != nil {
-
 		fmt.Println("insert club error")
 		return err
 	}
 	return nil
 }
 
-func (u *User) insertUser(mc *mgo.Collection, elkUserBody *elkUserBody, dataType int) error {
+func (u *User) insertUser(elkUserBody *elkUserBody, dataType int) error {
 	//新增数据
 	created := time.Now().Format("2006-01-02")
 	u.notRecommendUid = append(u.notRecommendUid, elkUserBody.Id)

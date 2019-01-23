@@ -102,7 +102,7 @@ func TestRecommendUserBySpecies(t *testing.T) {
 	fmt.Println(c.recommendUserBySpecies(0, 5))
 }
 
-func TestfollowClubs(t *testing.T) {
+func TestFollowClubs(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	uid := "2060500"
 	c := NewUser(mysqlXorm, mongoConn, uid, elkDsn)
