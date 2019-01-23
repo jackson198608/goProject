@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"gouminGitlab/common/orm/elasticsearch"
 )
 
 type elkClubBody struct {
@@ -46,6 +47,7 @@ type User struct {
 	mongoConn       []*mgo.Session
 	Uid             int
 	elkDsn          string
+	nodes           []string
 	province        string
 	species         string
 	address         string
@@ -67,7 +69,8 @@ func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, elk
 	u.mysqlXorm = mysqlXorm
 	u.mongoConn = mongoConn
 	u.Uid, _ = strconv.Atoi(uid)
-	u.elkDsn = elkDsn
+	u.nodes = strings.SplitN(elkDsn, ",", -1)
+	u.elkDsn = u.nodes[0]
 	return u
 }
 
@@ -503,7 +506,7 @@ func (u *User) getUserQueries(keyword string, getType int, size int) string {
 //获取用户数据
 func (u *User) getUser(query string) (*[]elkUserBody, error) {
 	abuyun := u.setAbuyun()
-	targetUrl := "http://" + u.elkDsn + "/user/user_info/_search?pretty"
+	targetUrl := u.elkDsn + "/user/user_info/_search?pretty"
 	var h http.Header = make(http.Header)
 
 	h.Set("Content-Type", "application/json")
@@ -651,16 +654,18 @@ func (u *User) insertUser(mc *mgo.Collection, elkUserBody *elkUserBody, dataType
 	//新增数据
 	created := time.Now().Format("2006-01-02")
 	u.notRecommendUid = append(u.notRecommendUid, elkUserBody.Id)
-	var data RecommendData.User
-	data = RecommendData.User{bson.NewObjectId(),
-		elkUserBody.Id,
-		u.Uid,
-		elkUserBody.nickname,
-		elkUserBody.avatar,
-		0,
-		dataType,
-		created}
-	err := mc.Insert(&data) //插入数据
+	var _id = "R_"+ created+"_" + strconv.Itoa(u.Uid) + "_"+strconv.Itoa(elkUserBody.Id)
+	var data elasticsearch.RecommendUserData
+	data = elasticsearch.RecommendUserData{_id,
+			elkUserBody.Id,
+			u.Uid,
+			elkUserBody.nickname,
+			elkUserBody.avatar,
+			0,
+			dataType,
+			created}
+	ru := elasticsearch.NewRecommendUser(u.nodes)
+	err := ru.Create(&data)
 	if err != nil {
 		fmt.Println("insert user error")
 		return err

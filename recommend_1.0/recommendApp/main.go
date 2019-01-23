@@ -24,7 +24,7 @@ var c Config = Config{
 	1,                     //thread num
 	"pushContentCenter",   //queuename
 	"192.168.86.192:27017",
-	"192.168.86.5:9200"} // mongo
+	"192.168.86.230:9200,192.168.5.231:9200"} // mongo
 
 func init() {
 	loadConfig()

@@ -10,14 +10,14 @@ import (
 )
 
 const dbAuth = "dog123:dog123"
-const dbDsn = "192.168.86.193:3307"
+const dbDsn = "192.168.86.194:3307"
 const dbName = "new_dog123"
-const mongoConn = "192.168.86.192:27017" //"192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019"
-const elkDsn = "210.14.154.117:8986"     //"192.168.86.5:9200"
+const mongoConn ="192.168.86.80:27017,192.168.86.81:27017,192.168.86.82:27017" //"192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019"
+const elkDsn = "http://192.168.86.231:9200,http://192.168.86.230:9200"     //"192.168.86.5:9200"
 
 func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	dbAuth := "dog123:dog123"
-	dbDsn := "192.168.86.193:3307" //"210.14.154.117:33068"
+	dbDsn := "192.168.86.194:3307" //"210.14.154.117:33068"
 	dbName := "new_dog123"
 	dataSourceName := dbAuth + "@tcp(" + dbDsn + ")/" + dbName + "?charset=utf8mb4"
 	engine, err := xorm.NewEngine("mysql", dataSourceName)
@@ -34,9 +34,9 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	// }
 
 	Host := []string{
-		"192.168.86.193:27017",
-		"192.168.86.193:27018",
-		"192.168.86.193:27019",
+		"192.168.86.80:27017",
+		"192.168.86.81:27018",
+		"192.168.86.82:27019",
 	}
 	const (
 		Username       = ""
