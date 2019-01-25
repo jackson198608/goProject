@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 	"gouminGitlab/common/orm/elasticsearch"
+	"github.com/gin-gonic/gin/json"
 )
 
 type elkClubBody struct {
@@ -54,6 +55,9 @@ type User struct {
 	notRecommendUid []int
 	notRecommendFid []int
 }
+
+var recommendClubData []elasticsearch.RecommendClubData
+var recommendUserData []elasticsearch.RecommendUserData
 
 func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, elkDsn string) *User {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (uid == "") || (elkDsn == "") {
@@ -227,6 +231,7 @@ func (u *User) getRecommendClub() error {
 			}
 		}
 	}
+	u.pushClubRecommend()
 	return nil
 }
 
@@ -245,6 +250,7 @@ func (u *User) getRecommendUser() error {
 			logger.Info("[user] recommend nextSpeciesNum is ", strconv.Itoa(nextSpeciesNum), " by uid ", strconv.Itoa(u.Uid))
 		}
 	}
+	u.pushUserRecommend()
 	return nil
 }
 
@@ -270,11 +276,7 @@ func (u *User) recommendUserBySpecies(isFirst int, num int) (int, error) {
 			return 0, nil
 		}
 		if user != nil {
-			err = u.pushUserRecommend(user, 1)
-			if err != nil {
-				fmt.Println("push user error, by " + u.age)
-				return 0, nil
-			}
+			u.buildRecommendUserData(user, 1)
 			return len(*user), nil
 		}
 	}
@@ -293,11 +295,7 @@ func (u *User) recommendUserByAddress(num int) (int, error) {
 			return 0, nil
 		}
 		if user != nil {
-			err = u.pushUserRecommend(user, 2)
-			if err != nil {
-				fmt.Println("push user error, by " + u.age)
-				return 0, nil
-			}
+			u.buildRecommendUserData(user, 2)
 			return len(*user), nil
 		}
 	}
@@ -322,11 +320,7 @@ func (u *User) recommendUserByAge() (int, error) {
 			return 0, nil
 		}
 		if user != nil {
-			err = u.pushUserRecommend(user, 0)
-			if err != nil {
-				fmt.Println("push user error, by " + u.age)
-				return 0, nil
-			}
+			u.buildRecommendUserData(user, 0)
 			return len(*user), nil
 		}
 	}
@@ -334,15 +328,11 @@ func (u *User) recommendUserByAge() (int, error) {
 }
 
 // 存储用户数据
-func (u *User) pushUserRecommend(user *[]elkUserBody, dateType int) error {
-	userItems := *user
-	for i, _ := range userItems {
-		err := u.insertUser(&userItems[i], dateType)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func (u *User) pushUserRecommend() error {
+	jsonData, _ := json.Marshal(recommendUserData)
+	dataStr := string(jsonData)
+	err := u.insertData(dataStr, 2)
+	return err
 }
 
 // -----   推荐俱乐部  ------
@@ -361,11 +351,7 @@ func (u *User) followClubs() (int, error) {
 		return 0, nil
 	}
 	if club != nil {
-		err = u.pushClubRecommend(club)
-		if err != nil {
-			fmt.Println("push club error, by " + u.species)
-			return 0, nil
-		}
+		u.buildRecommendClubData(club)
 		return len(*club), nil
 	}
 	return 0, nil
@@ -389,11 +375,7 @@ func (u *User) recommendClubBySpecies() (int, error) {
 		return 0, nil
 	}
 	if club != nil {
-		err = u.pushClubRecommend(club)
-		if err != nil {
-			fmt.Println("push club error, by " + u.species)
-			return 0, nil
-		}
+		u.buildRecommendClubData(club)
 		return len(*club), nil
 	}
 	return 0, nil
@@ -407,11 +389,7 @@ func (u *User) recommendClubByFid(fid int) (int, error) {
 		return 0, nil
 	}
 	if club != nil {
-		err = u.pushClubRecommend(club)
-		if err != nil {
-			fmt.Println("push club error, by " + strconv.Itoa(fid))
-			return 0, nil
-		}
+		u.buildRecommendClubData(club)
 		return len(*club), nil
 	}
 	return 0, nil
@@ -427,11 +405,7 @@ func (u *User) recommendClubByAddress() (int, error) {
 			return 0, nil
 		}
 		if club != nil {
-			err = u.pushClubRecommend(club)
-			if err != nil {
-				fmt.Println("push club error, by " + u.province)
-				return 0, nil
-			}
+			u.buildRecommendClubData(club)
 			return len(*club), nil
 		}
 	}
@@ -446,24 +420,18 @@ func (u *User) recommendClubByFup(fup int) (int, error) {
 		return 0, nil
 	}
 	if club != nil {
-		err = u.pushClubRecommend(club)
-		if err != nil {
-			fmt.Println("push club error, by " + strconv.Itoa(fup))
-			return 0, nil
-		}
+		u.buildRecommendClubData(club)
 		return len(*club), nil
 	}
 	return 0, nil
 }
 
-func (u *User) pushClubRecommend(club *[]elkClubBody) error {
-	//mc := u.mongoConn[0].DB("RecommendData").C("recommend_club")
-	clubItems := *club
-	for i, _ := range clubItems {
-		err := u.insertClub(&clubItems[i])
-		if err != nil {
-			return err
-		}
+func (u *User) pushClubRecommend() error {
+	jsonData, _ := json.Marshal(recommendClubData)
+	dataStr := string(jsonData)
+	err := u.insertData(dataStr, 1)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -622,60 +590,59 @@ func (u *User) formatClub(body string) (*[]elkClubBody, error) {
 	return &club, nil
 }
 
-func (u *User) insertClub(elkClubBody *elkClubBody) error {
+/**
+构造向user_recommend_data 中存储的俱乐部数据
+ */
+func (u *User) buildRecommendClubData(club *[]elkClubBody) {
 	//新增数据
-	created := time.Now().Format("2006-01-02")
-	membernum, _ := strconv.Atoi(elkClubBody.membernum)
-	isFollow := u.isFollow(elkClubBody.Id)
-	//var data RecommendData.Club
-	//data = RecommendData.Club{bson.NewObjectId(),
-	//	u.Uid,
-	//	elkClubBody.Id,
-	//	elkClubBody.name,
-	//	elkClubBody.description,
-	//	elkClubBody.icon,
-	//	membernum,
-	//	1,
-	//	created,
-	//	isFollow}
-	//err := mc.Insert(&data) //插入数据
-	var _id = "R_"+ created+"_" + strconv.Itoa(u.Uid) + "_"+ strconv.Itoa(elkClubBody.Id)
-	var data elasticsearch.RecommendClubData
-	data = elasticsearch.RecommendClubData{
-		_id,
-		u.Uid,
-		elkClubBody.Id,
-		elkClubBody.name,
-		elkClubBody.description,
-		elkClubBody.icon,
-		membernum,
-		1,
-		created,
-		isFollow}
-	rc := elasticsearch.NewRecommendClub(u.nodes)
-	err:=rc.Create(&data)
-	if err != nil {
-		fmt.Println("insert club error")
-		return err
+	clubItems := *club
+	for i, _ := range clubItems {
+		clubItem := &clubItems[i]
+		membernum, _ := strconv.Atoi(clubItem.membernum)
+		isFollow := u.isFollow(clubItem.Id)
+		var data elasticsearch.RecommendClubData
+		data = elasticsearch.RecommendClubData{
+			clubItem.Id,
+			clubItem.name,
+			clubItem.description,
+			clubItem.icon,
+			membernum,
+			1,
+			isFollow}
+		recommendClubData = append(recommendClubData, data)
 	}
-	return nil
 }
 
-func (u *User) insertUser(elkUserBody *elkUserBody, dataType int) error {
+/**
+构造向user_recommend_data 中存储的相关用户数据
+ */
+func (u *User) buildRecommendUserData(user *[]elkUserBody, dataType int) {
+	userItems := *user
+	for i, _ := range userItems {
+		userItem := &userItems[i]
+		u.notRecommendUid = append(u.notRecommendUid, userItem.Id)
+		var data elasticsearch.RecommendUserData
+		data = elasticsearch.RecommendUserData{
+			userItem.Id,
+			userItem.nickname,
+			userItem.avatar,
+		0,
+			dataType}
+		recommendUserData = append(recommendUserData, data)
+	}
+}
+
+func (u *User) insertData(recommendData string, recommendType int) error {
 	//新增数据
 	created := time.Now().Format("2006-01-02")
-	u.notRecommendUid = append(u.notRecommendUid, elkUserBody.Id)
-	var _id = "R_"+ created+"_" + strconv.Itoa(u.Uid) + "_"+strconv.Itoa(elkUserBody.Id)
-	var data elasticsearch.RecommendUserData
-	data = elasticsearch.RecommendUserData{_id,
-			elkUserBody.Id,
+	var _id = strconv.Itoa(recommendType)+"_"+ created+"_" + strconv.Itoa(u.Uid)
+	var data elasticsearch.UserRecommendListData
+	data = elasticsearch.UserRecommendListData{_id,
 			u.Uid,
-			elkUserBody.nickname,
-			elkUserBody.avatar,
-			0,
-			dataType,
+recommendData,
+		recommendType,
 			created}
-	ru := elasticsearch.NewRecommendUser(u.nodes)
+	ru := elasticsearch.NewUserRecommendData(u.nodes)
 	err := ru.Create(&data)
 	if err != nil {
 		fmt.Println("insert user error")
