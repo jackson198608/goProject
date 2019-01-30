@@ -70,9 +70,9 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string,
 //TypeId = 19 宠家号视频, push fans active persons
 //TypeId = 30 星球传记(事迹), push fans active persons
 func (f *Focus) Do() error {
-	fmt.Println(f.jsonData)
+	//fmt.Println(f.jsonData)
 	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 || f.jsonData.TypeId == 19 {
-		fmt.Println(f.jsonData.TypeId)
+		//fmt.Println(f.jsonData.TypeId)
 		f.jsonData.Source = 3
 		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
 		err := fp.Do()
@@ -161,36 +161,6 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 
 	return &jsonC, nil
 }
-
-//func loadActiveUserToMap() map[int]bool {
-//	var m map[int]bool
-//	m = make(map[int]bool)
-//
-//	var session *mgo.Session
-//	var err error
-//	mgoInfos := strings.Split(mongoConn, ",")
-//	if len(mgoInfos) == 1 {
-//		session, err = tools.GetStandAloneConnecting(mongoConn)
-//	} else {
-//		session, err = tools.GetReplicaConnecting(mgoInfos)
-//	}
-//	if err != nil {
-//		return m
-//	}
-//	defer session.Close()
-//
-//	var uids []int
-//	c := session.DB("ActiveUser").C("active_user")
-//	err = c.Find(nil).Distinct("uid", &uids)
-//	if err != nil {
-//		// panic(err)
-//		return m
-//	}
-//	for i := 0; i < len(uids); i++ {
-//		m[uids[i]] = true
-//	}
-//	return m
-//}
 
 func loadActiveUserToMap() map[int]bool   {
 	var nodes []string
