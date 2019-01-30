@@ -24,7 +24,8 @@ var c Config = Config{
 	"127.0.0.1:6379",      //redis info
 	1,                     //thread num
 	"pushContentCenter",   //queuename
-	"192.168.86.192:27017"} // mongo
+	"192.168.86.192:27017",
+	"http://192.168.86.230:9200,http://192.168.86.231:9200"} // mongo
 
 func init() {
 	loadConfig()
@@ -52,7 +53,7 @@ func main() {
 
 		redisInfo := tools.FormatRedisOption(c.redisConn)
 		logger.Info("start work")
-		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 1, jobFuc)
+		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 1, jobFuc,c.elkNodes)
 		if err != nil {
 			logger.Error("[NewRedisEngine] ", err)
 		}
@@ -82,7 +83,8 @@ func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engin
 	if (mysqlConns == nil) || (mgoConns == nil) {
 		return errors.New("mysql or mongo conn error")
 	}
-	t, err := task.NewTask(job, mysqlConns, mgoConns)
+	nodes := strings.SplitN(taskarg[0], ",", -1)
+	t, err := task.NewTask(job, mysqlConns, mgoConns, nodes)
 	if err != nil {
 		return err
 	}

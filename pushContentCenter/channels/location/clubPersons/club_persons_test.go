@@ -61,22 +61,19 @@ func jsonData() *job.FocusJsonColumn {
 }
 
 func TestGetPersons(t *testing.T) {
+
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	nodes = append(nodes, "http://192.168.86.231:9200")
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
 
-	f := NewClubPersons(mysqlXorm, mongoConn, jsonData)
+	f := NewClubPersons(mysqlXorm, mongoConn, jsonData,nodes)
 	var startId bson.ObjectId
 	startId = bson.ObjectId("000000000000")
 	fmt.Println(f.getPersons(startId))
 }
 
-func TestPushPerson(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-
-	f := NewClubPersons(mysqlXorm, mongoConn, jsonData)
-	fmt.Println(f.pushPerson(881050))
-}
 
 // func TestPushPersons(t *testing.T) {
 // 	mysqlXorm, mongoConn := testConn()
@@ -88,8 +85,12 @@ func TestPushPerson(t *testing.T) {
 // }
 
 func TestDo(t *testing.T) {
+
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	nodes = append(nodes, "http://192.168.86.231:9200")
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-	f := NewClubPersons(mysqlXorm, mongoConn, jsonData)
+	f := NewClubPersons(mysqlXorm, mongoConn, jsonData,nodes)
 	fmt.Println(f.Do())
 }

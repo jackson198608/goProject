@@ -56,8 +56,8 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Imagenums = 0
 	jsonData.ImageInfo = "7916"
 	jsonData.Source = 2
-	jsonData.Status = -1
-	jsonData.Action = -1
+	jsonData.Status = 1
+	jsonData.Action = 0
 	jsonData.PetType = 1
 	jsonData.PetId = 71
 	jsonData.VideoUrl= ""
@@ -89,24 +89,24 @@ func Init() {
 }
 
 func TestGetPersons(t *testing.T) {
+
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	nodes = append(nodes, "http://192.168.86.231:9200")
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m)
+	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m, nodes)
 	fmt.Println(f.getPersons(1))
 }
 
-func TestPushPerson(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-
-	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m)
-	fmt.Println(f.pushPerson(881050))
-}
-
 func TestDo(t *testing.T) {
+
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	nodes = append(nodes, "http://192.168.86.231:9200")
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
 
-	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m)
+	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m, nodes)
 	fmt.Println(f.Do())
 }

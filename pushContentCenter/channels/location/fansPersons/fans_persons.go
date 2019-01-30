@@ -7,11 +7,10 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-	"gouminGitlab/common/orm/mongo/FansData"
 	"gouminGitlab/common/orm/mysql/new_dog123"
 	// "reflect"
 	"strconv"
+	"gouminGitlab/common/orm/elasticsearch"
 )
 
 type FansPersons struct {
@@ -19,11 +18,12 @@ type FansPersons struct {
 	mongoConn      []*mgo.Session //@todo to be []
 	jsonData       *job.FocusJsonColumn
 	activeUserData *map[int]bool
+	nodes []string
 }
 
 const count = 1000
 
-func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool) *FansPersons {
+func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool,nodes []string) *FansPersons {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
@@ -37,6 +37,7 @@ func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
 	f.activeUserData = activeUserData
+	f.nodes = nodes
 
 	return f
 }
@@ -67,16 +68,18 @@ func (f *FansPersons) pushPersons(follows *[]new_dog123.Follow) (int, error) {
 	}
 	active_user := *f.activeUserData
 	persons := *follows
+	//fmt.Println(active_user)
 
 	var endId int
+	elx := elasticsearch.NewEventLogX(f.nodes, f.jsonData)
 	for _, person := range persons {
 		//check key in actice user
 		_, ok := active_user[person.FollowId]
 		if ok {
-			err := f.pushPerson(person.FollowId)
+			err := elx.PushPerson(person.FollowId)
 			if err != nil {
 				for i := 0; i < 5; i++ {
-					err := f.pushPerson(person.FollowId)
+					err := elx.PushPerson(person.FollowId)
 					if err == nil {
 						break
 					}
@@ -87,42 +90,6 @@ func (f *FansPersons) pushPersons(follows *[]new_dog123.Follow) (int, error) {
 	}
 
 	return endId, nil
-}
-
-func getTableNum(person int) string {
-	tableNumX := person % 100
-	if tableNumX == 0 {
-		tableNumX = 100
-	}
-	tableNameX := "event_log_" + strconv.Itoa(tableNumX) //粉丝表
-	return tableNameX
-}
-
-func (f *FansPersons) pushPerson(person int) error {
-	tableNameX := getTableNum(person)
-	c := f.mongoConn[0].DB("FansData").C(tableNameX)
-	if f.jsonData.Action == 0 {
-		//fmt.Println("insert" + strconv.Itoa(person))
-		err := f.insertPerson(c, person)
-		if err != nil {
-			return err
-		}
-	} else if f.jsonData.Action == 1 {
-		//修改数据
-		//fmt.Println("update" + strconv.Itoa(person))
-		err := f.updatePerson(c, person)
-		if err != nil {
-			return err
-		}
-	} else if f.jsonData.Action == -1 {
-		//删除数据
-		// fmt.Println("remove" + strconv.Itoa(person))
-		err := f.removePerson(c, person)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 //get fans persons by uid
@@ -137,49 +104,3 @@ func (f *FansPersons) getPersons(startId int) *[]new_dog123.Follow {
 	return &follows
 }
 
-func (f *FansPersons) insertPerson(c *mgo.Collection, person int) error {
-	//新增数据
-	var data FansData.EventLog
-	data = FansData.EventLog{bson.NewObjectId(),
-		f.jsonData.TypeId,
-		f.jsonData.Uid,
-		person,
-		f.jsonData.Created,
-		f.jsonData.Infoid,
-		f.jsonData.Status,
-		f.jsonData.Tid,
-		f.jsonData.Bid,
-		f.jsonData.Content,
-		f.jsonData.Title,
-		f.jsonData.Imagenums,
-		f.jsonData.ImageInfo,
-		f.jsonData.Forum,
-		f.jsonData.Tag,
-		f.jsonData.Qsttype,
-		f.jsonData.Source,
-		f.jsonData.PetId,
-		f.jsonData.PetType,
-		f.jsonData.VideoUrl,
-		f.jsonData.IsVideo}
-	err := c.Insert(&data) //插入数据
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (f *FansPersons) updatePerson(c *mgo.Collection, person int) error {
-	_, err := c.UpdateAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person, "infoid": f.jsonData.Infoid}, bson.M{"$set": bson.M{"status": f.jsonData.Status, "created": f.jsonData.Created}})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (f *FansPersons) removePerson(c *mgo.Collection, person int) error {
-	_, err := c.RemoveAll(bson.M{"type": f.jsonData.TypeId, "uid": f.jsonData.Uid, "fuid": person,  "infoid": f.jsonData.Infoid, "tid": f.jsonData.Tid})
-	if err != nil {
-		return err
-	}
-	return nil
-}

@@ -10,11 +10,13 @@ import (
 	// "gouminGitlab/common/orm/mongo/FansData"
 	// "reflect"
 	"testing"
+	"gouminGitlab/common/orm/elasticsearch"
+	"encoding/json"
 )
 
 func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	dbAuth := "dog123:dog123"
-	dbDsn := "192.168.86.193:3307"
+	dbDsn := "192.168.86.194:3307"
 	// dbDsn := "210.14.154.117:33068"
 	dbName := "new_dog123"
 	dataSourceName := dbAuth + "@tcp(" + dbDsn + ")/" + dbName + "?charset=utf8mb4"
@@ -24,7 +26,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 		return nil, nil
 	}
 
-	mongoConn := "192.168.86.193:27017"
+	mongoConn := "192.168.86.80:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		fmt.Println("[error] connect mongodb err")
@@ -55,7 +57,7 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Qsttype = 0
 	jsonData.Fid = 0
 	jsonData.Source = 2
-	jsonData.Status = 1
+	jsonData.Status =-1
 	jsonData.Action = -1
 	return &jsonData
 }
@@ -63,52 +65,32 @@ func jsonData() *job.FocusJsonColumn {
 var m map[int]bool
 
 func init() {
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	nodes = append(nodes, "http://192.168.86.231:9200")
 	m = make(map[int]bool)
-
-	mongoConn := "192.168.86.192:27017"
-	session, err := mgo.Dial(mongoConn)
-	if err != nil {
-		// return m
-	}
-
-	var uids []int
-	c := session.DB("ActiveUser").C("active_user")
-	err = c.Find(nil).Distinct("uid", &uids)
-	if err != nil {
-		// panic(err)
-		// return m
-	}
-	for i := 0; i < len(uids); i++ {
-		m[uids[i]] = true
+	er := elasticsearch.NewUser(nodes)
+	from := 0
+	size := 1000
+	rst := er.SearchAllActiveUser(from, size)
+	if rst.Hits.TotalHits >0 {
+		for _,hit := range rst.Hits.Hits{
+			var userinfo elasticsearch.UserData
+			err := json.Unmarshal(*hit.Source, &userinfo) //另外一种取数据的方法
+			if err != nil {
+				fmt.Println("Deserialization failed")
+			}
+			m[userinfo.Id] = true
+		}
 	}
 }
-
-// func TestGetPersons(t *testing.T) {
-// 	mysqlXorm, mongoConn := testConn()
-// 	jsonData := jsonData()
-// 	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
-// 	fmt.Println(f.getPersons(2))
-// }
-
-func TestPushPerson(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
-	fmt.Println(f.pushPerson(881050))
-}
-
-// func TestPushPersons(t *testing.T) {
-// 	mysqlXorm, mongoConn := testConn()
-// 	jsonData := jsonData()
-// 	var persons = []int{2060500, 2060400}
-
-// 	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
-// 	fmt.Println(f.pushPersons(persons))
-// }
 
 func TestDo(t *testing.T) {
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	nodes = append(nodes, "http://192.168.86.231:9200")
 	mysqlXorm, mongoConn := testConn()
 	jsonData := jsonData()
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m)
+	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m,nodes)
 	fmt.Println(f.Do())
 }

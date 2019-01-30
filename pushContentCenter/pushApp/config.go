@@ -13,6 +13,7 @@ type Config struct {
 	coroutinNum int
 	queueName   string
 	mongoConn   string
+	elkNodes string
 }
 
 func loadConfig() {
@@ -27,4 +28,5 @@ func loadConfig() {
 	c.coroutinNum = config.GetInt("coroutinNum")
 	c.queueName = config.GetString("queueName")
 	c.mongoConn = config.GetString("mongoConn")
+	c.elkNodes = config.GetString("elkNodes")
 }

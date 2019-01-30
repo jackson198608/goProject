@@ -7,15 +7,14 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/allPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/breedPersons"
-	// "github.com/jackson198608/goProject/pushContentCenter/channels/location/clubPersons"
-	"github.com/jackson198608/goProject/common/tools"
+
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/fansPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	"gopkg.in/mgo.v2"
-	"strings"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/cardFansPersons"
 	"fmt"
 	"strconv"
+	"gouminGitlab/common/orm/elasticsearch"
 )
 
 const (
@@ -30,6 +29,7 @@ type Focus struct {
 	mongoConn []*mgo.Session
 	jobstr    string
 	jsonData  *job.FocusJsonColumn
+	nodes []string
 }
 
 func init() {
@@ -37,7 +37,7 @@ func init() {
 	m = loadActiveUserToMap()
 }
 
-func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string) *Focus {
+func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string,nodes []string) *Focus {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
 		return nil
 	}
@@ -50,6 +50,7 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 	f.mysqlXorm = mysqlXorm
 	f.mongoConn = mongoConn
 	f.jobstr = jobStr
+	f.nodes = nodes
 
 	//@todo pass params
 	jsonColumn, err := f.parseJson()
@@ -71,9 +72,9 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string)
 func (f *Focus) Do() error {
 	fmt.Println(f.jsonData)
 	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 || f.jsonData.TypeId == 19 {
-		// fmt.Println(f.jsonData.TypeId)
+		fmt.Println(f.jsonData.TypeId)
 		f.jsonData.Source = 3
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
 		err := fp.Do()
 		if err != nil {
 			return err
@@ -86,40 +87,40 @@ func (f *Focus) Do() error {
 		// 	return err
 		// }
 	} else if f.jsonData.TypeId == 6 {
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
 		err := fp.Do()
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.TypeId == 8 {
 		f.jsonData.Source = 3
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
 		err := fp.Do()
 		if err != nil {
 			return err
 		}
 
 		f.jsonData.Source = 4
-		bp := breedPersons.NewBreedPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
+		bp := breedPersons.NewBreedPersons(f.mysqlXorm, f.mongoConn, f.jsonData,f.nodes)
 		err = bp.Do()
 		if err != nil {
 			return err
 		}
 	} else if ((f.jsonData.TypeId == 9) || (f.jsonData.TypeId == 15)) && (f.jsonData.Source) == 1 {
-		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
 		err := ap.Do()
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.TypeId == 30 {
 		fmt.Println("card json uid:" + strconv.Itoa(f.jsonData.Uid) + " infoid:" + strconv.Itoa(f.jsonData.Infoid))
-		cfp := cardFansPersons.NewCardFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
+		cfp := cardFansPersons.NewCardFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
 		err := cfp.Do()
 		if err != nil {
 			return err
 		}
 	} else {
-		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
 		err := ap.Do()
 		if err != nil {
 			return err
@@ -161,32 +162,74 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	return &jsonC, nil
 }
 
-func loadActiveUserToMap() map[int]bool {
+//func loadActiveUserToMap() map[int]bool {
+//	var m map[int]bool
+//	m = make(map[int]bool)
+//
+//	var session *mgo.Session
+//	var err error
+//	mgoInfos := strings.Split(mongoConn, ",")
+//	if len(mgoInfos) == 1 {
+//		session, err = tools.GetStandAloneConnecting(mongoConn)
+//	} else {
+//		session, err = tools.GetReplicaConnecting(mgoInfos)
+//	}
+//	if err != nil {
+//		return m
+//	}
+//	defer session.Close()
+//
+//	var uids []int
+//	c := session.DB("ActiveUser").C("active_user")
+//	err = c.Find(nil).Distinct("uid", &uids)
+//	if err != nil {
+//		// panic(err)
+//		return m
+//	}
+//	for i := 0; i < len(uids); i++ {
+//		m[uids[i]] = true
+//	}
+//	return m
+//}
+
+func loadActiveUserToMap() map[int]bool   {
+	var nodes []string
+	//@todo change to online
+	//nodes = append(nodes, "http://192.168.86.230:9200")
+	//nodes = append(nodes, "http://192.168.86.231:9200")
+
+	// is test config
+	//nodes = append(nodes, "http://192.168.6.50:9200")
+
+	//is online config
+	nodes = append(nodes, "192.168.5.87:9500")
+	nodes = append(nodes, "192.168.5.30:9500")
+	nodes = append(nodes, "192.168.5.71:9500")
 	var m map[int]bool
 	m = make(map[int]bool)
-
-	var session *mgo.Session
-	var err error
-	mgoInfos := strings.Split(mongoConn, ",")
-	if len(mgoInfos) == 1 {
-		session, err = tools.GetStandAloneConnecting(mongoConn)
-	} else {
-		session, err = tools.GetReplicaConnecting(mgoInfos)
-	}
-	if err != nil {
-		return m
-	}
-	defer session.Close()
-
-	var uids []int
-	c := session.DB("ActiveUser").C("active_user")
-	err = c.Find(nil).Distinct("uid", &uids)
-	if err != nil {
-		// panic(err)
-		return m
-	}
-	for i := 0; i < len(uids); i++ {
-		m[uids[i]] = true
+	er := elasticsearch.NewUser(nodes)
+	from := 0
+	size := 1000
+	i :=1
+	for {
+		rst := er.SearchAllActiveUser(from, size)
+		total := rst.Hits.TotalHits
+		if total> 0 {
+			for _, hit := range rst.Hits.Hits {
+				//var userinfo elasticsearch.UserData
+				//err := json.Unmarshal(*hit.Source, &userinfo) //另外一种取数据的方法
+				//if err != nil {
+				//	fmt.Println("Deserialization failed", err)
+				//}
+				uid,_ := strconv.Atoi(hit.Id)
+				m[uid] = true
+			}
+		}
+		if int(total) < from {
+			break
+		}
+		i++
+		from = (i-1)*size
 	}
 	return m
 }
