@@ -8,11 +8,12 @@ import (
 	"github.com/jackson198608/goProject/recommend_1.0/task"
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
 	"github.com/jackson198608/goProject/common/tools"
-	mgo "gopkg.in/mgo.v2"
-	redis "gopkg.in/redis.v4"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/redis.v4"
 	"gouminGitlab/common/orm/mongo/RecommendData"
 	"os"
 	"strconv"
+	"gouminGitlab/common/orm/elasticsearch"
 	"strings"
 )
 
@@ -31,26 +32,33 @@ func init() {
 }
 
 //全部活跃用户
-func getAllActiveUsers(mongoConn string) []int {
+func getAllActiveUsers(nodes []string) []int {
 	var user []int
-	var session *mgo.Session
-	var err error
-	mgoInfos := strings.Split(mongoConn, ",")
-	if len(mgoInfos) == 1 {
-		session, err = tools.GetStandAloneConnecting(mongoConn)
-	} else {
-		session, err = tools.GetReplicaConnecting(mgoInfos)
-	}
-	if err != nil {
-		return user
-	}
+	// is test config
+	//nodes = append(nodes, "http://192.168.6.50:9200")
 
-	defer session.Close()
-
-	c := session.DB("ActiveUser").C("active_user")
-	err = c.Find(nil).Distinct("uid", &user)
-	if err != nil {
-		panic(err)
+	//is online config
+	//nodes = append(nodes, "192.168.5.87:9500")
+	//nodes = append(nodes, "192.168.5.30:9500")
+	//nodes = append(nodes, "192.168.5.71:9500")
+	er := elasticsearch.NewUser(nodes)
+	from := 0
+	size := 1000
+	i :=1
+	for {
+		rst := er.SearchAllActiveUser(from, size)
+		total := rst.Hits.TotalHits
+		if total> 0 {
+			for _, hit := range rst.Hits.Hits {
+				uid,_ := strconv.Atoi(hit.Id)
+				user = append(user, uid)
+			}
+		}
+		if int(total) < from {
+			break
+		}
+		i++
+		from = (i-1)*size
 	}
 	return user
 }
@@ -62,7 +70,8 @@ func pushAllActiveUserToRedis(queueName string, channel string) bool {
 		fmt.Println("error")
 		return false
 	}
-	realTasks := getAllActiveUsers(c.mongoConn)
+	nodes := strings.SplitN(c.elkDsn, ",", -1)
+	realTasks := getAllActiveUsers(nodes)
 	if len(realTasks) == 0 {
 		logger.Error("active user data is empty")
 		return false

@@ -14,9 +14,9 @@ type Task struct {
 	Raw       string         //the data get from redis queue
 	MysqlXorm []*xorm.Engine //mysql single instance
 	MongoConn []*mgo.Session //mongo single instance
-	elkDsn    string
 	Jobstr    string //private member parse from raw
 	JobType   string //private membe parse from raw jobType: focus|club
+	elkNodes []string
 }
 
 //job: redisQueue pop string
@@ -36,7 +36,7 @@ func NewTask(raw string, mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, tas
 	t.Raw = raw
 	t.MysqlXorm = mysqlXorm
 	t.MongoConn = mongoConn
-	t.elkDsn = taskarg[0]
+	t.elkNodes = strings.SplitN(taskarg[0], ",", -1)
 
 	//create private member
 	err := t.parseRaw()
@@ -59,7 +59,7 @@ func (t *Task) Do() error {
 
 // follow channel's invoke function
 func (t *Task) ChannelFollow() error {
-	u := user.NewUser(t.MysqlXorm, t.MongoConn, t.Jobstr, t.elkDsn)
+	u := user.NewUser(t.MysqlXorm, t.MongoConn, t.Jobstr, t.elkNodes)
 	err := u.Do()
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (t *Task) ChannelFollow() error {
 
 // content channel's invoke function
 func (t *Task) ChannelContent() error {
-	c := content.NewContent(t.MysqlXorm, t.MongoConn, t.Jobstr)
+	c := content.NewContent(t.MysqlXorm, t.MongoConn, t.Jobstr, t.elkNodes)
 	err := c.Do()
 	if err != nil {
 		return err

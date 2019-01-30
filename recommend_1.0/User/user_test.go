@@ -7,6 +7,7 @@ import (
 	"github.com/go-xorm/xorm"
 	mgo "gopkg.in/mgo.v2"
 	"testing"
+	"strings"
 )
 
 const dbAuth = "dog123:dog123"
@@ -66,47 +67,44 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 func TestGetMyData(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	uid := "2060500"
+	elkNodes := strings.SplitN(elkDsn, ",", -1)
 	// c := NewUser(mysqlXorm, mongoConn, uid, "210.14.154.117:8986")
-	c := NewUser(mysqlXorm, mongoConn, uid, elkDsn)
+	c := NewUser(mysqlXorm, mongoConn, uid, elkNodes)
 	fmt.Println(c.getMyData())
 }
 
 func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	uid := "2060500"
+	elkNodes := strings.SplitN(elkDsn, ",", -1)
 	// c := NewUser(mysqlXorm, mongoConn, uid, "210.14.154.117:8986")
-	c := NewUser(mysqlXorm, mongoConn, uid, elkDsn)
+	c := NewUser(mysqlXorm, mongoConn, uid, elkNodes)
 	fmt.Println(c.Do())
-}
-
-func TestGetUser(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	uid := "2060500"
-	c := NewUser(mysqlXorm, mongoConn, uid, elkDsn)
-	str := `{"size" : 5,"query": {"query_string":{"query":"\"法国斗牛\",\"金毛\"","fields":["pets"]}},"filter" : {"bool":{"must_not":{"term":{"id":2060500}}}},"sort": { "lastlogintime": { "order": "desc" }}}`
-	fmt.Println(c.getUser(str))
-}
-
-func TestGetClub(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	uid := "2060500"
-	c := NewUser(mysqlXorm, mongoConn, uid, elkDsn)
-	str := `{"query": {"query_string":{"query":"\"法国斗牛\"","fields":["name","description"]}},"sort": { "todayposts": { "order": "desc" }}}`
-	fmt.Println(c.getClub(str))
 }
 
 func TestRecommendUserBySpecies(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	uid := "2060500"
-	c := NewUser(mysqlXorm, mongoConn, uid, elkDsn)
+	elkNodes := strings.SplitN(elkDsn, ",", -1)
+	c := NewUser(mysqlXorm, mongoConn, uid, elkNodes)
 	fmt.Println(c.recommendUserBySpecies(0, 5))
 }
 
 func TestFollowClubs(t *testing.T) {
 	mysqlXorm, mongoConn := testConn()
 	uid := "2060500"
-	c := NewUser(mysqlXorm, mongoConn, uid, elkDsn)
+	elkNodes := strings.SplitN(elkDsn, ",", -1)
+	c := NewUser(mysqlXorm, mongoConn, uid, elkNodes)
 	fmt.Println(c.followClubs())
+}
+
+func TestRecommendClubBySpecies(t *testing.T) {
+	mysqlXorm, mongoConn := testConn()
+	uid := "2060500"
+	elkNodes := strings.SplitN(elkDsn, ",", -1)
+	c := NewUser(mysqlXorm, mongoConn, uid, elkNodes)
+	c.getMyData() //获取我的数据
+	fmt.Println(c.recommendClubBySpecies())
 }
 
 //{"size" : 5,"query": {"query_string":{"query":"\"法国斗牛\",\"金毛\"","fields":["pets"]}},"filter" : {"bool":{"must_not":{"term":{"id":2060500}}}},"sort": { "lastlogintime": { "order": "desc" }}}

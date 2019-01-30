@@ -18,9 +18,10 @@ type Content struct {
 	mysqlXorm []*xorm.Engine
 	mongoConn []*mgo.Session
 	Uid       int
+	nodes []string
 }
 
-func NewContent(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string) *Content {
+func NewContent(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, elkNodes []string) *Content {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (uid == "") {
 		return nil
 	}
@@ -32,6 +33,7 @@ func NewContent(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string) 
 	c.mysqlXorm = mysqlXorm
 	c.mongoConn = mongoConn
 	c.Uid, _ = strconv.Atoi(uid)
+	c.nodes = elkNodes
 	return c
 }
 
