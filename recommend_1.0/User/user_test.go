@@ -8,6 +8,8 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"testing"
 	"strings"
+	"github.com/olivere/elastic"
+	"gouminGitlab/common/orm/elasticsearchBase"
 )
 
 const dbAuth = "dog123:dog123"
@@ -16,7 +18,7 @@ const dbName = "new_dog123"
 const mongoConn ="192.168.86.80:27017,192.168.86.81:27017,192.168.86.82:27017" //"192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019"
 const elkDsn = "http://192.168.86.231:9200,http://192.168.86.230:9200"     //"192.168.86.5:9200"
 
-func testConn() ([]*xorm.Engine, []*mgo.Session) {
+func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	dbAuth := "dog123:dog123"
 	dbDsn := "192.168.86.194:3307" //"210.14.154.117:33068"
 	dbName := "new_dog123"
@@ -24,7 +26,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	engine, err := xorm.NewEngine("mysql", dataSourceName)
 	if err != nil {
 		fmt.Println(err)
-		return nil, nil
+		return nil, nil,nil
 	}
 
 	// mongoConn := "192.168.86.192:27017"
@@ -53,56 +55,55 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 		ReplicaSetName: ReplicaSetName,
 	})
 	if err != nil {
-		return nil, nil
+		return nil, nil,nil
 	}
+	elkNodes := strings.SplitN(elkDsn, ",", -1)
+	r ,_ := elasticsearchBase.NewClient(elkNodes)
+	esConn,_ := r.Run()
 	// return engine, session
 	var engineAry []*xorm.Engine
 	engineAry = append(engineAry, engine)
 	var sessionAry []*mgo.Session
 	sessionAry = append(sessionAry, session)
-	return engineAry, sessionAry
+	return engineAry, sessionAry,esConn
 
 }
 
 func TestGetMyData(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn, esConn := testConn()
 	uid := "2060500"
-	elkNodes := strings.SplitN(elkDsn, ",", -1)
+
 	// c := NewUser(mysqlXorm, mongoConn, uid, "210.14.154.117:8986")
-	c := NewUser(mysqlXorm, mongoConn, uid, elkNodes)
+	c := NewUser(mysqlXorm, mongoConn, uid, esConn)
 	fmt.Println(c.getMyData())
 }
 
 func TestDo(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn,esConn := testConn()
 	uid := "2060500"
-	elkNodes := strings.SplitN(elkDsn, ",", -1)
 	// c := NewUser(mysqlXorm, mongoConn, uid, "210.14.154.117:8986")
-	c := NewUser(mysqlXorm, mongoConn, uid, elkNodes)
+	c := NewUser(mysqlXorm, mongoConn, uid, esConn)
 	fmt.Println(c.Do())
 }
 
 func TestRecommendUserBySpecies(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn,esConn := testConn()
 	uid := "2060500"
-	elkNodes := strings.SplitN(elkDsn, ",", -1)
-	c := NewUser(mysqlXorm, mongoConn, uid, elkNodes)
+	c := NewUser(mysqlXorm, mongoConn, uid, esConn)
 	fmt.Println(c.recommendUserBySpecies(0, 5))
 }
 
 func TestFollowClubs(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn,esConn := testConn()
 	uid := "2060500"
-	elkNodes := strings.SplitN(elkDsn, ",", -1)
-	c := NewUser(mysqlXorm, mongoConn, uid, elkNodes)
+	c := NewUser(mysqlXorm, mongoConn, uid, esConn)
 	fmt.Println(c.followClubs())
 }
 
 func TestRecommendClubBySpecies(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn,esConn := testConn()
 	uid := "2060500"
-	elkNodes := strings.SplitN(elkDsn, ",", -1)
-	c := NewUser(mysqlXorm, mongoConn, uid, elkNodes)
+	c := NewUser(mysqlXorm, mongoConn, uid, esConn)
 	c.getMyData() //获取我的数据
 	fmt.Println(c.recommendClubBySpecies())
 }

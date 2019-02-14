@@ -6,6 +6,7 @@ import (
 	"github.com/jackson198608/goProject/common/tools"
 	mgo "gopkg.in/mgo.v2"
 	"testing"
+	"gouminGitlab/common/orm/elasticsearchBase"
 )
 
 const dbAuth = "dog123:dog123"
@@ -33,7 +34,10 @@ func newtask() (*Task, error) {
 
 	elkDsn := []string{}
 	elkDsn = append(elkDsn, "192.168.86.5:9200")
-	t, err := NewTask("2060500", engines, sessions, elkDsn)
+	r,_ := elasticsearchBase.NewClient(elkDsn)
+	esConn ,_:= r.Run()
+
+	t, err := NewTask("2060500", engines, sessions, esConn)
 	return t, err
 
 }

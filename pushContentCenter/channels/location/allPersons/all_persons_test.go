@@ -12,9 +12,11 @@ import (
 	"testing"
 	"gouminGitlab/common/orm/elasticsearch"
 	"encoding/json"
+	"gouminGitlab/common/orm/elasticsearchBase"
+	"github.com/olivere/elastic"
 )
 
-func testConn() ([]*xorm.Engine, []*mgo.Session) {
+func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	dbAuth := "dog123:dog123"
 	dbDsn := "192.168.86.194:3307"
 	// dbDsn := "210.14.154.117:33068"
@@ -23,21 +25,27 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	engine, err := xorm.NewEngine("mysql", dataSourceName)
 	if err != nil {
 		fmt.Println(err)
-		return nil, nil
+		return nil, nil,nil
 	}
 
 	mongoConn := "192.168.86.80:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		fmt.Println("[error] connect mongodb err")
-		return nil, nil
+		return nil, nil,nil
 	}
 
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	nodes = append(nodes, "http://192.168.86.231:9200")
+	r,_ := elasticsearchBase.NewClient(nodes)
+	esConn,_ :=r.Run()
 	var engineAry []*xorm.Engine
 	engineAry = append(engineAry, engine)
 	var sessionAry []*mgo.Session
 	sessionAry = append(sessionAry, session)
-	return engineAry, sessionAry
+	//Init()
+	return engineAry, sessionAry, esConn
 	// return engine, session
 }
 
@@ -58,7 +66,7 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Fid = 0
 	jsonData.Source = 2
 	jsonData.Status =-1
-	jsonData.Action = -1
+	jsonData.Action = 0
 	return &jsonData
 }
 
@@ -68,8 +76,10 @@ func init() {
 	var nodes []string
 	nodes = append(nodes, "http://192.168.86.230:9200")
 	nodes = append(nodes, "http://192.168.86.231:9200")
+	r,_ := elasticsearchBase.NewClient(nodes)
+	esConn,_ :=r.Run()
 	m = make(map[int]bool)
-	er := elasticsearch.NewUser(nodes)
+	er := elasticsearch.NewUser(esConn)
 	from := 0
 	size := 1000
 	rst := er.SearchAllActiveUser(from, size)
@@ -89,8 +99,8 @@ func TestDo(t *testing.T) {
 	var nodes []string
 	nodes = append(nodes, "http://192.168.86.230:9200")
 	nodes = append(nodes, "http://192.168.86.231:9200")
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn,esConn := testConn()
 	jsonData := jsonData()
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m,nodes)
+	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m,esConn)
 	fmt.Println(f.Do())
 }

@@ -8,6 +8,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
+	"github.com/olivere/elastic"
 )
 
 const count = 1000
@@ -16,10 +17,10 @@ type BreedPersons struct {
 	mysqlXorm []*xorm.Engine
 	mongoConn []*mgo.Session
 	jsonData  *job.FocusJsonColumn
-	nodes []string
+	esConn  *elastic.Client
 }
 
-func NewBreedPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn,nodes []string) *BreedPersons {
+func NewBreedPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn,esConn *elastic.Client) *BreedPersons {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
@@ -32,7 +33,7 @@ func NewBreedPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonDat
 	f.mysqlXorm = mysqlXorm
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
-	f.nodes = nodes
+	f.esConn = esConn
 
 	return f
 }
@@ -53,7 +54,7 @@ func (f *BreedPersons) pushPersons(ActiveUser []int) error {
 	if ActiveUser == nil {
 		return errors.New("push to breed active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
-	elx := elasticsearch.NewEventLogX(f.nodes, f.jsonData)
+	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
 	for _, person := range ActiveUser {
 		err := elx.PushPerson(person)
 		if err != nil {
@@ -78,7 +79,7 @@ func (f *BreedPersons) getPersonsByElk() []int {
 	size := 1000
 	i :=1
 	for {
-		er := elasticsearch.NewUser(f.nodes)
+		er := elasticsearch.NewUser(f.esConn)
 		rst := er.SearchAllActiveUserByBreed(Bid, f.jsonData.Uid, from, size)
 		total := rst.Hits.TotalHits
 		if total > 0 {

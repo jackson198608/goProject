@@ -10,20 +10,21 @@ import (
 	"gouminGitlab/common/orm/mongo/ActiveUser"
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
+	"github.com/olivere/elastic"
 )
 
 type ClubPersons struct {
 	mysqlXorm []*xorm.Engine
 	mongoConn []*mgo.Session
 	jsonData  *job.FocusJsonColumn
-	nodes []string
+	esConn *elastic.Client
 }
 
 //已废弃
 
 const count = 1000
 
-func NewClubPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, nodes []string) *ClubPersons {
+func NewClubPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, esConn *elastic.Client) *ClubPersons {
 	if (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
@@ -36,7 +37,7 @@ func NewClubPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData
 	f.mysqlXorm = mysqlXorm
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
-	f.nodes = nodes
+	f.esConn = esConn
 
 	return f
 }
@@ -68,7 +69,7 @@ func (f *ClubPersons) pushPersons(ActiveUser *[]ActiveUser.ActiveForumUser) (bso
 
 	var endId bson.ObjectId
 	persons := *ActiveUser
-	elx := elasticsearch.NewEventLogX(f.nodes, f.jsonData)
+	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
 	for _, person := range persons {
 		// fmt.Println(person.Uid)
 		err := elx.PushPerson(person.Uid)

@@ -9,13 +9,14 @@ import (
 	"strings"
 	"gouminGitlab/common/orm/elasticsearch"
 	"github.com/gin-gonic/gin/json"
+	"github.com/olivere/elastic"
 )
 
 type User struct {
 	mysqlXorm       []*xorm.Engine
 	mongoConn       []*mgo.Session
 	Uid             int
-	nodes           []string
+	esConn          *elastic.Client
 	province        string
 	species         string
 	address         string
@@ -28,8 +29,8 @@ type User struct {
 var recommendClubData []elasticsearch.RecommendClubData
 var recommendUserData []elasticsearch.RecommendUserData
 
-func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, elkNodes []string) *User {
-	if (mysqlXorm == nil) || (mongoConn == nil) || (uid == "") || (elkNodes == nil) {
+func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, esConn *elastic.Client) *User {
+	if (mysqlXorm == nil) || (mongoConn == nil) || (uid == "") || (esConn == nil) {
 		return nil
 	}
 	logger.Info("start recommend: ", uid)
@@ -40,7 +41,7 @@ func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, elk
 	u.mysqlXorm = mysqlXorm
 	u.mongoConn = mongoConn
 	u.Uid, _ = strconv.Atoi(uid)
-	u.nodes = elkNodes
+	u.esConn = esConn
 	return u
 }
 
@@ -58,7 +59,7 @@ func (u *User) Do() error {
 }
 
 func (u *User) getMyData() error {
-	elkU := elasticsearch.NewUser(u.nodes)
+	elkU := elasticsearch.NewUser(u.esConn)
 	user := elkU.SearchById(u.Uid)
 
 	if user != nil {
@@ -213,7 +214,7 @@ func (u *User) getRecommendUser() error {
 func (u *User) recommendUserBySpecies(isFirst int, num int) (int, error) {
 	if u.species != "" {
 		speciesItems := strings.Split(u.species, ";")
-		elkU := elasticsearch.NewUser(u.nodes)
+		elkU := elasticsearch.NewUser(u.esConn)
 		user := elkU.SearchByPets(speciesItems,u.notRecommendUid, num)
 		if user != nil {
 			u.buildRecommendUserData(user, 1)
@@ -226,7 +227,7 @@ func (u *User) recommendUserBySpecies(isFirst int, num int) (int, error) {
 //根据地域推荐用户
 func (u *User) recommendUserByAddress(num int) (int, error) {
 	if u.address != "" {
-		elkU := elasticsearch.NewUser(u.nodes)
+		elkU := elasticsearch.NewUser(u.esConn)
 		user := elkU.SearchByAddress(u.address,u.notRecommendUid, num)
 		if user != nil {
 			u.buildRecommendUserData(user, 2)
@@ -240,7 +241,7 @@ func (u *User) recommendUserByAddress(num int) (int, error) {
 func (u *User) recommendUserByAge() (int, error) {
 	if u.age != "" {
 		ageItems := strings.Split(u.age, ";")
-		elkU := elasticsearch.NewUser(u.nodes)
+		elkU := elasticsearch.NewUser(u.esConn)
 		user := elkU.SearchByPets(ageItems,u.notRecommendUid, 3)
 		if user != nil {
 			u.buildRecommendUserData(user, 0)
@@ -254,7 +255,7 @@ func (u *User) recommendUserByAge() (int, error) {
 func (u *User) pushUserRecommend() error {
 	jsonData, _ := json.Marshal(recommendUserData)
 	dataStr := string(jsonData)
-	ur := elasticsearch.NewUserRecommendData(u.nodes)
+	ur := elasticsearch.NewUserRecommendData(u.esConn)
 	err := ur.InsertData(u.Uid,dataStr,2)
 	return err
 }
@@ -263,7 +264,7 @@ func (u *User) pushUserRecommend() error {
 
 //获取已关注的俱乐部
 func (u *User) followClubs() (int, error) {
-	c := elasticsearch.NewClub(u.nodes)
+	c := elasticsearch.NewClub(u.esConn)
 	club := c.SearchByFollowIds(u.notRecommendFid, 6)
 	if club != nil {
 		u.buildRecommendClubData(club)
@@ -278,7 +279,7 @@ func (u *User) recommendClubBySpecies() (int, error) {
 		return 0, nil
 	}
 	speciesItems := strings.Split(u.species, ";")
-	c := elasticsearch.NewClub(u.nodes)
+	c := elasticsearch.NewClub(u.esConn)
 	club := c.SearchByKeyword(speciesItems, u.notRecommendFid, 6)
 	if club != nil {
 		u.buildRecommendClubData(club)
@@ -288,7 +289,7 @@ func (u *User) recommendClubBySpecies() (int, error) {
 }
 
 func (u *User) recommendClubByFid(fid int) (int, error) {
-	c := elasticsearch.NewClub(u.nodes)
+	c := elasticsearch.NewClub(u.esConn)
 	club := c.SearchById(fid)
 	if club != nil {
 		u.buildRecommendClubData(club)
@@ -301,7 +302,7 @@ func (u *User) recommendClubByAddress() (int, error) {
 	if u.province != "" {
 		var keyword []string
 		keyword = append(keyword,u.province,)
-		c := elasticsearch.NewClub(u.nodes)
+		c := elasticsearch.NewClub(u.esConn)
 		club := c.SearchByKeyword(keyword,u.notRecommendFid,6)
 		if club != nil {
 			u.buildRecommendClubData(club)
@@ -312,7 +313,7 @@ func (u *User) recommendClubByAddress() (int, error) {
 }
 
 func (u *User) recommendClubByFup(fup int) (int, error) {
-	c := elasticsearch.NewClub(u.nodes)
+	c := elasticsearch.NewClub(u.esConn)
 	club := c.SearchByFup(fup,u.notRecommendFid,4)
 	if club != nil {
 		u.buildRecommendClubData(club)
@@ -324,7 +325,7 @@ func (u *User) recommendClubByFup(fup int) (int, error) {
 func (u *User) pushClubRecommend() error {
 	jsonData, _ := json.Marshal(recommendClubData)
 	dataStr := string(jsonData)
-	ur := elasticsearch.NewUserRecommendData(u.nodes)
+	ur := elasticsearch.NewUserRecommendData(u.esConn)
 	err := ur.InsertData(u.Uid,dataStr,1)
 	//err := u.insertData(dataStr, 1)
 	if err != nil {

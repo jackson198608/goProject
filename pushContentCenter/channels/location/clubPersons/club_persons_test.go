@@ -14,7 +14,7 @@ import (
 
 func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	dbAuth := "dog123:dog123"
-	dbDsn := "192.168.86.193:3307"
+	dbDsn := "192.168.86.194:3307"
 	// dbDsn := "210.14.154.117:33068"
 	dbName := "new_dog123"
 	dataSourceName := dbAuth + "@tcp(" + dbDsn + ")/" + dbName + "?charset=utf8mb4"

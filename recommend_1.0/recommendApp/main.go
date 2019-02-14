@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
 	"strings"
+	"github.com/olivere/elastic"
+	"gouminGitlab/common/orm/elasticsearchBase"
 )
 
 var c Config = Config{
@@ -32,16 +34,9 @@ func init() {
 }
 
 //全部活跃用户
-func getAllActiveUsers(nodes []string) []int {
+func getAllActiveUsers(esConn *elastic.Client) []int {
 	var user []int
-	// is test config
-	//nodes = append(nodes, "http://192.168.6.50:9200")
-
-	//is online config
-	//nodes = append(nodes, "192.168.5.87:9500")
-	//nodes = append(nodes, "192.168.5.30:9500")
-	//nodes = append(nodes, "192.168.5.71:9500")
-	er := elasticsearch.NewUser(nodes)
+	er := elasticsearch.NewUser(esConn)
 	from := 0
 	size := 1000
 	i :=1
@@ -71,7 +66,9 @@ func pushAllActiveUserToRedis(queueName string, channel string) bool {
 		return false
 	}
 	nodes := strings.SplitN(c.elkDsn, ",", -1)
-	realTasks := getAllActiveUsers(nodes)
+	r,_ := elasticsearchBase.NewClient(nodes)
+	esConn ,_ := r.Run()
+	realTasks := getAllActiveUsers(esConn)
 	if len(realTasks) == 0 {
 		logger.Error("active user data is empty")
 		return false
@@ -106,8 +103,10 @@ func main() {
 		//生产任务
 		pushAllActiveUserToRedis(c.queueName, "follow")
 
+		nodes := strings.SplitN(c.elkDsn, ",", -1)
+
 		logger.Info("start work")
-		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 0, jobFuc, c.elkDsn)
+		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo,nodes, c.coroutinNum, 0, jobFuc, c.elkDsn)
 		if err != nil {
 			logger.Error("[NewRedisEngine] ", err)
 		}
@@ -125,9 +124,10 @@ func main() {
 		redisInfo := tools.FormatRedisOption(c.redisConn)
 		//生产任务
 		pushAllActiveUserToRedis(c.queueName, "content")
+		nodes := strings.SplitN(c.elkDsn, ",", -1)
 
 		logger.Info("start work")
-		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 0, jobFuc, c.elkDsn)
+		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo,nodes, c.coroutinNum, 0, jobFuc, c.elkDsn)
 		if err != nil {
 			logger.Error("[NewRedisEngine] ", err)
 		}
@@ -148,11 +148,11 @@ func main() {
 	}
 }
 
-func jobFuc(job string,redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
-	if (mysqlConns == nil) || (mgoConns == nil) {
+func jobFuc(job string,redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, esConn *elastic.Client,taskarg []string) error {
+	if (mysqlConns == nil) || (mgoConns == nil) || (esConn == nil){
 		return errors.New("mysql or mongo conn error")
 	}
-	t, err := task.NewTask(job, mysqlConns, mgoConns, taskarg)
+	t, err := task.NewTask(job, mysqlConns, mgoConns, esConn)
 	if err != nil {
 		return err
 	}

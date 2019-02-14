@@ -15,6 +15,8 @@ import (
 	"fmt"
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
+	"github.com/olivere/elastic"
+	"gouminGitlab/common/orm/elasticsearchBase"
 )
 
 const (
@@ -29,7 +31,7 @@ type Focus struct {
 	mongoConn []*mgo.Session
 	jobstr    string
 	jsonData  *job.FocusJsonColumn
-	nodes []string
+	esConn   *elastic.Client
 }
 
 func init() {
@@ -37,7 +39,7 @@ func init() {
 	m = loadActiveUserToMap()
 }
 
-func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string,nodes []string) *Focus {
+func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string, esConn *elastic.Client) *Focus {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
 		return nil
 	}
@@ -50,7 +52,7 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string,
 	f.mysqlXorm = mysqlXorm
 	f.mongoConn = mongoConn
 	f.jobstr = jobStr
-	f.nodes = nodes
+	f.esConn = esConn
 
 	//@todo pass params
 	jsonColumn, err := f.parseJson()
@@ -74,7 +76,7 @@ func (f *Focus) Do() error {
 	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 || f.jsonData.TypeId == 19 {
 		//fmt.Println(f.jsonData.TypeId)
 		f.jsonData.Source = 3
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
 		err := fp.Do()
 		if err != nil {
 			return err
@@ -87,40 +89,40 @@ func (f *Focus) Do() error {
 		// 	return err
 		// }
 	} else if f.jsonData.TypeId == 6 {
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
 		err := fp.Do()
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.TypeId == 8 {
 		f.jsonData.Source = 3
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
 		err := fp.Do()
 		if err != nil {
 			return err
 		}
 
 		f.jsonData.Source = 4
-		bp := breedPersons.NewBreedPersons(f.mysqlXorm, f.mongoConn, f.jsonData,f.nodes)
+		bp := breedPersons.NewBreedPersons(f.mysqlXorm, f.mongoConn, f.jsonData,f.esConn)
 		err = bp.Do()
 		if err != nil {
 			return err
 		}
 	} else if ((f.jsonData.TypeId == 9) || (f.jsonData.TypeId == 15)) && (f.jsonData.Source) == 1 {
-		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
 		err := ap.Do()
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.TypeId == 30 {
 		fmt.Println("card json uid:" + strconv.Itoa(f.jsonData.Uid) + " infoid:" + strconv.Itoa(f.jsonData.Infoid))
-		cfp := cardFansPersons.NewCardFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
+		cfp := cardFansPersons.NewCardFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
 		err := cfp.Do()
 		if err != nil {
 			return err
 		}
 	} else {
-		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.nodes)
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
 		err := ap.Do()
 		if err != nil {
 			return err
@@ -175,9 +177,11 @@ func loadActiveUserToMap() map[int]bool   {
 	nodes = append(nodes, "192.168.5.87:9500")
 	nodes = append(nodes, "192.168.5.30:9500")
 	nodes = append(nodes, "192.168.5.71:9500")
+	r,_ := elasticsearchBase.NewClient(nodes)
+	esConn,_:=r.Run()
 	var m map[int]bool
 	m = make(map[int]bool)
-	er := elasticsearch.NewUser(nodes)
+	er := elasticsearch.NewUser(esConn)
 	from := 0
 	size := 1000
 	i :=1

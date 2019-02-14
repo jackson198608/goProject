@@ -9,6 +9,7 @@ import (
 	//"gouminGitlab/common/orm/mongo/FansData"
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
+	"github.com/olivere/elastic"
 )
 
 type AllPersons struct {
@@ -16,12 +17,12 @@ type AllPersons struct {
 	mongoConn      []*mgo.Session
 	jsonData       *job.FocusJsonColumn
 	activeUserData *map[int]bool
-	nodes []string
+	esConn  *elastic.Client
 }
 
 const count = 1000
 
-func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool, nodes []string) *AllPersons {
+func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool, esConn *elastic.Client) *AllPersons {
 	if (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
@@ -35,7 +36,7 @@ func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData 
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
 	f.activeUserData = activeUserData
-	f.nodes = nodes
+	f.esConn = esConn
 	return f
 }
 
@@ -49,7 +50,7 @@ func (f *AllPersons) pushPersons(persons *map[int]bool) error {
 	if persons == nil {
 		return errors.New("push to all active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
-	elx := elasticsearch.NewEventLogX(f.nodes, f.jsonData)
+	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
 	for k := range *persons {
 		err := elx.PushPerson(k)
 		if err != nil {

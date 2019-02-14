@@ -11,6 +11,7 @@ import (
 	// "reflect"
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
+	"github.com/olivere/elastic"
 )
 
 type FansPersons struct {
@@ -18,12 +19,12 @@ type FansPersons struct {
 	mongoConn      []*mgo.Session //@todo to be []
 	jsonData       *job.FocusJsonColumn
 	activeUserData *map[int]bool
-	nodes []string
+	esConn  *elastic.Client
 }
 
 const count = 1000
 
-func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool,nodes []string) *FansPersons {
+func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool,esConn *elastic.Client) *FansPersons {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
@@ -37,7 +38,7 @@ func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
 	f.activeUserData = activeUserData
-	f.nodes = nodes
+	f.esConn = esConn
 
 	return f
 }
@@ -71,7 +72,7 @@ func (f *FansPersons) pushPersons(follows *[]new_dog123.Follow) (int, error) {
 	//fmt.Println(active_user)
 
 	var endId int
-	elx := elasticsearch.NewEventLogX(f.nodes, f.jsonData)
+	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
 	for _, person := range persons {
 		//check key in actice user
 		_, ok := active_user[person.FollowId]

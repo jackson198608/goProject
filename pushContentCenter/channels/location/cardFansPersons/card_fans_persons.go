@@ -9,6 +9,7 @@ import (
 	"gouminGitlab/common/orm/mysql/card"
 	"fmt"
 	"gouminGitlab/common/orm/elasticsearch"
+	"github.com/olivere/elastic"
 )
 
 type CardFansPersons struct {
@@ -16,12 +17,12 @@ type CardFansPersons struct {
 	mongoConn      []*mgo.Session //@todo to be []
 	jsonData       *job.FocusJsonColumn
 	activeUserData *map[int]bool
-	nodes []string
+	esConn *elastic.Client
 }
 
 const count = 1000
 
-func NewCardFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool,nodes []string) *CardFansPersons {
+func NewCardFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool,esConn *elastic.Client) *CardFansPersons {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
@@ -35,7 +36,7 @@ func NewCardFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, json
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
 	f.activeUserData = activeUserData
-	f.nodes = nodes
+	f.esConn = esConn
 
 	return f
 }
@@ -65,7 +66,7 @@ func (f *CardFansPersons) Do() error {
 
 func (f *CardFansPersons) pushMyself() {
 	//推送给自己
-	elx := elasticsearch.NewEventLogX(f.nodes, f.jsonData)
+	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
 	err := elx.PushPerson(f.jsonData.Uid)
 	if err != nil {
 		for i := 0; i < 5; i++ {
@@ -85,7 +86,7 @@ func (f *CardFansPersons) pushPersons(follows *[]card.HaremCard) (int, error) {
 	persons := *follows
 
 	var endId int
-	elx := elasticsearch.NewEventLogX(f.nodes, f.jsonData)
+	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
 	for _, person := range persons {
 		//check key in actice user
 		var ok bool

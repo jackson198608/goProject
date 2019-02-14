@@ -6,29 +6,32 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/common/tools"
-	mgo "gopkg.in/mgo.v2"
-	redis "gopkg.in/redis.v4"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/redis.v4"
 	"testing"
+	"strings"
+	"github.com/olivere/elastic"
 )
 
 const dbAuth = "root:goumin123"
 const dbDsn = "127.0.0.1:3306"
 const dbName = "test"
 const mongoConn = "127.0.0.1:27017"
+const redisDsn  = "127.0.0.1:6379"
+const elkNodes  = "http://192.168.86.230:9200,http://192.168.86.231:9200"
 
 func newtask() (*RedisEngine, error) {
 
-	redisInfo := redis.Options{
-		Addr: "127.0.0.1:6379",
-	}
+	redisInfo := tools.FormatRedisOption(redisDsn)
 	//getXormEngine
 	connStr := tools.GetMysqlDsn(dbAuth, dbDsn, dbName)
 	conns := []string{connStr}
 
 	//get mongo session
 	mgos := []string{mongoConn}
+	esNodes := strings.SplitN(elkNodes, ",", -1)
 
-	r, err := NewRedisEngine("test", &redisInfo, mgos, conns, 3, 1, jobFunc)
+	r, err := NewRedisEngine("test", &redisInfo, mgos, conns, esNodes,3, 1, jobFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -38,16 +41,16 @@ func newtask() (*RedisEngine, error) {
 
 func newtaskWithEmptyInfo() (*RedisEngine, error) {
 
-	redisInfo := redis.Options{
-		Addr: "127.0.0.1:6379",
-	}
+	redisInfo := tools.FormatRedisOption(redisDsn)
 	//getXormEngine
 	conns := []string{}
 
 	//get mongo session
 	mgos := []string{}
 
-	r, err := NewRedisEngine("test", &redisInfo, mgos, conns, 3, jobFunc)
+	esNodes := strings.SplitN(elkNodes, ",", -1)
+
+	r, err := NewRedisEngine("test", &redisInfo, mgos, conns, esNodes,3,1, jobFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +58,7 @@ func newtaskWithEmptyInfo() (*RedisEngine, error) {
 
 }
 
-func jobFunc(job string, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
+func jobFunc(job string,redis*redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, esConn *elastic.Client, taskarg []string) error {
 
 	fmt.Println("this is jobFunc", job)
 	return errors.New("job func fail")

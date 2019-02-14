@@ -12,16 +12,17 @@ import (
 	// "strings"
 	"math/rand"
 	"time"
+	"github.com/olivere/elastic"
 )
 
 type Content struct {
 	mysqlXorm []*xorm.Engine
 	mongoConn []*mgo.Session
 	Uid       int
-	nodes []string
+	esConn    *elastic.Client
 }
 
-func NewContent(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, elkNodes []string) *Content {
+func NewContent(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, esConn *elastic.Client) *Content {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (uid == "") {
 		return nil
 	}
@@ -33,7 +34,7 @@ func NewContent(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, 
 	c.mysqlXorm = mysqlXorm
 	c.mongoConn = mongoConn
 	c.Uid, _ = strconv.Atoi(uid)
-	c.nodes = elkNodes
+	c.esConn = esConn
 	return c
 }
 

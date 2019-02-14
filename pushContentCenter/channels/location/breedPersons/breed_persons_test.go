@@ -9,9 +9,10 @@ import (
 	// "gouminGitlab/common/orm/mongo/FansData"
 	// "reflect"
 	"testing"
+	"gouminGitlab/common/orm/elasticsearchBase"
+	"github.com/olivere/elastic"
 )
-
-func testConn() ([]*xorm.Engine, []*mgo.Session) {
+func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	dbAuth := "dog123:dog123"
 	dbDsn := "192.168.86.194:3307"
 	// dbDsn := "210.14.154.117:33068"
@@ -20,21 +21,27 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	engine, err := xorm.NewEngine("mysql", dataSourceName)
 	if err != nil {
 		fmt.Println(err)
-		return nil, nil
+		return nil, nil,nil
 	}
 
 	mongoConn := "192.168.86.80:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		fmt.Println("[error] connect mongodb err")
-		return nil, nil
+		return nil, nil,nil
 	}
 
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	nodes = append(nodes, "http://192.168.86.231:9200")
+	r,_ := elasticsearchBase.NewClient(nodes)
+	esConn,_ :=r.Run()
 	var engineAry []*xorm.Engine
 	engineAry = append(engineAry, engine)
 	var sessionAry []*mgo.Session
 	sessionAry = append(sessionAry, session)
-	return engineAry, sessionAry
+	//Init()
+	return engineAry, sessionAry, esConn
 	// return engine, session
 }
 
@@ -64,8 +71,8 @@ func TestDo(t *testing.T) {
 	var nodes []string
 	nodes = append(nodes, "http://192.168.86.230:9200")
 	nodes = append(nodes, "http://192.168.86.231:9200")
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn,esConn  := testConn()
 	jsonData := jsonData()
-	f := NewBreedPersons(mysqlXorm, mongoConn, jsonData, nodes)
+	f := NewBreedPersons(mysqlXorm, mongoConn, jsonData,esConn )
 	fmt.Println(f.Do())
 }

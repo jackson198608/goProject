@@ -8,6 +8,7 @@ import (
 	"github.com/jackson198608/goProject/recommend_1.0/content"
 	mgo "gopkg.in/mgo.v2"
 	"strings"
+	"github.com/olivere/elastic"
 )
 
 type Task struct {
@@ -16,12 +17,12 @@ type Task struct {
 	MongoConn []*mgo.Session //mongo single instance
 	Jobstr    string //private member parse from raw
 	JobType   string //private membe parse from raw jobType: focus|club
-	elkNodes []string
+	esConn *elastic.Client
 }
 
 //job: redisQueue pop string
 //taskarg: mongoHost,mongoDatabase,mongoReplicaSetName
-func NewTask(raw string, mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, taskarg []string) (*Task, error) {
+func NewTask(raw string, mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, esConn *elastic.Client) (*Task, error) {
 	//check prams
 	if (raw == "") || (mysqlXorm == nil) || (mongoConn == nil) {
 		return nil, errors.New("params can not be null")
@@ -36,7 +37,7 @@ func NewTask(raw string, mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, tas
 	t.Raw = raw
 	t.MysqlXorm = mysqlXorm
 	t.MongoConn = mongoConn
-	t.elkNodes = strings.SplitN(taskarg[0], ",", -1)
+	t.esConn = esConn
 
 	//create private member
 	err := t.parseRaw()
@@ -59,7 +60,7 @@ func (t *Task) Do() error {
 
 // follow channel's invoke function
 func (t *Task) ChannelFollow() error {
-	u := user.NewUser(t.MysqlXorm, t.MongoConn, t.Jobstr, t.elkNodes)
+	u := user.NewUser(t.MysqlXorm, t.MongoConn, t.Jobstr, t.esConn)
 	err := u.Do()
 	if err != nil {
 		return err
@@ -69,7 +70,7 @@ func (t *Task) ChannelFollow() error {
 
 // content channel's invoke function
 func (t *Task) ChannelContent() error {
-	c := content.NewContent(t.MysqlXorm, t.MongoConn, t.Jobstr, t.elkNodes)
+	c := content.NewContent(t.MysqlXorm, t.MongoConn, t.Jobstr, t.esConn)
 	err := c.Do()
 	if err != nil {
 		return err

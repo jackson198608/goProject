@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/olivere/elastic"
+	"gouminGitlab/common/orm/elasticsearchBase"
 )
 
 const tryTimeLimit = 5
@@ -25,19 +27,21 @@ type RedisEngine struct {
 	redisInfo     *redis.ClusterOptions //require
 	mongoConnInfo []string              //custom @todo need to multi
 	mysqlInfo     []string              //the result format like tools.GetMysqlDsn return value,pass to task
+	esInfo     []string              //the result format like tools.GetElasticsearchNodes return value,pass to task
 	coroutinNum   int
 	daemon        int
 	taskArgs      []string //somethin you want to give task
-	workFun       func(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error
+	workFun       func(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, esConn *elastic.Client, taskarg []string) error
 }
 
 func NewRedisEngine(queueName string,
 	redisInfo *redis.ClusterOptions,
 	mongoConnInfo []string,
 	mysqlInfo []string,
+	esInfo []string,
 	coroutinNum int,
 	daemon int,
-	workFun func(job string, redisConn *redis.ClusterClient, tmysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error,
+	workFun func(job string, redisConn *redis.ClusterClient, tmysqlConns []*xorm.Engine, mgoConns []*mgo.Session, esConn *elastic.Client, taskarg []string) error,
 	taskArgs ...string,
 ) (*RedisEngine, error) {
 	//check param
@@ -59,6 +63,7 @@ func NewRedisEngine(queueName string,
 	r.workFun = workFun
 	r.taskArgs = taskArgs
 	r.daemon = daemon
+	r.esInfo = esInfo
 
 	return r, nil
 
@@ -140,6 +145,18 @@ func (r *RedisEngine) mgoSingleConnect(mgoInfo string) (*mgo.Session, error) {
 	return session, nil
 }
 
+func (r *RedisEngine) esConnect() (*elastic.Client, error)  {
+	if r.esInfo == nil {
+		return nil,nil
+	}
+	esR,_ := elasticsearchBase.NewClient(r.esInfo)
+	client,err := esR.Run()
+	if err!=nil {
+		return nil,nil
+	}
+	return client,nil
+}
+
 //create several coroutin to do the job and controll the error is job fail
 //@todo make error to be []error
 func (r *RedisEngine) Do() error {
@@ -203,6 +220,12 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 
 	defer r.closeMgoConn(mgoConns)
 
+
+	esConn, err := r.esConnect()
+	if r.checkError(&result,c , err) {
+		return
+	}
+
 	//get task data from redis,and invoke the callback fun
 	for {
 		//get task
@@ -230,7 +253,7 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 		}
 
 		//if goint to here ,call the invoke
-		err = r.workFun(realraw, redisConn, mysqlConns, mgoConns, r.taskArgs)
+		err = r.workFun(realraw, redisConn, mysqlConns, mgoConns, esConn, r.taskArgs)
 		if err != nil {
 			fmt.Println("[error]jobFunc get error ,but still can be retry", err)
 			err = r.pushFails(redisConn, realraw, trytimes)

@@ -7,9 +7,11 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
 	"testing"
+	"gouminGitlab/common/orm/elasticsearchBase"
+	"github.com/olivere/elastic"
 )
 
-func testConn() ([]*xorm.Engine, []*mgo.Session) {
+func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	dbAuth := "dog123:dog123"
 	dbDsn := "192.168.86.194:3307"
 	// dbDsn := "210.14.154.117:33068"
@@ -18,30 +20,27 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	engine, err := xorm.NewEngine("mysql", dataSourceName)
 	if err != nil {
 		fmt.Println(err)
-		return nil, nil
-	}
-	dbName1 := "card"
-	dataSourceName1 := dbAuth + "@tcp(" + dbDsn + ")/" + dbName1 + "?charset=utf8mb4"
-	engine1, err := xorm.NewEngine("mysql", dataSourceName1)
-	if err != nil {
-		fmt.Println(err)
-		return nil, nil
+		return nil, nil,nil
 	}
 
 	mongoConn := "192.168.86.80:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		fmt.Println("[error] connect mongodb err")
-		return nil, nil
+		return nil, nil,nil
 	}
 
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	nodes = append(nodes, "http://192.168.86.231:9200")
+	r,_ := elasticsearchBase.NewClient(nodes)
+	esConn,_ :=r.Run()
 	var engineAry []*xorm.Engine
 	engineAry = append(engineAry, engine)
-	engineAry = append(engineAry, engine1)
 	var sessionAry []*mgo.Session
 	sessionAry = append(sessionAry, session)
 	Init()
-	return engineAry, sessionAry
+	return engineAry, sessionAry, esConn
 	// return engine, session
 }
 
@@ -93,9 +92,9 @@ func TestGetPersons(t *testing.T) {
 	var nodes []string
 	nodes = append(nodes, "http://192.168.86.230:9200")
 	nodes = append(nodes, "http://192.168.86.231:9200")
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn,esConn := testConn()
 	jsonData := jsonData()
-	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m, nodes)
+	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m, esConn)
 	fmt.Println(f.getPersons(1))
 }
 
@@ -104,9 +103,9 @@ func TestDo(t *testing.T) {
 	var nodes []string
 	nodes = append(nodes, "http://192.168.86.230:9200")
 	nodes = append(nodes, "http://192.168.86.231:9200")
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn,esConn := testConn()
 	jsonData := jsonData()
 
-	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m, nodes)
+	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m, esConn)
 	fmt.Println(f.Do())
 }

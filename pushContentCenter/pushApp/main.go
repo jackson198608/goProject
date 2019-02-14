@@ -14,6 +14,7 @@ import (
 	// "strconv"
 	"fmt"
 	"strings"
+	"github.com/olivere/elastic"
 )
 
 var c Config = Config{
@@ -50,10 +51,11 @@ func main() {
 		if c.dbName1 != "" {
 			mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName1+"?charset=utf8mb4")
 		}
+		esNodes := strings.SplitN(c.elkNodes, ",", -1)
 
 		redisInfo := tools.FormatRedisOption(c.redisConn)
 		logger.Info("start work")
-		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 1, jobFuc,c.elkNodes)
+		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, esNodes, c.coroutinNum, 1, jobFuc)
 		if err != nil {
 			logger.Error("[NewRedisEngine] ", err)
 		}
@@ -79,12 +81,11 @@ func main() {
 	}
 }
 
-func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
+func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, esConn *elastic.Client, taskarg []string) error {
 	if (mysqlConns == nil) || (mgoConns == nil) {
 		return errors.New("mysql or mongo conn error")
 	}
-	nodes := strings.SplitN(taskarg[0], ",", -1)
-	t, err := task.NewTask(job, mysqlConns, mgoConns, nodes)
+	t, err := task.NewTask(job, mysqlConns, mgoConns, esConn)
 	if err != nil {
 		return err
 	}
