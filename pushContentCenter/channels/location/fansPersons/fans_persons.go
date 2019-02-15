@@ -12,6 +12,7 @@ import (
 	"gouminGitlab/common/orm/mysql/new_dog123"
 	// "reflect"
 	"strconv"
+	"fmt"
 )
 
 type FansPersons struct {
@@ -102,25 +103,28 @@ func (f *FansPersons) pushPerson(person int) error {
 	tableNameX := getTableNum(person)
 	c := f.mongoConn[0].DB("FansData").C(tableNameX)
 	if f.jsonData.Action == 0 {
-		//fmt.Println("insert" + strconv.Itoa(person))
 		err := f.insertPerson(c, person)
 		if err != nil {
+			fmt.Println("insert fail;" + strconv.Itoa(person))
 			return err
 		}
+		fmt.Println("insert " + strconv.Itoa(person))
 	} else if f.jsonData.Action == 1 {
 		//修改数据
-		//fmt.Println("update" + strconv.Itoa(person))
 		err := f.updatePerson(c, person)
 		if err != nil {
+			fmt.Println("update fail; " + strconv.Itoa(person))
 			return err
 		}
+		fmt.Println("update " + strconv.Itoa(person))
 	} else if f.jsonData.Action == -1 {
 		//删除数据
-		// fmt.Println("remove" + strconv.Itoa(person))
 		err := f.removePerson(c, person)
 		if err != nil {
+			fmt.Println("remove fail; " + strconv.Itoa(person))
 			return err
 		}
+		fmt.Println("remove " + strconv.Itoa(person))
 	}
 	return nil
 }
