@@ -9,9 +9,10 @@ import (
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
 	"github.com/olivere/elastic"
+	"fmt"
 )
 
-const count = 1000
+const count = 100
 
 type BreedPersons struct {
 	mysqlXorm []*xorm.Engine
@@ -76,23 +77,25 @@ func (f *BreedPersons) getPersonsByElk() []int {
 	}
 	var activeBreedUsers []int
 	from := 0
-	size := 1000
 	i :=1
 	for {
 		er := elasticsearch.NewUser(f.esConn)
-		rst := er.SearchAllActiveUserByBreed(Bid, f.jsonData.Uid, from, size)
+		rst := er.SearchAllActiveUserByBreed(Bid, f.jsonData.Uid, from, count)
 		total := rst.Hits.TotalHits
+		fmt.Println(total)
 		if total > 0 {
 			for _, hit := range rst.Hits.Hits {
 				id, _ := strconv.Atoi(hit.Id)
 				activeBreedUsers = append(activeBreedUsers, id)
 			}
 		}
+
+		i++
+		from = (i-1)*count
+
 		if int(total) < from {
 			break
 		}
-		i++
-		from = (i-1)*size
 	}
 	return activeBreedUsers
 }

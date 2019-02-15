@@ -10,19 +10,20 @@ import (
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
 	"github.com/olivere/elastic"
+	"fmt"
+	"unsafe"
 )
 
 type AllPersons struct {
 	mysqlXorm      []*xorm.Engine
 	mongoConn      []*mgo.Session
 	jsonData       *job.FocusJsonColumn
-	activeUserData *map[int]bool
 	esConn  *elastic.Client
 }
 
-const count = 1000
+const count = 100
 
-func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool, esConn *elastic.Client) *AllPersons {
+func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, esConn *elastic.Client) *AllPersons {
 	if (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
@@ -35,27 +36,46 @@ func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData 
 	f.mysqlXorm = mysqlXorm
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
-	f.activeUserData = activeUserData
 	f.esConn = esConn
 	return f
 }
 
 func (f *AllPersons) Do() error {
 	//get all active user from hashmap
-	f.pushPersons(f.activeUserData)
+	er := elasticsearch.NewUser(f.esConn)
+	from := 0
+	i :=1
+	for {
+		var uids []int
+		rst := er.SearchAllActiveUser(from, count)
+		total := rst.Hits.TotalHits
+		fmt.Println("size: ",unsafe.Sizeof(*rst))
+		if total> 0 {
+			for _, hit := range rst.Hits.Hits {
+				uid,_ := strconv.Atoi(hit.Id)
+				uids = append(uids, uid)
+			}
+		}
+		fmt.Println(uids)
+		i++
+		from = (i-1)*count
+		if int(total) < from {
+			break
+		}
+	}
 	return nil
 }
 
-func (f *AllPersons) pushPersons(persons *map[int]bool) error {
+func (f *AllPersons) pushPersons(persons []int) error {
 	if persons == nil {
 		return errors.New("push to all active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
 	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
-	for k := range *persons {
-		err := elx.PushPerson(k)
+	for _,uid := range persons {
+		err := elx.PushPerson(uid)
 		if err != nil {
 			for i := 0; i < 5; i++ {
-				err := elx.PushPerson(k)
+				err := elx.PushPerson(uid)
 				if err == nil {
 					break
 				}

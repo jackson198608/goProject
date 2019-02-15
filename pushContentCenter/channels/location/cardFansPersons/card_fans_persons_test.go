@@ -94,7 +94,7 @@ func TestGetPersons(t *testing.T) {
 	nodes = append(nodes, "http://192.168.86.231:9200")
 	mysqlXorm, mongoConn,esConn := testConn()
 	jsonData := jsonData()
-	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m, esConn)
+	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData,  esConn)
 	fmt.Println(f.getPersons(1))
 }
 
@@ -106,6 +106,6 @@ func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn,esConn := testConn()
 	jsonData := jsonData()
 
-	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData, &m, esConn)
+	f := NewCardFansPersons(mysqlXorm, mongoConn, jsonData,  esConn)
 	fmt.Println(f.Do())
 }

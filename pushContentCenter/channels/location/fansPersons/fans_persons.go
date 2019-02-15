@@ -12,19 +12,19 @@ import (
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
 	"github.com/olivere/elastic"
+	"fmt"
 )
 
 type FansPersons struct {
 	mysqlXorm      []*xorm.Engine //@todo to be []
 	mongoConn      []*mgo.Session //@todo to be []
 	jsonData       *job.FocusJsonColumn
-	activeUserData *map[int]bool
 	esConn  *elastic.Client
 }
 
-const count = 1000
+const count = 100
 
-func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool,esConn *elastic.Client) *FansPersons {
+func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, esConn *elastic.Client) *FansPersons {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
@@ -37,7 +37,6 @@ func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData
 	f.mysqlXorm = mysqlXorm
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
-	f.activeUserData = activeUserData
 	f.esConn = esConn
 
 	return f
@@ -67,15 +66,24 @@ func (f *FansPersons) pushPersons(follows *[]new_dog123.Follow) (int, error) {
 	if follows == nil {
 		return 0, errors.New("push to fans active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
-	active_user := *f.activeUserData
 	persons := *follows
-	//fmt.Println(active_user)
 
 	var endId int
 	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
+	var active_user map[int]bool
+
+	if f.jsonData.Action != -1 {
+		active_user = f.getActiveUserByUids(follows)
+	}
 	for _, person := range persons {
-		//check key in actice user
-		_, ok := active_user[person.FollowId]
+		ok := false
+		//如果是删除操作，则所有粉丝用户全部更新
+		if f.jsonData.Action == -1  {
+			ok = true
+		}else {
+			//check key in actice user
+			_, ok = active_user[person.FollowId]
+		}
 		if ok {
 			err := elx.PushPerson(person.FollowId)
 			if err != nil {
@@ -103,5 +111,29 @@ func (f *FansPersons) getPersons(startId int) *[]new_dog123.Follow {
 	}
 
 	return &follows
+}
+
+/**
+获取活跃用户的粉丝
+ */
+func (f *FansPersons) getActiveUserByUids(follows *[]new_dog123.Follow) map[int]bool {
+	var m map[int]bool
+	m = make(map[int]bool)
+	er := elasticsearch.NewUser(f.esConn)
+	var uids []int
+	persons := *follows
+	for _, person := range persons {
+		uids = append(uids, person.FollowId)
+	}
+	rst := er.SearchActiveUserByUids(uids, 0, count)
+	total := rst.Hits.TotalHits
+	if total> 0 {
+		for _, hit := range rst.Hits.Hits {
+			uid,_ := strconv.Atoi(hit.Id)
+			m[uid] = true
+		}
+	}
+	fmt.Println(m)
+	return m
 }
 

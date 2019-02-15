@@ -14,9 +14,7 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/cardFansPersons"
 	"fmt"
 	"strconv"
-	"gouminGitlab/common/orm/elasticsearch"
 	"github.com/olivere/elastic"
-	"gouminGitlab/common/orm/elasticsearchBase"
 )
 
 const (
@@ -34,10 +32,10 @@ type Focus struct {
 	esConn   *elastic.Client
 }
 
-func init() {
-	m = make(map[int]bool)
-	m = loadActiveUserToMap()
-}
+//func init() {
+//	m = make(map[int]bool)
+//	m = loadActiveUserToMap()
+//}
 
 func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string, esConn *elastic.Client) *Focus {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
@@ -76,7 +74,7 @@ func (f *Focus) Do() error {
 	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 || f.jsonData.TypeId == 19 {
 		//fmt.Println(f.jsonData.TypeId)
 		f.jsonData.Source = 3
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := fp.Do()
 		if err != nil {
 			return err
@@ -89,14 +87,14 @@ func (f *Focus) Do() error {
 		// 	return err
 		// }
 	} else if f.jsonData.TypeId == 6 {
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := fp.Do()
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.TypeId == 8 {
 		f.jsonData.Source = 3
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
+		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := fp.Do()
 		if err != nil {
 			return err
@@ -109,20 +107,20 @@ func (f *Focus) Do() error {
 			return err
 		}
 	} else if ((f.jsonData.TypeId == 9) || (f.jsonData.TypeId == 15)) && (f.jsonData.Source) == 1 {
-		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := ap.Do()
 		if err != nil {
 			return err
 		}
 	} else if f.jsonData.TypeId == 30 {
 		fmt.Println("card json uid:" + strconv.Itoa(f.jsonData.Uid) + " infoid:" + strconv.Itoa(f.jsonData.Infoid))
-		cfp := cardFansPersons.NewCardFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
+		cfp := cardFansPersons.NewCardFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := cfp.Do()
 		if err != nil {
 			return err
 		}
 	} else {
-		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m, f.esConn)
+		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := ap.Do()
 		if err != nil {
 			return err
@@ -164,46 +162,47 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	return &jsonC, nil
 }
 
-func loadActiveUserToMap() map[int]bool   {
-	var nodes []string
-	//@todo change to online
-	//nodes = append(nodes, "http://192.168.86.230:9200")
-	//nodes = append(nodes, "http://192.168.86.231:9200")
-
-	// is test config
-	//nodes = append(nodes, "http://192.168.6.50:9200")
-
-	//is online config
-	nodes = append(nodes, "192.168.5.87:9500")
-	nodes = append(nodes, "192.168.5.30:9500")
-	nodes = append(nodes, "192.168.5.71:9500")
-	r,_ := elasticsearchBase.NewClient(nodes)
-	esConn,_:=r.Run()
-	var m map[int]bool
-	m = make(map[int]bool)
-	er := elasticsearch.NewUser(esConn)
-	from := 0
-	size := 1000
-	i :=1
-	for {
-		rst := er.SearchAllActiveUser(from, size)
-		total := rst.Hits.TotalHits
-		if total> 0 {
-			for _, hit := range rst.Hits.Hits {
-				//var userinfo elasticsearch.UserData
-				//err := json.Unmarshal(*hit.Source, &userinfo) //另外一种取数据的方法
-				//if err != nil {
-				//	fmt.Println("Deserialization failed", err)
-				//}
-				uid,_ := strconv.Atoi(hit.Id)
-				m[uid] = true
-			}
-		}
-		if int(total) < from {
-			break
-		}
-		i++
-		from = (i-1)*size
-	}
-	return m
-}
+//func loadActiveUserToMap() map[int]bool   {
+//	var nodes []string
+//	//@todo change to online
+//	nodes = append(nodes, "http://192.168.86.230:9200")
+//	nodes = append(nodes, "http://192.168.86.231:9200")
+//
+//	// is test config
+//	//nodes = append(nodes, "http://192.168.6.50:9200")
+//
+//	//is online config
+//	//nodes = append(nodes, "192.168.5.87:9500")
+//	//nodes = append(nodes, "192.168.5.30:9500")
+//	//nodes = append(nodes, "192.168.5.71:9500")
+//	r,_ := elasticsearchBase.NewClient(nodes)
+//	esConn,_:=r.Run()
+//	var m map[int]bool
+//	m = make(map[int]bool)
+//	er := elasticsearch.NewUser(esConn)
+//	from := 0
+//	size := 1000
+//	i :=1
+//	for {
+//		rst := er.SearchAllActiveUser(from, size)
+//		total := rst.Hits.TotalHits
+//		if total> 0 {
+//			for _, hit := range rst.Hits.Hits {
+//				//var userinfo elasticsearch.UserData
+//				//err := json.Unmarshal(*hit.Source, &userinfo) //另外一种取数据的方法
+//				//if err != nil {
+//				//	fmt.Println("Deserialization failed", err)
+//				//}
+//				uid,_ := strconv.Atoi(hit.Id)
+//				m[uid] = true
+//			}
+//		}
+//		if int(total) < from {
+//			break
+//		}
+//		i++
+//		from = (i-1)*size
+//	}
+//	fmt.Println(m)
+//	return m
+//}

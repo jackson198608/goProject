@@ -46,7 +46,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 
 func jsonData() *job.FocusJsonColumn {
 	var jsonData job.FocusJsonColumn
-	jsonData.Uid = 881050
+	jsonData.Uid = 68296
 	jsonData.TypeId = 1
 	jsonData.Created = "2017-10-23 22:54:20"
 	jsonData.Tid = 0
@@ -61,7 +61,7 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Fid = 0
 	jsonData.Source = 2
 	jsonData.Status = 1
-	jsonData.Action  = -1
+	jsonData.Action  = 0
 	return &jsonData
 }
 
@@ -93,7 +93,7 @@ func TestGetPersons(t *testing.T) {
 	mysqlXorm, mongoConn,esConn := testConn()
 	jsonData := jsonData()
 
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, &m,esConn)
+	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, esConn)
 	fmt.Println(f.getPersons(1))
 }
 
@@ -105,6 +105,6 @@ func TestDo(t *testing.T) {
 	mysqlXorm, mongoConn,esConn := testConn()
 	jsonData := jsonData()
 
-	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, &m,esConn)
+	f := NewFansPersons(mysqlXorm, mongoConn, jsonData, esConn)
 	fmt.Println(f.Do())
 }

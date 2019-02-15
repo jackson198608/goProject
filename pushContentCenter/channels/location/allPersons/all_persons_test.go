@@ -5,13 +5,11 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
-	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2"
 	// "gopkg.in/mgo.v2/bson"
 	// "gouminGitlab/common/orm/mongo/FansData"
 	// "reflect"
 	"testing"
-	"gouminGitlab/common/orm/elasticsearch"
-	"encoding/json"
 	"gouminGitlab/common/orm/elasticsearchBase"
 	"github.com/olivere/elastic"
 )
@@ -70,30 +68,6 @@ func jsonData() *job.FocusJsonColumn {
 	return &jsonData
 }
 
-var m map[int]bool
-
-func init() {
-	var nodes []string
-	nodes = append(nodes, "http://192.168.86.230:9200")
-	nodes = append(nodes, "http://192.168.86.231:9200")
-	r,_ := elasticsearchBase.NewClient(nodes)
-	esConn,_ :=r.Run()
-	m = make(map[int]bool)
-	er := elasticsearch.NewUser(esConn)
-	from := 0
-	size := 1000
-	rst := er.SearchAllActiveUser(from, size)
-	if rst.Hits.TotalHits >0 {
-		for _,hit := range rst.Hits.Hits{
-			var userinfo elasticsearch.UserData
-			err := json.Unmarshal(*hit.Source, &userinfo) //另外一种取数据的方法
-			if err != nil {
-				fmt.Println("Deserialization failed")
-			}
-			m[userinfo.Id] = true
-		}
-	}
-}
 
 func TestDo(t *testing.T) {
 	var nodes []string
@@ -101,6 +75,6 @@ func TestDo(t *testing.T) {
 	nodes = append(nodes, "http://192.168.86.231:9200")
 	mysqlXorm, mongoConn,esConn := testConn()
 	jsonData := jsonData()
-	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, &m,esConn)
+	f := NewAllPersons(mysqlXorm, mongoConn, jsonData, esConn)
 	fmt.Println(f.Do())
 }

@@ -62,7 +62,7 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Fid = 0
 	jsonData.Source = 2
 	jsonData.Status = -1
-	jsonData.Action = 1
+	jsonData.Action = 0
 	return &jsonData
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/olivere/elastic"
 )
 
+//已废弃
 type CardFansPersons struct {
 	mysqlXorm      []*xorm.Engine //@todo to be []
 	mongoConn      []*mgo.Session //@todo to be []
@@ -22,7 +23,7 @@ type CardFansPersons struct {
 
 const count = 1000
 
-func NewCardFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, activeUserData *map[int]bool,esConn *elastic.Client) *CardFansPersons {
+func NewCardFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, esConn *elastic.Client) *CardFansPersons {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
@@ -35,7 +36,6 @@ func NewCardFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, json
 	f.mysqlXorm = mysqlXorm
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
-	f.activeUserData = activeUserData
 	f.esConn = esConn
 
 	return f
@@ -82,7 +82,7 @@ func (f *CardFansPersons) pushPersons(follows *[]card.HaremCard) (int, error) {
 	if follows == nil {
 		return 0, errors.New("push to fans active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
-	active_user := *f.activeUserData
+	active_user := f.getActiveUserByUids(follows)
 	persons := *follows
 
 	var endId int
@@ -126,5 +126,29 @@ func (f *CardFansPersons) getPersons(startId int) *[]card.HaremCard {
 		}
 	}
 	return &follows
+}
+
+/**
+获取活跃用户的粉丝
+ */
+func (f *CardFansPersons) getActiveUserByUids(follows *[]card.HaremCard) map[int]bool {
+	var m map[int]bool
+	m = make(map[int]bool)
+	er := elasticsearch.NewUser(f.esConn)
+	var uids []int
+	persons := *follows
+	for _, person := range persons {
+		uids = append(uids, person.Uid)
+	}
+	rst := er.SearchActiveUserByUids(uids, 0, count)
+	total := rst.Hits.TotalHits
+	if total> 0 {
+		for _, hit := range rst.Hits.Hits {
+			uid,_ := strconv.Atoi(hit.Id)
+			m[uid] = true
+		}
+	}
+	fmt.Println(m)
+	return m
 }
 
