@@ -33,31 +33,6 @@ func init() {
 	loadConfig()
 }
 
-//全部活跃用户
-func getAllActiveUsers(esConn *elastic.Client) []int {
-	var user []int
-	er := elasticsearch.NewUser(esConn)
-	from := 0
-	size := 1000
-	i :=1
-	for {
-		rst := er.SearchAllActiveUser(from, size)
-		total := rst.Hits.TotalHits
-		if total> 0 {
-			for _, hit := range rst.Hits.Hits {
-				uid,_ := strconv.Atoi(hit.Id)
-				user = append(user, uid)
-			}
-		}
-		if int(total) < from {
-			break
-		}
-		i++
-		from = (i-1)*size
-	}
-	return user
-}
-
 func pushAllActiveUserToRedis(queueName string, channel string) bool {
 	redisInfo := tools.FormatRedisOption(c.redisConn)
 	rc, _ := tools.GetClusterClient(&redisInfo)
@@ -68,23 +43,29 @@ func pushAllActiveUserToRedis(queueName string, channel string) bool {
 	nodes := strings.SplitN(c.elkDsn, ",", -1)
 	r,_ := elasticsearchBase.NewClient(nodes)
 	esConn ,_ := r.Run()
-	realTasks := getAllActiveUsers(esConn)
-	if len(realTasks) == 0 {
-		logger.Error("active user data is empty")
-		return false
-	}
-	if realTasks == nil {
-		logger.Error("not get active user data")
-		return false
-	}
 
-	logger.Info("this is int task", realTasks)
-	for i := 0; i < len(realTasks); i++ {
-		err := rc.RPush(queueName, strconv.Itoa(realTasks[i])+"|"+channel).Err()
-		if err != nil {
-			logger.Error("insert redis error", err)
-			return false
+	er := elasticsearch.NewUser(esConn)
+	from := 0
+	size := 100
+	i :=1
+	for {
+		rst := er.SearchAllActiveUser(from, size)
+		total := rst.Hits.TotalHits
+		if total> 0 {
+			for _, hit := range rst.Hits.Hits {
+				uid,_ := strconv.Atoi(hit.Id)
+				err := rc.RPush(queueName, strconv.Itoa(uid)+"|"+channel).Err()
+				if err != nil {
+					logger.Error("insert redis error", err)
+					return false
+				}
+			}
 		}
+		if int(total) < from {
+			break
+		}
+		i++
+		from = (i-1)*size
 	}
 	return true
 }

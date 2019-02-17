@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
 	"github.com/olivere/elastic"
-	"fmt"
 )
 
 type FansPersons struct {
@@ -133,7 +132,7 @@ func (f *FansPersons) getActiveUserByUids(follows *[]new_dog123.Follow) map[int]
 			m[uid] = true
 		}
 	}
-	fmt.Println(m)
+	//fmt.Println(m)
 	return m
 }
 

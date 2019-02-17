@@ -17,13 +17,6 @@ import (
 	"github.com/olivere/elastic"
 )
 
-const (
-	mongoConn = "192.168.5.22:27017,192.168.5.26:27017,192.168.5.200:27017"
-	//mongoConn = "192.168.86.80:27017,192.168.86.81:27017,192.168.86.82:27017" //@todo change online dsn
-)
-
-var m map[int]bool
-
 type Focus struct {
 	mysqlXorm []*xorm.Engine
 	mongoConn []*mgo.Session
@@ -31,11 +24,6 @@ type Focus struct {
 	jsonData  *job.FocusJsonColumn
 	esConn   *elastic.Client
 }
-
-//func init() {
-//	m = make(map[int]bool)
-//	m = loadActiveUserToMap()
-//}
 
 func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string, esConn *elastic.Client) *Focus {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
@@ -161,48 +149,3 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 
 	return &jsonC, nil
 }
-
-//func loadActiveUserToMap() map[int]bool   {
-//	var nodes []string
-//	//@todo change to online
-//	nodes = append(nodes, "http://192.168.86.230:9200")
-//	nodes = append(nodes, "http://192.168.86.231:9200")
-//
-//	// is test config
-//	//nodes = append(nodes, "http://192.168.6.50:9200")
-//
-//	//is online config
-//	//nodes = append(nodes, "192.168.5.87:9500")
-//	//nodes = append(nodes, "192.168.5.30:9500")
-//	//nodes = append(nodes, "192.168.5.71:9500")
-//	r,_ := elasticsearchBase.NewClient(nodes)
-//	esConn,_:=r.Run()
-//	var m map[int]bool
-//	m = make(map[int]bool)
-//	er := elasticsearch.NewUser(esConn)
-//	from := 0
-//	size := 1000
-//	i :=1
-//	for {
-//		rst := er.SearchAllActiveUser(from, size)
-//		total := rst.Hits.TotalHits
-//		if total> 0 {
-//			for _, hit := range rst.Hits.Hits {
-//				//var userinfo elasticsearch.UserData
-//				//err := json.Unmarshal(*hit.Source, &userinfo) //另外一种取数据的方法
-//				//if err != nil {
-//				//	fmt.Println("Deserialization failed", err)
-//				//}
-//				uid,_ := strconv.Atoi(hit.Id)
-//				m[uid] = true
-//			}
-//		}
-//		if int(total) < from {
-//			break
-//		}
-//		i++
-//		from = (i-1)*size
-//	}
-//	fmt.Println(m)
-//	return m
-//}

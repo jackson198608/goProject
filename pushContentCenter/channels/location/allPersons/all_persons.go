@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
 	"github.com/olivere/elastic"
-	"fmt"
-	"unsafe"
 )
 
 type AllPersons struct {
@@ -49,14 +47,13 @@ func (f *AllPersons) Do() error {
 		var uids []int
 		rst := er.SearchAllActiveUser(from, count)
 		total := rst.Hits.TotalHits
-		fmt.Println("size: ",unsafe.Sizeof(*rst))
 		if total> 0 {
 			for _, hit := range rst.Hits.Hits {
 				uid,_ := strconv.Atoi(hit.Id)
 				uids = append(uids, uid)
 			}
 		}
-		fmt.Println(uids)
+		f.pushPersons(uids)
 		i++
 		from = (i-1)*count
 		if int(total) < from {

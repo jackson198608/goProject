@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
 	"github.com/olivere/elastic"
-	"fmt"
 )
 
 const count = 100
@@ -40,13 +39,23 @@ func NewBreedPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonDat
 }
 
 func (f *BreedPersons) Do() error {
-	currentPersionList := f.getPersonsByElk()
-	if currentPersionList == nil {
-		return nil
-	}
-	err := f.pushPersons(currentPersionList)
-	if err != nil {
-		return err
+	from := 0
+	i :=1
+	for {
+		currentPersionList := f.getPersonsByElk(from)
+		if currentPersionList == nil {
+			return nil
+		}
+		total := len(currentPersionList)
+		err := f.pushPersons(currentPersionList)
+		if err != nil {
+			return err
+		}
+		i++
+		from = (i-1)*count
+		if int(total) < count {
+			break
+		}
 	}
 	return nil
 }
@@ -70,31 +79,19 @@ func (f *BreedPersons) pushPersons(ActiveUser []int) error {
 	return nil
 }
 
-func (f *BreedPersons) getPersonsByElk() []int {
+func (f *BreedPersons) getPersonsByElk(from int) []int {
 	Bid := f.jsonData.Bid
 	if Bid == 0 {
 		return nil
 	}
 	var activeBreedUsers []int
-	from := 0
-	i :=1
-	for {
-		er := elasticsearch.NewUser(f.esConn)
-		rst := er.SearchAllActiveUserByBreed(Bid, f.jsonData.Uid, from, count)
-		total := rst.Hits.TotalHits
-		fmt.Println(total)
-		if total > 0 {
-			for _, hit := range rst.Hits.Hits {
-				id, _ := strconv.Atoi(hit.Id)
-				activeBreedUsers = append(activeBreedUsers, id)
-			}
-		}
-
-		i++
-		from = (i-1)*count
-
-		if int(total) < from {
-			break
+	er := elasticsearch.NewUser(f.esConn)
+	rst := er.SearchAllActiveUserByBreed(Bid, f.jsonData.Uid, from, count)
+	total := rst.Hits.TotalHits
+	if total > 0 {
+		for _, hit := range rst.Hits.Hits {
+			id, _ := strconv.Atoi(hit.Id)
+			activeBreedUsers = append(activeBreedUsers, id)
 		}
 	}
 	return activeBreedUsers
