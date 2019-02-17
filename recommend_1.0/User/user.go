@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"gouminGitlab/common/orm/elasticsearch"
-	"github.com/gin-gonic/gin/json"
 	"github.com/olivere/elastic"
+	"encoding/json"
 )
 
 type User struct {
