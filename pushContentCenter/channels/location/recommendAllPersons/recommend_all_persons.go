@@ -8,20 +8,21 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"gouminGitlab/common/orm/mongo/RecommendData"
 	"strconv"
+	"gouminGitlab/common/orm/elasticsearch"
+	"github.com/olivere/elastic"
 )
 
 type RecommendAllPersons struct {
 	mysqlXorm      []*xorm.Engine
 	mongoConn      []*mgo.Session
 	jsonData       *job.RecommendJsonColumn
-	activeUserData *map[int]bool
+	esConn *elastic.Client
 }
 
 const count = 1000
 
-func NewRecommendAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.RecommendJsonColumn, activeUserData *map[int]bool) *RecommendAllPersons {
+func NewRecommendAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, esConn *elastic.Client,jsonData *job.RecommendJsonColumn) *RecommendAllPersons {
 	if (mongoConn == nil) || (jsonData == nil) {
 		return nil
 	}
@@ -34,22 +35,43 @@ func NewRecommendAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, 
 	f.mysqlXorm = mysqlXorm
 	f.mongoConn = mongoConn
 	f.jsonData = jsonData
-	f.activeUserData = activeUserData
+	f.esConn = esConn
 
 	return f
 }
 
 func (f *RecommendAllPersons) Do() error {
-	if f.jsonData.Action == 0 {
-		//get all active user from hashmap
-		err := f.pushPersons(f.activeUserData)
-		if err != nil {
-			return err
+	er := elasticsearch.NewUser(f.esConn)
+	from := 0
+	i :=1
+	for {
+		var uids []int
+		rst := er.SearchAllActiveUser(from, count)
+		total := rst.Hits.TotalHits
+		if total> 0 {
+			for _, hit := range rst.Hits.Hits {
+				uid,_ := strconv.Atoi(hit.Id)
+				uids = append(uids, uid)
+			}
 		}
-	} else if f.jsonData.Action == -1 {
-		err := f.removeInfoByTables()
-		if err != nil {
-			return err
+		if len(uids)>0 {
+			if f.jsonData.Action == 0 {
+				//get all active user from hashmap
+				err := f.pushPersons(uids)
+				if err != nil {
+					return err
+				}
+			} else if f.jsonData.Action == -1 {
+				err := f.removeInfoByTables()
+				if err != nil {
+					return err
+				}
+			}
+		}
+		i++
+		from = (i-1)*count
+		if int(total) < from {
+			break
 		}
 	}
 	return nil
@@ -83,29 +105,11 @@ func (f *RecommendAllPersons) pushPerson(person int) error {
 }
 
 func (f *RecommendAllPersons) removeInfoByTables() error {
-	for i := 1; i < 101; i++ {
-		tableNameX := "user_recommend_" + strconv.Itoa(i)
-		c := f.mongoConn[0].DB("RecommendData").C(tableNameX)
-		err := f.removeInfo(c)
-		logger.Info(" recommend data remove by connection is ", tableNameX, ", channel is ", f.jsonData.Channel, ", type is ", f.jsonData.Type, ", infoid is ", f.jsonData.Infoid)
-		if err != nil {
-			for n := 0; n < 5; n++ {
-				err = f.removeInfo(c)
-				logger.Info("[try next]", n, " recommend data remove by connection is ", tableNameX, ", channel is ", f.jsonData.Channel, ", type is ", f.jsonData.Type, ", infoid is ", f.jsonData.Infoid)
-				if err == nil {
-					break
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func (f *RecommendAllPersons) removeInfo(c *mgo.Collection) error {
-	//删除数据
-	_, err := c.RemoveAll(bson.M{"type": f.jsonData.Type, "infoid": f.jsonData.Infoid, "channel": f.jsonData.Channel})
+	ur := elasticsearch.NewUserRecommendX(f.esConn, f.jsonData)
+	err := ur.Remove()
 	if err != nil {
 		return err
 	}
 	return nil
 }
+
