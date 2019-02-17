@@ -9,11 +9,7 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/recommendAllPersons"
 	mgo "gopkg.in/mgo.v2"
-)
-
-const (
-	mongoConn = "192.168.5.22:27017,192.168.5.26:27017,192.168.5.200:27017"
-	// mongoConn = "192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019" //@todo change online dsn
+	"github.com/olivere/elastic"
 )
 
 var m map[int]bool
@@ -23,16 +19,12 @@ type Recommend struct {
 	mongoConn []*mgo.Session
 	jobstr    string
 	jsonData  *job.RecommendJsonColumn
+	esConn *elastic.Client
 }
 
-func init() {
-	m = make(map[int]bool)
-	m = loadActiveUserToMap()
-}
-
-func NewRecommend(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string) *Recommend {
+func NewRecommend(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, esConn *elastic.Client, jobStr string) *Recommend {
 	// fmt.Println("in recommend")
-	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
+	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") || (esConn ==nil) {
 		return nil
 	}
 
@@ -61,7 +53,7 @@ func (f *Recommend) Do() error {
 	// fmt.Println(f.jsonData.RecommendType)
 	if f.jsonData.RecommendType == "all" {
 		logger.Info("[recommend do] jsonData is ", f.jsonData)
-		ap := recommendAllPersons.NewRecommendAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, &m)
+		ap := recommendAllPersons.NewRecommendAllPersons(f.mysqlXorm, f.mongoConn, f.esConn, f.jsonData)
 		err := ap.Do()
 		if err != nil {
 			return err
@@ -100,26 +92,4 @@ func (f *Recommend) parseJson() (*job.RecommendJsonColumn, error) {
 	jsonC.RecommendType, _ = js.Get("recommend_type").String() //推送方式 all 全部用户
 
 	return &jsonC, nil
-}
-
-func loadActiveUserToMap() map[int]bool {
-	var m map[int]bool
-	m = make(map[int]bool)
-	session, err := mgo.Dial(mongoConn)
-	if err != nil {
-		return m
-	}
-	defer session.Close()
-
-	var uids []int
-	c := session.DB("ActiveUser").C("active_user")
-	err = c.Find(nil).Distinct("uid", &uids)
-	if err != nil {
-		// panic(err)
-		return m
-	}
-	for i := 0; i < len(uids); i++ {
-		m[uids[i]] = true
-	}
-	return m
 }

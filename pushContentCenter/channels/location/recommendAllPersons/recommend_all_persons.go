@@ -74,48 +74,8 @@ func (f *RecommendAllPersons) pushPersons(persons *map[int]bool) error {
 }
 
 func (f *RecommendAllPersons) pushPerson(person int) error {
-	tableNameX := getTableNum(person)
-	c := f.mongoConn[0].DB("RecommendData").C(tableNameX)
-	logger.Info("recommend data push uid is ", person, ", channel is ", f.jsonData.Channel, ", type is ", f.jsonData.Type, ", infoid is ", f.jsonData.Infoid)
-	err := f.insertPerson(c, person)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func getTableNum(person int) string {
-	tableNumX := person % 100
-	if tableNumX == 0 {
-		tableNumX = 100
-	}
-	tableNameX := "user_recommend_" + strconv.Itoa(tableNumX) //用户推荐表
-	return tableNameX
-}
-
-func (f *RecommendAllPersons) insertPerson(c *mgo.Collection, person int) error {
-	//新增数据
-	var data RecommendData.UserRecommendX
-	data = RecommendData.UserRecommendX{bson.NewObjectId(),
-		f.jsonData.Pid,
-		f.jsonData.Uid,
-		person,
-		f.jsonData.Type,
-		f.jsonData.Infoid,
-		f.jsonData.Title,
-		f.jsonData.Description,
-		f.jsonData.Created,
-		f.jsonData.Images,
-		f.jsonData.Imagenums,
-		f.jsonData.Tag,
-		f.jsonData.Tags,
-		f.jsonData.QstType,
-		f.jsonData.AdType,
-		f.jsonData.AdUrl,
-		f.jsonData.Channel,
-		f.jsonData.VideoUrl,
-		f.jsonData.Duration}
-	err := c.Insert(&data) //插入数据
+	ur := elasticsearch.NewUserRecommendX(f.esConn, f.jsonData)
+	err := ur.Create(person)
 	if err != nil {
 		return err
 	}
