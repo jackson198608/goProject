@@ -82,8 +82,8 @@ func main() {
 }
 
 func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, esConn *elastic.Client, taskarg []string) error {
-	if (mysqlConns == nil) || (mgoConns == nil) {
-		return errors.New("mysql or mongo conn error")
+	if (mysqlConns == nil) || (mgoConns == nil) || (esConn==nil){
+		return errors.New("mysql or mongo or elastic conn error")
 	}
 	t, err := task.NewTask(job, mysqlConns, mgoConns, esConn)
 	if err != nil {

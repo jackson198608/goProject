@@ -24,7 +24,7 @@ type FansPersons struct {
 const count = 100
 
 func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, esConn *elastic.Client) *FansPersons {
-	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
+	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) || (esConn ==nil){
 		return nil
 	}
 
@@ -68,11 +68,17 @@ func (f *FansPersons) pushPersons(follows *[]new_dog123.Follow) (int, error) {
 	persons := *follows
 
 	var endId int
-	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
+	elx,err := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
+	if err !=nil {
+		return 0, err
+	}
 	var active_user map[int]bool
 
 	if f.jsonData.Action != -1 {
-		active_user = f.getActiveUserByUids(follows)
+		active_user,err = f.getActiveUserByUids(follows)
+		if err !=nil {
+			return 0, err
+		}
 	}
 	for _, person := range persons {
 		ok := false
@@ -115,10 +121,14 @@ func (f *FansPersons) getPersons(startId int) *[]new_dog123.Follow {
 /**
 获取活跃用户的粉丝
  */
-func (f *FansPersons) getActiveUserByUids(follows *[]new_dog123.Follow) map[int]bool {
+func (f *FansPersons) getActiveUserByUids(follows *[]new_dog123.Follow) (map[int]bool,error) {
 	var m map[int]bool
 	m = make(map[int]bool)
-	er := elasticsearch.NewUser(f.esConn)
+	er,err := elasticsearch.NewUser(f.esConn)
+	if err!=nil {
+		return nil,err
+
+	}
 	var uids []int
 	persons := *follows
 	for _, person := range persons {
@@ -133,6 +143,6 @@ func (f *FansPersons) getActiveUserByUids(follows *[]new_dog123.Follow) map[int]
 		}
 	}
 	//fmt.Println(m)
-	return m
+	return m,nil
 }
 

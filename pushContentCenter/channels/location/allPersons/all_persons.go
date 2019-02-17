@@ -22,7 +22,7 @@ type AllPersons struct {
 const count = 100
 
 func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, esConn *elastic.Client) *AllPersons {
-	if (mongoConn == nil) || (jsonData == nil) {
+	if (mongoConn == nil) || (jsonData == nil) || (esConn == nil){
 		return nil
 	}
 
@@ -40,7 +40,10 @@ func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData 
 
 func (f *AllPersons) Do() error {
 	//get all active user from hashmap
-	er := elasticsearch.NewUser(f.esConn)
+	er,err := elasticsearch.NewUser(f.esConn)
+	if err != nil {
+		return err
+	}
 	from := 0
 	i :=1
 	for {
@@ -67,7 +70,10 @@ func (f *AllPersons) pushPersons(persons []int) error {
 	if persons == nil {
 		return errors.New("push to all active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
-	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
+	elx,err := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
+	if err != nil {
+		return err
+	}
 	for _,uid := range persons {
 		err := elx.PushPerson(uid)
 		if err != nil {

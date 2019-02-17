@@ -44,7 +44,10 @@ func pushAllActiveUserToRedis(queueName string, channel string) bool {
 	r,_ := elasticsearchBase.NewClient(nodes)
 	esConn ,_ := r.Run()
 
-	er := elasticsearch.NewUser(esConn)
+	er,err := elasticsearch.NewUser(esConn)
+	if err !=nil {
+		return false
+	}
 	from := 0
 	size := 100
 	i :=1
@@ -82,8 +85,10 @@ func main() {
 		redisInfo := tools.FormatRedisOption(c.redisConn)
 
 		//生产任务
-		pushAllActiveUserToRedis(c.queueName, "follow")
-
+		tastStatus := pushAllActiveUserToRedis(c.queueName, "follow")
+		if !tastStatus {
+			logger.Error("[NewRedisEngine] ", errors.New("create task fail"))
+		}
 		nodes := strings.SplitN(c.elkDsn, ",", -1)
 
 		logger.Info("start work")
@@ -131,7 +136,7 @@ func main() {
 
 func jobFuc(job string,redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, esConn *elastic.Client,taskarg []string) error {
 	if (mysqlConns == nil) || (mgoConns == nil) || (esConn == nil){
-		return errors.New("mysql or mongo conn error")
+		return errors.New("mysql or mongo or esConn conn error")
 	}
 	t, err := task.NewTask(job, mysqlConns, mgoConns, esConn)
 	if err != nil {

@@ -24,7 +24,7 @@ type CardFansPersons struct {
 const count = 1000
 
 func NewCardFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, esConn *elastic.Client) *CardFansPersons {
-	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) {
+	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) || (esConn == nil) {
 		return nil
 	}
 
@@ -66,13 +66,15 @@ func (f *CardFansPersons) Do() error {
 
 func (f *CardFansPersons) pushMyself() {
 	//推送给自己
-	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
-	err := elx.PushPerson(f.jsonData.Uid)
-	if err != nil {
-		for i := 0; i < 5; i++ {
-			err := elx.PushPerson(f.jsonData.Uid)
-			if err == nil {
-				break
+	elx,err := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
+	if err!=nil {
+		err = elx.PushPerson(f.jsonData.Uid)
+		if err != nil {
+			for i := 0; i < 5; i++ {
+				err := elx.PushPerson(f.jsonData.Uid)
+				if err == nil {
+					break
+				}
 			}
 		}
 	}
@@ -82,11 +84,17 @@ func (f *CardFansPersons) pushPersons(follows *[]card.HaremCard) (int, error) {
 	if follows == nil {
 		return 0, errors.New("push to fans active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
-	active_user := f.getActiveUserByUids(follows)
+	active_user,err := f.getActiveUserByUids(follows)
+	if err!=nil {
+		return 0,err
+	}
 	persons := *follows
 
 	var endId int
-	elx := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
+	elx,err := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
+	if err !=nil {
+		return 0, err
+	}
 	for _, person := range persons {
 		//check key in actice user
 		var ok bool
@@ -131,10 +139,13 @@ func (f *CardFansPersons) getPersons(startId int) *[]card.HaremCard {
 /**
 获取活跃用户的粉丝
  */
-func (f *CardFansPersons) getActiveUserByUids(follows *[]card.HaremCard) map[int]bool {
+func (f *CardFansPersons) getActiveUserByUids(follows *[]card.HaremCard) (map[int]bool, error) {
 	var m map[int]bool
 	m = make(map[int]bool)
-	er := elasticsearch.NewUser(f.esConn)
+	er,err := elasticsearch.NewUser(f.esConn)
+	if err!=nil {
+		return nil,err
+	}
 	var uids []int
 	persons := *follows
 	for _, person := range persons {
@@ -149,6 +160,6 @@ func (f *CardFansPersons) getActiveUserByUids(follows *[]card.HaremCard) map[int
 		}
 	}
 	fmt.Println(m)
-	return m
+	return m,nil
 }
 

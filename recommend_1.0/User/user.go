@@ -59,7 +59,10 @@ func (u *User) Do() error {
 }
 
 func (u *User) getMyData() error {
-	elkU := elasticsearch.NewUser(u.esConn)
+	elkU,err := elasticsearch.NewUser(u.esConn)
+	if err != nil {
+		return err
+	}
 	user := elkU.SearchById(u.Uid)
 
 	if user != nil {
@@ -214,7 +217,10 @@ func (u *User) getRecommendUser() error {
 func (u *User) recommendUserBySpecies(isFirst int, num int) (int, error) {
 	if u.species != "" {
 		speciesItems := strings.Split(u.species, ";")
-		elkU := elasticsearch.NewUser(u.esConn)
+		elkU,err := elasticsearch.NewUser(u.esConn)
+		if err != nil {
+			return 0, err
+		}
 		user := elkU.SearchByPets(speciesItems,u.notRecommendUid, num)
 		if user != nil {
 			u.buildRecommendUserData(user, 1)
@@ -227,7 +233,10 @@ func (u *User) recommendUserBySpecies(isFirst int, num int) (int, error) {
 //根据地域推荐用户
 func (u *User) recommendUserByAddress(num int) (int, error) {
 	if u.address != "" {
-		elkU := elasticsearch.NewUser(u.esConn)
+		elkU,err := elasticsearch.NewUser(u.esConn)
+		if err != nil {
+			return 0,err
+		}
 		user := elkU.SearchByAddress(u.address,u.notRecommendUid, num)
 		if user != nil {
 			u.buildRecommendUserData(user, 2)
@@ -241,7 +250,10 @@ func (u *User) recommendUserByAddress(num int) (int, error) {
 func (u *User) recommendUserByAge() (int, error) {
 	if u.age != "" {
 		ageItems := strings.Split(u.age, ";")
-		elkU := elasticsearch.NewUser(u.esConn)
+		elkU,err := elasticsearch.NewUser(u.esConn)
+		if err != nil {
+			return 0,err
+		}
 		user := elkU.SearchByPets(ageItems,u.notRecommendUid, 3)
 		if user != nil {
 			u.buildRecommendUserData(user, 0)
