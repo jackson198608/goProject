@@ -3,11 +3,9 @@ package recommendAllPersons
 import (
 	"errors"
 	// "fmt"
-	"github.com/donnie4w/go-logger/logger"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	mgo "gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
 	"github.com/olivere/elastic"
@@ -77,11 +75,11 @@ func (f *RecommendAllPersons) Do() error {
 	return nil
 }
 
-func (f *RecommendAllPersons) pushPersons(persons *map[int]bool) error {
+func (f *RecommendAllPersons) pushPersons(persons []int) error {
 	if persons == nil {
 		return errors.New("push to all active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
-	for k := range *persons {
+	for k := range persons {
 		err := f.pushPerson(k)
 		if err != nil {
 			for i := 0; i < 5; i++ {

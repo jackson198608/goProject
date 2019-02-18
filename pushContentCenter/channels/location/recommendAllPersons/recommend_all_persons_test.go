@@ -10,9 +10,11 @@ import (
 	// "gouminGitlab/common/orm/mongo/FansData"
 	// "reflect"
 	"testing"
+	"gouminGitlab/common/orm/elasticsearchBase"
+	"github.com/olivere/elastic"
 )
 
-func testConn() ([]*xorm.Engine, []*mgo.Session) {
+func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	dbAuth := "dog123:dog123"
 	dbDsn := "192.168.86.193:3307"
 	// dbDsn := "210.14.154.117:33068"
@@ -21,21 +23,27 @@ func testConn() ([]*xorm.Engine, []*mgo.Session) {
 	engine, err := xorm.NewEngine("mysql", dataSourceName)
 	if err != nil {
 		fmt.Println(err)
-		return nil, nil
+		return nil, nil,nil
 	}
 
-	mongoConn := "192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019"
+	mongoConn := "192.168.86.80:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		fmt.Println("[error] connect mongodb err")
-		return nil, nil
+		return nil, nil,nil
 	}
+
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	nodes = append(nodes, "http://192.168.86.231:9200")
+	r,_ := elasticsearchBase.NewClient(nodes)
+	esConn,_ :=r.Run()
 
 	var engineAry []*xorm.Engine
 	engineAry = append(engineAry, engine)
 	var sessionAry []*mgo.Session
 	sessionAry = append(sessionAry, session)
-	return engineAry, sessionAry
+	return engineAry, sessionAry,esConn
 	// return engine, session
 }
 
@@ -44,7 +52,7 @@ func jsonData() *job.RecommendJsonColumn {
 	jsonData.Uid = 2060500
 	jsonData.Type = 1
 	jsonData.Created = 1516598106
-	jsonData.Infoid = 3399348
+	jsonData.Infoid = 3399349
 	jsonData.Title = "所有活跃用户推送title"
 	jsonData.Description = "所有活跃用户推送正文正文"
 	jsonData.Images = ""
@@ -55,59 +63,27 @@ func jsonData() *job.RecommendJsonColumn {
 	jsonData.AdType = 0
 	jsonData.AdUrl = ""
 	jsonData.Channel = 1
-	jsonData.Action = 0
+	jsonData.Action = -1
 	return &jsonData
 }
 
-var m map[int]bool
-
-func init() {
-	m = make(map[int]bool)
-
-	mongoConn := "192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019"
-	session, err := mgo.Dial(mongoConn)
-	if err != nil {
-		// return m
-	}
-
-	var uids []int
-	c := session.DB("ActiveUser").C("active_user")
-	err = c.Find(nil).Distinct("uid", &uids)
-	if err != nil {
-		// panic(err)
-		// return m
-	}
-	for i := 0; i < len(uids); i++ {
-		m[uids[i]] = true
-	}
-}
-
 func TestPushPerson(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn,esConn := testConn()
 	jsonData := jsonData()
-	f := NewRecommendAllPersons(mysqlXorm, mongoConn, jsonData, &m)
+	f := NewRecommendAllPersons(mysqlXorm, mongoConn,esConn, jsonData)
 	fmt.Println(f.pushPerson(881050))
 }
 
 func TestDo(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn,esConn := testConn()
 	jsonData := jsonData()
-	f := NewRecommendAllPersons(mysqlXorm, mongoConn, jsonData, &m)
+	f := NewRecommendAllPersons(mysqlXorm, mongoConn,esConn, jsonData)
 	fmt.Println(f.Do())
 }
 
 func TestRemoveInfoByTables(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
+	mysqlXorm, mongoConn,esConn := testConn()
 	jsonData := jsonData()
-	f := NewRecommendAllPersons(mysqlXorm, mongoConn, jsonData, &m)
+	f := NewRecommendAllPersons(mysqlXorm, mongoConn,esConn, jsonData)
 	fmt.Println(f.removeInfoByTables())
-}
-
-func TestRemoveinfo(t *testing.T) {
-	mysqlXorm, mongoConn := testConn()
-	jsonData := jsonData()
-	tableNameX := "user_recommend_100"
-	c := mongoConn[0].DB("RecommendData").C(tableNameX)
-	f := NewRecommendAllPersons(mysqlXorm, mongoConn, jsonData, &m)
-	fmt.Println(f.removeInfo(c))
 }
