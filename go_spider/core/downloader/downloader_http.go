@@ -236,7 +236,7 @@ func connectByAbuyun(p *page.Page, req *request.Request) (*http.Response, error)
 		}
 	*/
 
-	client := AbuyunProxy{AppID: "HK71T41EZ21304GP", AppSecret: "75FE0C4E23EEA0E7"}.ProxyClient()
+	client := AbuyunProxy{AppID: "HH758K1F9E12841P", AppSecret: "0B96C43DD1B07CE1"}.ProxyClient()
 	client.CheckRedirect = req.GetRedirectFunc()
 
 	httpreq, err := http.NewRequest(req.GetMethod(), req.GetUrl(), strings.NewReader(req.GetPostdata()))
@@ -344,8 +344,8 @@ func (this *HttpDownloader) downloadFile(p *page.Page, req *request.Request) (*p
 	} else {
 		//normal http download
 		//fmt.Print("Http Normal Enter \n",proxystr,"\n")
-		resp, err = connectByHttp(p, req)
-		//resp, err = connectByAbuyun(p, req)
+		//resp, err = connectByHttp(p, req)
+		resp, err = connectByAbuyun(p, req)
 	}
 
 	if err != nil {
