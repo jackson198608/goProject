@@ -7,7 +7,7 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/channels/club"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/focus"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/recommend"
-	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2"
 	"strings"
 	"github.com/olivere/elastic"
 )
@@ -103,7 +103,7 @@ func (t *Task) ChannelClub() error {
 
 // recommend channel's invoke function
 func (t *Task) ChannelRecommend() error {
-	c := recommend.NewRecommend(t.MysqlXorm, t.MongoConn, t.Jobstr)
+	c := recommend.NewRecommend(t.MysqlXorm, t.MongoConn, t.esConn,t.Jobstr)
 	err := c.Do()
 	if err != nil {
 		return err

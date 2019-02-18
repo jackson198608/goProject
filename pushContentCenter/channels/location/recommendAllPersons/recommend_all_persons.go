@@ -39,7 +39,10 @@ func NewRecommendAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, 
 }
 
 func (f *RecommendAllPersons) Do() error {
-	er := elasticsearch.NewUser(f.esConn)
+	er,err := elasticsearch.NewUser(f.esConn)
+	if err!=nil {
+		return err
+	}
 	from := 0
 	i :=1
 	for {
@@ -79,7 +82,7 @@ func (f *RecommendAllPersons) pushPersons(persons []int) error {
 	if persons == nil {
 		return errors.New("push to all active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
-	for k := range persons {
+	for _,k := range persons {
 		err := f.pushPerson(k)
 		if err != nil {
 			for i := 0; i < 5; i++ {

@@ -24,10 +24,10 @@ type User struct {
 	myData          elasticsearch.UserData
 	notRecommendUid []int
 	notRecommendFid []int
+	recommendClubData []elasticsearch.RecommendClubData
+	recommendUserData []elasticsearch.RecommendUserData
 }
 
-var recommendClubData []elasticsearch.RecommendClubData
-var recommendUserData []elasticsearch.RecommendUserData
 
 func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, esConn *elastic.Client) *User {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (uid == "") || (esConn == nil) {
@@ -42,6 +42,7 @@ func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, esC
 	u.mongoConn = mongoConn
 	u.Uid, _ = strconv.Atoi(uid)
 	u.esConn = esConn
+
 	return u
 }
 
@@ -265,7 +266,7 @@ func (u *User) recommendUserByAge() (int, error) {
 
 // 存储用户数据
 func (u *User) pushUserRecommend() error {
-	jsonData, _ := json.Marshal(recommendUserData)
+	jsonData, _ := json.Marshal(u.recommendUserData)
 	dataStr := string(jsonData)
 	ur := elasticsearch.NewUserRecommendData(u.esConn)
 	err := ur.InsertData(u.Uid,dataStr,2)
@@ -335,7 +336,7 @@ func (u *User) recommendClubByFup(fup int) (int, error) {
 }
 
 func (u *User) pushClubRecommend() error {
-	jsonData, _ := json.Marshal(recommendClubData)
+	jsonData, _ := json.Marshal(u.recommendClubData)
 	dataStr := string(jsonData)
 	ur := elasticsearch.NewUserRecommendData(u.esConn)
 	err := ur.InsertData(u.Uid,dataStr,1)
@@ -365,7 +366,7 @@ func (u *User) buildRecommendClubData(club *[]elasticsearch.ClubData) {
 			membernum,
 			1,
 			isFollow}
-		recommendClubData = append(recommendClubData, data)
+		u.recommendClubData = append(u.recommendClubData, data)
 	}
 }
 
@@ -385,7 +386,7 @@ func (u *User) buildRecommendUserData(user *[]elasticsearch.UserData, dataType i
 			userItem.Avatar,
 		0,
 			dataType}
-		recommendUserData = append(recommendUserData, data)
+		u.recommendUserData = append(u.recommendUserData, data)
 	}
 }
 

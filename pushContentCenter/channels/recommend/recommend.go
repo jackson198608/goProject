@@ -36,6 +36,7 @@ func NewRecommend(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, esConn *el
 	f.mysqlXorm = mysqlXorm
 	f.mongoConn = mongoConn
 	f.jobstr = jobStr
+	f.esConn = esConn
 
 	logger.Info("[new recommend] jobStr is ", f.jobstr)
 
