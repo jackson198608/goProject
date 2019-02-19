@@ -10,6 +10,7 @@ type Config struct {
 	currentNum  int
 	redisConn   string
 	mongoConn   string
+	elasticConn string
 }
 
 type redisData struct {
@@ -24,6 +25,7 @@ func loadConfig() {
 	c.currentNum = config.GetInt("currentNum")
 	c.redisConn = config.GetString("redisConn")
 	c.mongoConn = config.GetString("mongoConn")
+	c.elasticConn = config.GetString("elasticConn")
 	numForOneLoop = c.currentNum
 	timeout = c.httpTimeOut
 }

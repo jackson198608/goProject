@@ -43,7 +43,6 @@ func (w Worker) Push(p12bytes []byte) (result bool) {
 
 func (w Worker) wxProgramPush() (result bool) {
 	//调用channel 请求微信
-
 }
 
 func (w Worker) iosPush(p12bytes []byte) (result bool) {

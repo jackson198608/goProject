@@ -8,7 +8,7 @@ import (
 )
 
 //define the config var
-var c Config = Config{5, 100, "192.168.86.68:6380,192.168.86.68:6381,192.168.86.68:6382,192.168.86.68:6383,192.168.86.68:6384,192.168.86.68:6385", "127.0.0.1:27017"}
+var c Config = Config{5, 100, "192.168.86.68:6380,192.168.86.68:6381,192.168.86.68:6382,192.168.86.68:6383,192.168.86.68:6384,192.168.86.68:6385", "127.0.0.1:27017","http://192.168.86.230:9200,http://192.168.86.231:9200"}
 var numForOneLoop int = c.currentNum
 var p12Bytes []byte
 var timeout time.Duration = c.httpTimeOut
@@ -28,11 +28,11 @@ var taskNum int = 0
 
 func Init() {
 	getRedisQueueName()
+	//redisQueueName = "mcInsert"
 	cBytes, err := ioutil.ReadFile("/etc/pro-lingdang.pem")
 	if err != nil {
 		return
 	}
-
 	p12Bytes = cBytes
 
 	loadConfig()
@@ -122,6 +122,7 @@ func main() {
 	//init the system process
 	Init()
 	jobType = os.Args[1]
+	//jobType = "insert"
 
 	switch jobType {
 	case "test":
