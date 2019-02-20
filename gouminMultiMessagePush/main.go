@@ -28,7 +28,6 @@ var taskNum int = 0
 
 func Init() {
 	getRedisQueueName()
-	//redisQueueName = "mcInsert"
 	cBytes, err := ioutil.ReadFile("/etc/pro-lingdang.pem")
 	if err != nil {
 		return
@@ -122,7 +121,6 @@ func main() {
 	//init the system process
 	Init()
 	jobType = os.Args[1]
-	//jobType = "insert"
 
 	switch jobType {
 	case "test":
