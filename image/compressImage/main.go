@@ -11,6 +11,7 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
 	// "strings"
+	"github.com/olivere/elastic"
 )
 
 var c Config = Config{
@@ -31,10 +32,10 @@ func main() {
 	//初始化ImageMagick资源
 	imagick.Initialize()
 	defer imagick.Terminate()
-
+	var esNodes []string
 	redisInfo := tools.FormatRedisOption(c.redisConn)
 	logger.Info("start work")
-	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, c.coroutinNum, 1, jobFuc, c.phpServerIp, c.watermarkPath)
+	r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, esNodes,c.coroutinNum, 1, jobFuc, c.phpServerIp, c.watermarkPath)
 	if err != nil {
 		logger.Error("[NewRedisEngine] ", err)
 	}
@@ -46,7 +47,7 @@ func main() {
 
 }
 
-func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, taskarg []string) error {
+func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, esConn *elastic.Client, taskarg []string) error {
 	t, err := task.NewTask(job, taskarg)
 	if err != nil {
 		return err
