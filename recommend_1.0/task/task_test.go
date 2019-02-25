@@ -12,7 +12,7 @@ import (
 const dbAuth = "dog123:dog123"
 const dbDsn = "192.168.86.193:3307"
 const dbName = "new_dog123"
-const mongoConn = "192.168.86.192:27017" //"192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019"
+//const mongoConn = "192.168.86.192:27017" //"192.168.86.193:27017,192.168.86.193:27018,192.168.86.193:27019"
 
 func newtask() (*Task, error) {
 	//getXormEngine
@@ -25,12 +25,13 @@ func newtask() (*Task, error) {
 	engines := []*xorm.Engine{engine}
 
 	//get mongo session
-	session, err := mgo.Dial(mongoConn)
-	if err != nil {
-		return nil, err
-	}
+	//session, err := mgo.Dial(mongoConn)
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	sessions := []*mgo.Session{session}
+	var sessions []*mgo.Session
+	//sessions := []*mgo.Session{session}
 
 	elkDsn := []string{}
 	elkDsn = append(elkDsn, "192.168.86.5:9200")

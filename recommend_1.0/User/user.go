@@ -30,7 +30,7 @@ type User struct {
 
 
 func NewUser(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, esConn *elastic.Client) *User {
-	if (mysqlXorm == nil) || (mongoConn == nil) || (uid == "") || (esConn == nil) {
+	if (mysqlXorm == nil) || (uid == "") || (esConn == nil) {
 		return nil
 	}
 	logger.Info("start recommend: ", uid)
