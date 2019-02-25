@@ -25,7 +25,7 @@ type ClubPersons struct {
 const count = 1000
 
 func NewClubPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, esConn *elastic.Client) *ClubPersons {
-	if (mongoConn == nil) || (jsonData == nil) {
+	if jsonData == nil {
 		return nil
 	}
 

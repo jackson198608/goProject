@@ -24,7 +24,7 @@ type FansPersons struct {
 const count = 100
 
 func NewFansPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, esConn *elastic.Client) *FansPersons {
-	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) || (esConn ==nil){
+	if (mysqlXorm == nil) || (jsonData == nil) || (esConn ==nil){
 		return nil
 	}
 

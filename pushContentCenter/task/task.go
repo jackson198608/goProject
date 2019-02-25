@@ -25,7 +25,7 @@ type Task struct {
 //taskarg: mongoHost,mongoDatabase,mongoReplicaSetName
 func NewTask(raw string, mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, esConn *elastic.Client) (*Task, error) {
 	//check prams
-	if (raw == "") || (mysqlXorm == nil) || (mongoConn == nil) || (esConn == nil) {
+	if (raw == "") || (mysqlXorm == nil) || (esConn == nil) {
 		return nil, errors.New("params can not be null")
 	}
 

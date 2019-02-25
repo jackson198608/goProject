@@ -21,7 +21,7 @@ type BreedPersons struct {
 }
 
 func NewBreedPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn,esConn *elastic.Client) *BreedPersons {
-	if (mysqlXorm == nil) || (mongoConn == nil) || (jsonData == nil) || (esConn == nil) {
+	if (mysqlXorm == nil) || (jsonData == nil) || (esConn == nil) {
 		return nil
 	}
 

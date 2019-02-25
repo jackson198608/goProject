@@ -22,7 +22,7 @@ type AllPersons struct {
 const count = 100
 
 func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData *job.FocusJsonColumn, esConn *elastic.Client) *AllPersons {
-	if (mongoConn == nil) || (jsonData == nil) || (esConn == nil){
+	if (jsonData == nil) || (esConn == nil){
 		return nil
 	}
 
