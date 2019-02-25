@@ -1,6 +1,7 @@
 package appPush
 
 import (
+	"fmt"
 	"io/ioutil"
 	"testing"
 )
@@ -11,7 +12,7 @@ var p12bytes []byte
 
 func iosPush(c chan int) {
 	//redisString format: devicetoken | json
-	var redisString string = `0|fb71306452499efc778cc77d1be6614b8e1753e79b7acd8348ce6cb47abd4dc2|{"aps":{"alert":"task","sound":"default","badge":1,"type":6,"mark":""}}`
+	var redisString string = `0|51306e7fe0720ee4666ee7cf2368293ce8f73bddd34ec75a4cc37c73658240be|{"aps":{"alert":"task","sound":"default","badge":1,"type":6,"mark":""}}`
 	t := NewTask(redisString)
 	w := NewWorker(t)
 	w.Push(p12bytes)
@@ -31,6 +32,7 @@ func androidPush(c chan int) {
 func TestFibonacci(t *testing.T) {
 	cBytes, err := ioutil.ReadFile("/etc/pro-lingdang.pem")
 	if err != nil {
+		fmt.Println("hi!")
 		return
 	}
 
