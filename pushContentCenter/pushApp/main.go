@@ -9,7 +9,6 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/task"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/redis.v4"
-	"gouminGitlab/common/orm/mongo/ClubData"
 	"os"
 	// "strconv"
 	"fmt"
@@ -25,7 +24,7 @@ var c Config = Config{
 	"127.0.0.1:6379",      //redis info
 	1,                     //thread num
 	"pushContentCenter",   //queuename
-	"192.168.86.192:27017",
+	//"192.168.86.192:27017",
 	"http://192.168.86.230:9200,http://192.168.86.231:9200"} // mongo
 
 func init() {
@@ -33,19 +32,19 @@ func init() {
 }
 
 func main() {
-	var clubId string
+	//var clubId string
 
 	params := os.Args[1]
 	jobType := params
-	jobTypeclubId := strings.Split(params, "_")
-	if len(jobTypeclubId) == 2 {
-		jobType = jobTypeclubId[0]
-		clubId = jobTypeclubId[1]
-	}
+	//jobTypeclubId := strings.Split(params, "_")
+	//if len(jobTypeclubId) == 2 {
+	//	jobType = jobTypeclubId[0]
+	//	clubId = jobTypeclubId[1]
+	//}
 	switch jobType {
 	case "push": //push content conter
 		var mongoConnInfo []string
-		mongoConnInfo = append(mongoConnInfo, c.mongoConn)
+		//mongoConnInfo = append(mongoConnInfo, c.mongoConn)
 		var mysqlInfo []string
 		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 		if c.dbName1 != "" {
@@ -64,16 +63,16 @@ func main() {
 		if err != nil {
 			logger.Error("[redisEngine Do] ", err)
 		}
-	case "allindex": // all collection create index
-		err := ClubData.AllCollectionsCreateIndex(c.mongoConn)
-		if err != nil {
-			logger.Error("all collections create index error! ", err)
-		}
-	case "singleindex": // single collection create index
-		err := ClubData.SingleCollectionCreateIndex(nil, "forum_content_"+clubId, c.mongoConn)
-		if err != nil {
-			logger.Error("single collection create index error by clubId is ", clubId, err)
-		}
+	//case "allindex": // all collection create index
+	//	err := ClubData.AllCollectionsCreateIndex(c.mongoConn)
+	//	if err != nil {
+	//		logger.Error("all collections create index error! ", err)
+	//	}
+	//case "singleindex": // single collection create index
+	//	err := ClubData.SingleCollectionCreateIndex(nil, "forum_content_"+clubId, c.mongoConn)
+	//	if err != nil {
+	//		logger.Error("single collection create index error by clubId is ", clubId, err)
+	//	}
 	case "--help":
 		help()
 	default:

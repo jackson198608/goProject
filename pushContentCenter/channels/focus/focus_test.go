@@ -22,12 +22,12 @@ func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 		return nil, nil,nil
 	}
 
-	mongoConn := "192.168.86.80:27017"
-	session, err := mgo.Dial(mongoConn)
-	if err != nil {
-		fmt.Println("[error] connect mongodb err")
-		return nil, nil,nil
-	}
+	//mongoConn := "192.168.86.80:27017"
+	//session, err := mgo.Dial(mongoConn)
+	//if err != nil {
+	//	fmt.Println("[error] connect mongodb err")
+	//	return nil, nil,nil
+	//}
 
 	var nodes []string
 	nodes = append(nodes, "http://192.168.86.230:9200")
@@ -37,7 +37,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	var engineAry []*xorm.Engine
 	engineAry = append(engineAry, engine)
 	var sessionAry []*mgo.Session
-	sessionAry = append(sessionAry, session)
+	//sessionAry = append(sessionAry, session)
 	//Init()
 	return engineAry, sessionAry, esConn
 	// return engine, session

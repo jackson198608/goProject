@@ -12,7 +12,7 @@ type Config struct {
 	redisConn   string
 	coroutinNum int
 	queueName   string
-	mongoConn   string
+	//mongoConn   string
 	elkNodes string
 }
 
@@ -27,6 +27,6 @@ func loadConfig() {
 	c.redisConn = config.GetString("redisConn")
 	c.coroutinNum = config.GetInt("coroutinNum")
 	c.queueName = config.GetString("queueName")
-	c.mongoConn = config.GetString("mongoConn")
+	//c.mongoConn = ""//config.GetString("mongoConn")
 	c.elkNodes = config.GetString("elkNodes")
 }
