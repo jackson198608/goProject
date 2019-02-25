@@ -56,7 +56,7 @@ type jsonColumn struct {
 }
 
 func NewClub(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string) *Club {
-	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") {
+	if (mysqlXorm == nil) || (jobStr == "") {
 		return nil
 	}
 

@@ -24,7 +24,7 @@ type Recommend struct {
 
 func NewRecommend(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, esConn *elastic.Client, jobStr string) *Recommend {
 	// fmt.Println("in recommend")
-	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") || (esConn ==nil) {
+	if (mysqlXorm == nil) || (jobStr == "") || (esConn ==nil) {
 		return nil
 	}
 

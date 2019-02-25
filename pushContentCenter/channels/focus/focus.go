@@ -26,7 +26,7 @@ type Focus struct {
 }
 
 func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string, esConn *elastic.Client) *Focus {
-	if (mysqlXorm == nil) || (mongoConn == nil) || (jobStr == "") ||( esConn == nil) {
+	if (mysqlXorm == nil) || (jobStr == "") ||( esConn == nil) {
 		return nil
 	}
 

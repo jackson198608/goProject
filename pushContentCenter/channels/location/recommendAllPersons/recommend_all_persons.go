@@ -21,7 +21,7 @@ type RecommendAllPersons struct {
 const count = 1000
 
 func NewRecommendAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, esConn *elastic.Client,jsonData *job.RecommendJsonColumn) *RecommendAllPersons {
-	if (mongoConn == nil) || (jsonData == nil) {
+	if (jsonData == nil) {
 		return nil
 	}
 
