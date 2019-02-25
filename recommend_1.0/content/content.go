@@ -22,6 +22,9 @@ type Content struct {
 	esConn    *elastic.Client
 }
 
+/**
+已废弃
+ */
 func NewContent(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, uid string, esConn *elastic.Client) *Content {
 	if (mysqlXorm == nil) || (mongoConn == nil) || (uid == "") {
 		return nil

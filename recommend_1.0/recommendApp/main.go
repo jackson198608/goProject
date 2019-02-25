@@ -10,7 +10,6 @@ import (
 	"github.com/jackson198608/goProject/common/tools"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/redis.v4"
-	"gouminGitlab/common/orm/mongo/RecommendData"
 	"os"
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
@@ -26,7 +25,7 @@ var c Config = Config{
 	"127.0.0.1:6379",      //redis info
 	1,                     //thread num
 	"pushContentCenter",   //queuename
-	"192.168.86.192:27017",
+	//"192.168.86.192:27017",
 	"192.168.86.230:9200,192.168.5.231:9200"} // mongo
 
 func init() {
@@ -78,7 +77,7 @@ func main() {
 	switch jobType {
 	case "recommend": //push content conter
 		var mongoConnInfo []string
-		mongoConnInfo = append(mongoConnInfo, c.mongoConn)
+		//mongoConnInfo = append(mongoConnInfo, c.mongoConn)
 		var mysqlInfo []string
 		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 
@@ -103,7 +102,7 @@ func main() {
 		}
 	case "content": //push content conter
 		var mongoConnInfo []string
-		mongoConnInfo = append(mongoConnInfo, c.mongoConn)
+		//mongoConnInfo = append(mongoConnInfo, c.mongoConn)
 		var mysqlInfo []string
 		mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName+"?charset=utf8mb4")
 
@@ -122,11 +121,11 @@ func main() {
 		if err != nil {
 			logger.Error("[redisEngine Do] ", err)
 		}
-	case "allindex": // all collection create index
-		err := RecommendData.AllCollectionsCreateIndex(c.mongoConn)
-		if err != nil {
-			logger.Error("all collections create index error! ", err)
-		}
+	//case "allindex": // all collection create index
+	//	err := RecommendData.AllCollectionsCreateIndex(c.mongoConn)
+	//	if err != nil {
+	//		logger.Error("all collections create index error! ", err)
+	//	}
 	case "--help":
 		help()
 	default:
@@ -135,7 +134,7 @@ func main() {
 }
 
 func jobFuc(job string,redisConn *redis.ClusterClient, mysqlConns []*xorm.Engine, mgoConns []*mgo.Session, esConn *elastic.Client,taskarg []string) error {
-	if (mysqlConns == nil) || (mgoConns == nil) || (esConn == nil){
+	if (mysqlConns == nil) || (esConn == nil){
 		return errors.New("mysql or mongo or esConn conn error")
 	}
 	t, err := task.NewTask(job, mysqlConns, mgoConns, esConn)
