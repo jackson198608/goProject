@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"strconv"
 	"github.com/olivere/elastic"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/location/CajFansPersons"
 )
 
 type Focus struct {
@@ -107,7 +108,13 @@ func (f *Focus) Do() error {
 		if err != nil {
 			return err
 		}
-	} else {
+	} else if f.jsonData.TypeId == 36{
+		caj := CajFansPersons.NewCajFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
+		err := caj.Do()
+		if err != nil {
+			return err
+		}
+	}else {
 		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := ap.Do()
 		if err != nil {
@@ -147,5 +154,24 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.PetType, _ = js.Get("pet_type").Int() // 宠物类型 1猫 2狗
 	jsonC.Action, _ = js.Get("action").Int()    //行为 -1 删除 0 插入 1 修改
 
+	jsonC.AdoptId, _ = js.Get("event_info").Get("adopt_id").Int()
+	jsonC.PetName,_ = js.Get("event_info").Get("pet_name").String()
+	jsonC.PetAge,_ = js.Get("event_info").Get("pet_age").String()
+	jsonC.PetBreed,_ = js.Get("event_info").Get("pet_breed").Int()
+	jsonC.PetGender,_ = js.Get("event_info").Get("pet_gender").Int()
+	jsonC.PetSpecies,_ = js.Get("event_info").Get("pet_species").String()
+	jsonC.Province,_ = js.Get("event_info").Get("province").String()
+	jsonC.City,_ = js.Get("event_info").Get("city").String()
+	jsonC.County,_ = js.Get("event_info").Get("county").String()
+	jsonC.Reason,_ = js.Get("event_info").Get("reason").String()
+	jsonC.Image,_ = js.Get("event_info").Get("image").String()
+	jsonC.PetImmunity, _ = js.Get("event_info").Get("pet_immunity").Int()
+	jsonC.PetExpelling, _ = js.Get("event_info").Get("pet_expelling").Int()
+	jsonC.PetSterilization, _ = js.Get("event_info").Get("pet_sterilization").Int()
+	jsonC.PetStatus, _ = js.Get("event_info").Get("pet_status").Int()
+	jsonC.AdoptStatus, _ = js.Get("event_info").Get("adopt_status").Int()
+	jsonC.PetIntroduction, _ = js.Get("event_info").Get("pet_introduction").String()
+	jsonC.UserIdentity, _ = js.Get("event_info").Get("user_identity").Int()
+	jsonC.AdoptTag = js.Get("event_info").Get("adopt_tag").Interface()
 	return &jsonC, nil
 }

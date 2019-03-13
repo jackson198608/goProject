@@ -15,11 +15,35 @@ func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	dbDsn := "192.168.86.194:3307"
 	// dbDsn := "210.14.154.117:33068"
 	dbName := "new_dog123"
+	dbName1 := "card"
+	dbName2 := "adoption"
+	var engineAry []*xorm.Engine
 	dataSourceName := dbAuth + "@tcp(" + dbDsn + ")/" + dbName + "?charset=utf8mb4"
 	engine, err := xorm.NewEngine("mysql", dataSourceName)
 	if err != nil {
 		fmt.Println(err)
 		return nil, nil,nil
+	}
+	engineAry = append(engineAry, engine)
+
+	if dbName1!="" {
+		dataSourceName1 := dbAuth + "@tcp(" + dbDsn + ")/" + dbName1 + "?charset=utf8mb4"
+		engine1, err := xorm.NewEngine("mysql", dataSourceName1)
+		if err != nil {
+			fmt.Println(err)
+			return nil, nil,nil
+		}
+		engineAry = append(engineAry, engine1)
+	}
+
+	if dbName2!="" {
+		dataSourceName2 := dbAuth + "@tcp(" + dbDsn + ")/" + dbName2 + "?charset=utf8mb4"
+		engine2, err := xorm.NewEngine("mysql", dataSourceName2)
+		if err != nil {
+			fmt.Println(err)
+			return nil, nil,nil
+		}
+		engineAry = append(engineAry, engine2)
 	}
 
 	//mongoConn := "192.168.86.80:27017"
@@ -34,8 +58,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	nodes = append(nodes, "http://192.168.86.231:9200")
 	r,_ := elasticsearchBase.NewClient(nodes)
 	esConn,_ :=r.Run()
-	var engineAry []*xorm.Engine
-	engineAry = append(engineAry, engine)
+
 	var sessionAry []*mgo.Session
 	//sessionAry = append(sessionAry, session)
 	//Init()
@@ -78,6 +101,15 @@ func TestDo2(t *testing.T) {
 	mysqlXorm, mongoConn,esConn := testConn()
 
 	jobStr := "{\"uid\":881050,\"event_type\":18,\"event_info\":{\"title\":\"subject\",\"event type 1focus content\":\" focus  message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":1,\"fid\":36,\"bid\":34},\"infoid\":123,\"tid\":0,\"status\":1,\"action\":0,\"time\":\"2017-10-23 10:54:00\"}"
+	f := NewFocus(mysqlXorm, mongoConn, jobStr, esConn)
+	fmt.Println(f.Do())
+}
+
+
+func TestDo3(t *testing.T) {
+	mysqlXorm, mongoConn,esConn := testConn()
+
+	jobStr := "{\"time\":1550387388,\"event_info\":{\"adopt_id\":2435,\"pet_name\":\"5\",\"pet_age\":\"6\",\"pet_breed\":1,\"pet_gender\":7,\"pet_species\":\"\u6bd4\u683c\",\"province\":\"11\",\"city\":\"12\",\"county\":\"13\",\"reason\":\"9\",\"image\":\"\",\"is_video\":1,\"pet_immunity\":16,\"pet_expelling\":17,\"pet_sterilization\":18,\"pet_status\":19,\"adopt_status\":0,\"pet_introduction\":\"20\",\"user_identity\":0,\"adopt_tag\":[\"26\",\"27\"]},\"uid\":2265027,\"event_type\":36,\"infoid\":2435,\"status\":1,\"action\":1}|focus"
 	f := NewFocus(mysqlXorm, mongoConn, jobStr, esConn)
 	fmt.Println(f.Do())
 }

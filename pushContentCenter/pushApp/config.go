@@ -7,7 +7,8 @@ import (
 type Config struct {
 	dbDsn       string
 	dbName      string
-	dbName1      string
+	dbName1     string
+	dbName2     string
 	dbAuth      string
 	redisConn   string
 	coroutinNum int
@@ -23,6 +24,7 @@ func loadConfig() {
 	c.dbDsn = config.GetString("dbDsn")
 	c.dbName = config.GetString("dbName")
 	c.dbName1 = config.GetString("dbName1")
+	c.dbName2 = config.GetString("dbName2")
 	c.dbAuth = config.GetString("dbAuth")
 	c.redisConn = config.GetString("redisConn")
 	c.coroutinNum = config.GetInt("coroutinNum")
