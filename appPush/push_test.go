@@ -12,7 +12,8 @@ var p12bytes []byte
 
 func iosPush(c chan int) {
 	//redisString format: devicetoken | json
-	var redisString string = `0|51306e7fe0720ee4666ee7cf2368293ce8f73bddd34ec75a4cc37c73658240be|{"aps":{"alert":"task","sound":"default","badge":1,"type":6,"mark":""}}`
+	var redisString string = `0|bb041195e0a424272177c17891fb7beb191aa3a366326037920329ae362d6570|{"aps":{"alert":"task","sound":"default","badge":1,"type":6,"mark":""}}`
+	//var redisString string = `0|11153d0425dd2457a0fbcc4f5f61c3f0a3d7f95499cc5276693cf6eb9311747c|{"aps":{"alert":"task","sound":"default","badge":1,"type":20,"mark":"G3535-216#216"}}`
 	t := NewTask(redisString)
 	w := NewWorker(t)
 	w.Push(p12bytes)
