@@ -84,7 +84,7 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Fid = 0
 	jsonData.Source = 2
 	jsonData.Status = 1
-	jsonData.Action = -1
+	jsonData.Action = 0
 	jsonData.AdoptId = 2435
 	jsonData.PetName = "宠物名称1"
 	jsonData.PetAge = "61"
@@ -104,6 +104,7 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.PetIntroduction = "20"
 	jsonData.UserIdentity = 1
 	jsonData.AdoptTag = tag
+	jsonData.PetAgenum = 1
 	return &jsonData
 }
 

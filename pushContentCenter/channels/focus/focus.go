@@ -114,13 +114,14 @@ func (f *Focus) Do() error {
 		if err != nil {
 			return err
 		}
-	}else {
-		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
-		err := ap.Do()
-		if err != nil {
-			return err
-		}
 	}
+	//else {
+	//	ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
+	//	err := ap.Do()
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 	return nil
 }
 
@@ -173,5 +174,6 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.PetIntroduction, _ = js.Get("event_info").Get("pet_introduction").String()
 	jsonC.UserIdentity, _ = js.Get("event_info").Get("user_identity").Int()
 	jsonC.AdoptTag = js.Get("event_info").Get("adopt_tag").Interface()
+	jsonC.PetAgenum, _ = js.Get("event_info").Get("pet_agenum").Int()
 	return &jsonC, nil
 }

@@ -42,4 +42,5 @@ type FocusJsonColumn struct {
 	PetIntroduction string
 	UserIdentity int
 	AdoptTag interface{}
+	PetAgenum int
 }

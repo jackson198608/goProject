@@ -109,7 +109,7 @@ func TestDo2(t *testing.T) {
 func TestDo3(t *testing.T) {
 	mysqlXorm, mongoConn,esConn := testConn()
 
-	jobStr := "{\"time\":1550387388,\"event_info\":{\"adopt_id\":2435,\"pet_name\":\"5\",\"pet_age\":\"6\",\"pet_breed\":1,\"pet_gender\":7,\"pet_species\":\"\u6bd4\u683c\",\"province\":\"11\",\"city\":\"12\",\"county\":\"13\",\"reason\":\"9\",\"image\":\"\",\"is_video\":1,\"pet_immunity\":16,\"pet_expelling\":17,\"pet_sterilization\":18,\"pet_status\":19,\"adopt_status\":0,\"pet_introduction\":\"20\",\"user_identity\":0,\"adopt_tag\":[\"26\",\"27\"]},\"uid\":2265027,\"event_type\":36,\"infoid\":2435,\"status\":1,\"action\":1}|focus"
+	jobStr := "{\"time\":1550387388,\"event_info\":{\"adopt_id\":2435,\"pet_name\":\"5\",\"pet_age\":\"6\",\"pet_breed\":1,\"pet_gender\":7,\"pet_species\":\"\u6bd4\u683c\",\"province\":\"11\",\"city\":\"12\",\"county\":\"13\",\"reason\":\"9\",\"image\":\"\",\"is_video\":1,\"pet_immunity\":16,\"pet_expelling\":17,\"pet_sterilization\":18,\"pet_status\":19,\"pet_agenum\":15,\"adopt_status\":0,\"pet_introduction\":\"20\",\"user_identity\":0,\"adopt_tag\":[\"26\",\"27\"]},\"uid\":2265027,\"event_type\":36,\"infoid\":2435,\"status\":1,\"action\":1}|focus"
 	f := NewFocus(mysqlXorm, mongoConn, jobStr, esConn)
 	fmt.Println(f.Do())
 }
