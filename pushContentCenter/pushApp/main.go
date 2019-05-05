@@ -21,6 +21,7 @@ var c Config = Config{
 	"new_dog123",          //mysql dbName
 	"card",
 	"adoption",//mysql dbName
+	"member",
 	"dog123:dog123",       //mysqldbAuth
 	"127.0.0.1:6379",      //redis info
 	1,                     //thread num
@@ -53,6 +54,9 @@ func main() {
 		}
 		if c.dbName2 != "" {
 			mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName2+"?charset=utf8mb4")
+		}
+		if c.dbName3 != "" {
+			mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName3+"?charset=utf8mb4")
 		}
 		esNodes := strings.SplitN(c.elkNodes, ",", -1)
 

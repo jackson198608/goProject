@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"github.com/olivere/elastic"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/CajFansPersons"
+	"github.com/jackson198608/goProject/pushContentCenter/channels/location/robots"
 )
 
 type Focus struct {
@@ -51,6 +52,7 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string,
 }
 
 //TypeId = 1 bbs, push fans active persons
+//TypeId = 5 diary, push fans active persons
 //TypeId = 6 video, push fans active persons
 //TypeId = 8 ask, push fans and breed active persons
 //TypeId = 9 recommend bbs, push all active persons
@@ -69,17 +71,33 @@ func (f *Focus) Do() error {
 			return err
 		}
 
+		if f.jsonData.TypeId ==1 {
+			//推送给机器人
+			fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
+			frErr := fr.Do()
+			if frErr != nil {
+				return frErr
+			}
+		}
+
 		// f.jsonData.Source = 2
 		// cp := clubPersons.NewClubPersons(f.mysqlXorm, f.mongoConn, f.jsonData)
 		// err = cp.Do()
 		// if err != nil {
 		// 	return err
 		// }
-	} else if f.jsonData.TypeId == 6 {
+	} else if f.jsonData.TypeId == 6 || f.jsonData.TypeId == 5{
 		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := fp.Do()
 		if err != nil {
 			return err
+		}
+
+		//推送给机器人
+		fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
+		frErr := fr.Do()
+		if frErr != nil {
+			return frErr
 		}
 	} else if f.jsonData.TypeId == 8 {
 		f.jsonData.Source = 3
@@ -87,6 +105,13 @@ func (f *Focus) Do() error {
 		err := fp.Do()
 		if err != nil {
 			return err
+		}
+
+		//推送给机器人
+		fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
+		frErr := fr.Do()
+		if frErr != nil {
+			return frErr
 		}
 
 		f.jsonData.Source = 4
@@ -175,5 +200,6 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.UserIdentity, _ = js.Get("event_info").Get("user_identity").Int()
 	jsonC.AdoptTag = js.Get("event_info").Get("adopt_tag").Interface()
 	jsonC.PetAgenum, _ = js.Get("event_info").Get("pet_agenum").Int()
+	//jsonC.Channel = 0  //1推送给机器人 0 推送给粉丝
 	return &jsonC, nil
 }

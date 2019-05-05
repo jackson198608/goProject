@@ -124,7 +124,7 @@ func (f *FansPersons) getPersons(startId int) *[]new_dog123.Follow {
 func (f *FansPersons) getActiveUserByUids(follows *[]new_dog123.Follow) (map[int]bool,error) {
 	var m map[int]bool
 	m = make(map[int]bool)
-	er,err := elasticsearch.NewUser(f.esConn)
+	er,err := elasticsearch.NewUserInfo(f.esConn)
 	if err!=nil {
 		return nil,err
 
@@ -134,7 +134,7 @@ func (f *FansPersons) getActiveUserByUids(follows *[]new_dog123.Follow) (map[int
 	for _, person := range persons {
 		uids = append(uids, person.FollowId)
 	}
-	rst := er.SearchActiveUserByUids(uids, 0, count)
+	rst := er.SearchActiveUserInfoByUids(uids, 0, count)
 	total := rst.Hits.TotalHits
 	if total> 0 {
 		for _, hit := range rst.Hits.Hits {
