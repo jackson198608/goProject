@@ -43,4 +43,5 @@ type FocusJsonColumn struct {
 	UserIdentity int
 	AdoptTag interface{}
 	PetAgenum int
+	Channel int  //1 水军数据
 }
