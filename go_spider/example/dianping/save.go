@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/jackson198608/gotest/go_spider/core/common/page"
+	"github.com/jackson198608/goProject/go_spider/core/common/page"
 	"os"
 	"path"
 	"strconv"

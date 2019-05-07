@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/jackson198608/gotest/go_spider/core/pipeline"
-	"github.com/jackson198608/gotest/go_spider/core/spider"
+	"github.com/jackson198608/goProject/go_spider/core/pipeline"
+	"github.com/jackson198608/goProject/go_spider/core/spider"
 	"log"
 	"os"
 	"strconv"
