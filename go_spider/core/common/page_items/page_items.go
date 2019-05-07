@@ -3,7 +3,7 @@
 package page_items
 
 import (
-    "github.com/jackson198608/gotest/go_spider/core/common/request"
+    "github.com/jackson198608/goProject/go_spider/core/common/request"
 )
 
 // PageItems represents an entity save result parsed by PageProcesser and will be output at last.

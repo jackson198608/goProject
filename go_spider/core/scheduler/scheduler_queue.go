@@ -8,7 +8,7 @@ package scheduler
 import (
     "container/list"
     "crypto/md5"
-    "github.com/jackson198608/gotest/go_spider/core/common/request"
+    "github.com/jackson198608/goProject/go_spider/core/common/request"
     "sync"
     //"fmt"
 )
