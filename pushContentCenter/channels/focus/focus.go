@@ -76,6 +76,7 @@ func (f *Focus) Do() error {
 			fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 			frErr := fr.Do()
 			if frErr != nil {
+				f.jsonData.Channel = 0
 				return frErr
 			}
 		}
@@ -97,6 +98,7 @@ func (f *Focus) Do() error {
 		fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		frErr := fr.Do()
 		if frErr != nil {
+			f.jsonData.Channel = 0
 			return frErr
 		}
 	} else if f.jsonData.TypeId == 8 {
@@ -118,6 +120,7 @@ func (f *Focus) Do() error {
 		fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		frErr := fr.Do()
 		if frErr != nil {
+			f.jsonData.Channel = 0
 			return frErr
 		}
 
