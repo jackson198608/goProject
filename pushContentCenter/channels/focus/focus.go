@@ -107,6 +107,13 @@ func (f *Focus) Do() error {
 			return err
 		}
 
+		f.jsonData.Source = 4
+		bp := breedPersons.NewBreedPersons(f.mysqlXorm, f.mongoConn, f.jsonData,f.esConn)
+		err = bp.Do()
+		if err != nil {
+			return err
+		}
+
 		//推送给机器人
 		fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		frErr := fr.Do()
@@ -114,12 +121,6 @@ func (f *Focus) Do() error {
 			return frErr
 		}
 
-		f.jsonData.Source = 4
-		bp := breedPersons.NewBreedPersons(f.mysqlXorm, f.mongoConn, f.jsonData,f.esConn)
-		err = bp.Do()
-		if err != nil {
-			return err
-		}
 	} else if ((f.jsonData.TypeId == 9) || (f.jsonData.TypeId == 15)) && (f.jsonData.Source) == 1 {
 		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := ap.Do()
