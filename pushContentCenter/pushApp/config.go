@@ -6,6 +6,7 @@ import (
 
 type Config struct {
 	dbDsn       string
+	dbDsn3       string
 	dbName      string
 	dbName1     string
 	dbName2     string
@@ -23,6 +24,7 @@ func loadConfig() {
 	config := jconfig.LoadConfig("/etc/pushContentCenterConfig.json")
 	//config := jconfig.LoadConfig("/Users/Snow/Work/go/config/pushContentCenterConfig.json")
 	c.dbDsn = config.GetString("dbDsn")
+	c.dbDsn3 = config.GetString("dbDsn3")
 	c.dbName = config.GetString("dbName")
 	c.dbName1 = config.GetString("dbName1")
 	c.dbName2 = config.GetString("dbName2")

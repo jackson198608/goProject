@@ -13,6 +13,7 @@ import (
 func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	dbAuth := "dog123:dog123"
 	dbDsn := "192.168.86.194:3307"
+	dbDsn3 := "192.168.86.194:3307"
 	// dbDsn := "210.14.154.117:33068"
 	dbName := "new_dog123"
 	dataSourceName := dbAuth + "@tcp(" + dbDsn + ")/" + dbName + "?charset=utf8mb4"
@@ -39,19 +40,19 @@ func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	}
 
 	dbName3 := "member"
-	dataSourceName3 := dbAuth + "@tcp(" + dbDsn + ")/" + dbName3 + "?charset=utf8mb4"
+	dataSourceName3 := dbAuth + "@tcp(" + dbDsn3 + ")/" + dbName3 + "?charset=utf8mb4"
 	engine3, err := xorm.NewEngine("mysql", dataSourceName3)
 	if err != nil {
 		fmt.Println(err)
 		return nil, nil,nil
 	}
 
-	mongoConn := "192.168.86.80:27017"
-	session, err := mgo.Dial(mongoConn)
-	if err != nil {
-		fmt.Println("[error] connect mongodb err")
-		return nil, nil,nil
-	}
+	//mongoConn := "192.168.86.80:27017"
+	//session, err := mgo.Dial(mongoConn)
+	//if err != nil {
+	//	fmt.Println("[error] connect mongodb err")
+	//	return nil, nil,nil
+	//}
 
 	var nodes []string
 	nodes = append(nodes, "http://192.168.86.230:9200")
@@ -64,7 +65,7 @@ func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	engineAry = append(engineAry, engine2)
 	engineAry = append(engineAry, engine3)
 	var sessionAry []*mgo.Session
-	sessionAry = append(sessionAry, session)
+	//sessionAry = append(sessionAry, session)
 	//Init()
 	return engineAry, sessionAry, esConn
 	// return engine, session

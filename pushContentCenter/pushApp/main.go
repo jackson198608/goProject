@@ -18,6 +18,7 @@ import (
 
 var c Config = Config{
 	"192.168.86.193:3307", //mysql dsn
+	"192.168.86.193:3307", //mysql dsn
 	"new_dog123",          //mysql dbName
 	"card",
 	"adoption",//mysql dbName
@@ -55,8 +56,8 @@ func main() {
 		if c.dbName2 != "" {
 			mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName2+"?charset=utf8mb4")
 		}
-		if c.dbName3 != "" {
-			mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn+")/"+c.dbName3+"?charset=utf8mb4")
+		if c.dbDsn3 != "" && c.dbName3 != "" {
+			mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn3+")/"+c.dbName3+"?charset=utf8mb4")
 		}
 		esNodes := strings.SplitN(c.elkNodes, ",", -1)
 
