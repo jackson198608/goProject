@@ -68,13 +68,13 @@ func (t *Task) Do() error {
 		} else {
 			return nil
 		}
-	case "recommend":
-		err := t.ChannelRecommend()
-		if err != nil {
-			return err
-		} else {
-			return nil
-		}
+	//case "recommend":
+	//	err := t.ChannelRecommend()
+	//	if err != nil {
+	//		return err
+	//	} else {
+	//		return nil
+	//	}
 
 	}
 	return nil
