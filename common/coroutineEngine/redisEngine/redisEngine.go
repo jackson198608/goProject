@@ -102,6 +102,7 @@ func (r *RedisEngine) mysqlConnect() ([]*xorm.Engine, error) {
 }
 func (r *RedisEngine) mysqlSingleConnect(mysqlInfo string) (*xorm.Engine, error) {
 	engine, err := xorm.NewEngine("mysql", mysqlInfo)
+	err = engine.Ping()
 	if err != nil {
 		return nil, err
 	}
@@ -252,6 +253,18 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 			continue
 		}
 
+		redisConn, redisErr :=r.checkAndRepairRedisConnectins(redisConn)
+
+		mysqlConns, mysqlErr :=r.checkAndRepairMysqlConnectins(mysqlConns)
+
+		//esConn, esErr :=r.checkAndRepairEsConnectins(esConn)
+
+		//如果mysql 或 redis 连接异常，则把任务重新抛回任务列表
+		if redisErr != nil || mysqlErr !=nil {
+			fmt.Println("[error]invalid connection ,but still can be retry", err)
+			err = r.pushFails(redisConn, realraw, trytimes)
+			continue
+		}
 		//if goint to here ,call the invoke
 		err = r.workFun(realraw, redisConn, mysqlConns, mgoConns, esConn, r.taskArgs)
 		if err != nil {
@@ -273,6 +286,43 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 	return
 
 }
+
+//检查redis链接, 链接异常时重连
+func (r *RedisEngine) checkAndRepairRedisConnectins(redisConn *redis.ClusterClient) (*redis.ClusterClient,error) {
+    _,err := redisConn.Ping().Result()
+	if err != nil {
+		redisConn, err := redisConnect(r.redisInfo)
+		if err != nil {
+			return nil, err
+		}
+		defer redisConn.Close()
+	}
+	return redisConn,nil
+}
+
+//检查mysql链接, 链接异常时重连
+func (r *RedisEngine) checkAndRepairMysqlConnectins(mysqlConns []*xorm.Engine) ([]*xorm.Engine,error) {
+	//for _, mysqlInfo := range r.mysqlInfo {
+	for i,mysqlConn := range mysqlConns{
+		err := mysqlConn.Ping()
+		if err !=nil{
+			x, err := r.mysqlSingleConnect(r.mysqlInfo[i])
+			if err != nil {
+				//close former connection
+				r.closeMysqlConn(mysqlConns)
+				return nil, err
+			}
+			mysqlConns[i] = x
+			defer r.closeMysqlConn(mysqlConns)
+		}
+	}
+	return mysqlConns,nil
+}
+
+//检查es链接, 链接异常时重连
+//func (r *RedisEngine) checkAndRepairEsConnectins(esConn *elastic.Client) (*elastic.Client,error) {
+//	return esConn,nil
+//}
 
 //@todo
 func (r *RedisEngine) closeMysqlConn(mysqlConns []*xorm.Engine) {
