@@ -140,9 +140,7 @@ func (f *CardFansPersons) getPersons(startId int) *[]card.HaremCard {
 获取活跃用户的粉丝
  */
 func (f *CardFansPersons) getActiveUserByUids(follows *[]card.HaremCard) (map[int]bool, error) {
-	var m map[int]bool
-	m = make(map[int]bool)
-	er,err := elasticsearch.NewUser(f.esConn)
+	er,err := elasticsearch.NewUserInfo(f.esConn)
 	if err!=nil {
 		return nil,err
 	}
@@ -151,15 +149,10 @@ func (f *CardFansPersons) getActiveUserByUids(follows *[]card.HaremCard) (map[in
 	for _, person := range persons {
 		uids = append(uids, person.Uid)
 	}
-	rst := er.SearchActiveUserByUids(uids, 0, count)
-	total := rst.Hits.TotalHits
-	if total> 0 {
-		for _, hit := range rst.Hits.Hits {
-			uid,_ := strconv.Atoi(hit.Id)
-			m[uid] = true
-		}
+	rst,err := er.GetActiveUserInfoByUids(uids, 0, count)
+	if err!=nil {
+		return nil,err
 	}
-	fmt.Println(m)
-	return m,nil
+	return rst,nil
 }
 

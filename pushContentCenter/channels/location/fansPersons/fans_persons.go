@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
 	"github.com/olivere/elastic"
+	log "github.com/thinkboy/log4go"
 )
 
 type FansPersons struct {
@@ -45,9 +46,9 @@ func (f *FansPersons) Do() error {
 	startId := 0
 	for {
 		//获取粉丝用户
-		currentPersionList := f.getPersons(startId)
-		if currentPersionList == nil {
-			return nil
+		currentPersionList,err := f.getPersons(startId)
+		if err != nil {
+			return err
 		}
 		endId, err := f.pushPersons(currentPersionList)
 		startId = endId
@@ -93,6 +94,7 @@ func (f *FansPersons) pushPersons(follows *[]new_dog123.Follow) (int, error) {
 			err := elx.PushPerson(person.FollowId)
 			if err != nil {
 				for i := 0; i < 5; i++ {
+					log.Info("push fans ", person.FollowId, " try ", i, " by ",f.jsonData)
 					err := elx.PushPerson(person.FollowId)
 					if err == nil {
 						break
@@ -107,42 +109,37 @@ func (f *FansPersons) pushPersons(follows *[]new_dog123.Follow) (int, error) {
 }
 
 //get fans persons by uid
-func (f *FansPersons) getPersons(startId int) *[]new_dog123.Follow {
+func (f *FansPersons) getPersons(startId int) (*[]new_dog123.Follow, error) {
 	// var persons []int
 	var follows []new_dog123.Follow
 	err := f.mysqlXorm[0].Where("user_id=? and id>? and fans_active=1", f.jsonData.Uid, startId).Asc("id").Limit(count).Find(&follows)
 	if err != nil {
-		return nil
+		return nil,err
 	}
 
-	return &follows
+	return &follows,nil
 }
 
 /**
 获取活跃用户的粉丝
  */
 func (f *FansPersons) getActiveUserByUids(follows *[]new_dog123.Follow) (map[int]bool,error) {
-	var m map[int]bool
-	m = make(map[int]bool)
+
 	er,err := elasticsearch.NewUserInfo(f.esConn)
 	if err!=nil {
 		return nil,err
-
 	}
 	var uids []int
 	persons := *follows
 	for _, person := range persons {
 		uids = append(uids, person.FollowId)
 	}
-	rst := er.SearchActiveUserInfoByUids(uids, 0, count)
-	total := rst.Hits.TotalHits
-	if total> 0 {
-		for _, hit := range rst.Hits.Hits {
-			uid,_ := strconv.Atoi(hit.Id)
-			m[uid] = true
-		}
+	rst,err := er.GetActiveUserInfoByUids(uids, 0, count)
+	if err!=nil {
+		return nil,err
 	}
-	//fmt.Println(m)
-	return m,nil
+	return rst,nil
 }
+
+
 

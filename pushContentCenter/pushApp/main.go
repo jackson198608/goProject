@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"github.com/donnie4w/go-logger/logger"
+	log "github.com/thinkboy/log4go"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
 	"github.com/jackson198608/goProject/common/tools"
@@ -28,7 +28,8 @@ var c Config = Config{
 	1,                     //thread num
 	"pushContentCenter",   //queuename
 	//"192.168.86.192:27017",
-	"http://192.168.86.230:9200,http://192.168.86.231:9200"} // mongo
+	"http://192.168.86.230:9200,http://192.168.86.231:9200",
+"/Users/Snow/Work/go/config/pushContentCenterLog.xml"} // mongo
 
 func init() {
 	loadConfig()
@@ -46,6 +47,9 @@ func main() {
 	//}
 	switch jobType {
 	case "push": //push content conter
+	    //初始化日志配置
+		log.LoadConfiguration(c.log)
+
 		var mongoConnInfo []string
 		//mongoConnInfo = append(mongoConnInfo, c.mongoConn)
 		var mysqlInfo []string
@@ -62,15 +66,15 @@ func main() {
 		esNodes := strings.SplitN(c.elkNodes, ",", -1)
 
 		redisInfo := tools.FormatRedisOption(c.redisConn)
-		logger.Info("start work")
+		log.Info("start work")
 		r, err := redisEngine.NewRedisEngine(c.queueName, &redisInfo, mongoConnInfo, mysqlInfo, esNodes, c.coroutinNum, 1, jobFuc)
 		if err != nil {
-			logger.Error("[NewRedisEngine] ", err)
+			log.Error("[NewRedisEngine] ", err)
 		}
 
 		err = r.Do()
 		if err != nil {
-			logger.Error("[redisEngine Do] ", err)
+			log.Error("[redisEngine Do] ", err)
 		}
 	//case "allindex": // all collection create index
 	//	err := ClubData.AllCollectionsCreateIndex(c.mongoConn)

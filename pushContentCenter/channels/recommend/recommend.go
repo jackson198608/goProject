@@ -3,13 +3,13 @@ package recommend
 import (
 	// "fmt"
 	"github.com/bitly/go-simplejson"
-	"github.com/donnie4w/go-logger/logger"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/recommendAllPersons"
-	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2"
 	"github.com/olivere/elastic"
+	log "github.com/thinkboy/log4go"
 )
 
 var m map[int]bool
@@ -38,7 +38,7 @@ func NewRecommend(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, esConn *el
 	f.jobstr = jobStr
 	f.esConn = esConn
 
-	logger.Info("[new recommend] jobStr is ", f.jobstr)
+	log.Info("[new recommend] jobStr is ", f.jobstr)
 
 	//@todo pass params
 	jsonColumn, err := f.parseJson()
@@ -53,7 +53,7 @@ func (f *Recommend) Do() error {
 	//推送所有用户
 	// fmt.Println(f.jsonData.RecommendType)
 	if f.jsonData.RecommendType == "all" {
-		logger.Info("[recommend do] jsonData is ", f.jsonData)
+		log.Info("[recommend do] jsonData is ", f.jsonData)
 		ap := recommendAllPersons.NewRecommendAllPersons(f.mysqlXorm, f.mongoConn, f.esConn, f.jsonData)
 		err := ap.Do()
 		if err != nil {

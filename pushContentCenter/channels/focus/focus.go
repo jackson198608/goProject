@@ -12,11 +12,11 @@ import (
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	"gopkg.in/mgo.v2"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/cardFansPersons"
-	"fmt"
 	"strconv"
 	"github.com/olivere/elastic"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/CajFansPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/robots"
+	log "github.com/thinkboy/log4go"
 )
 
 type Focus struct {
@@ -62,8 +62,8 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string,
 //TypeId = 30 星球传记(事迹), push fans active persons
 func (f *Focus) Do() error {
 	//fmt.Println(f.jsonData)
+	log.Info("get task: ",f.jsonData)
 	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 || f.jsonData.TypeId == 19 {
-		//fmt.Println(f.jsonData.TypeId)
 		f.jsonData.Source = 3
 		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := fp.Do()
@@ -131,7 +131,7 @@ func (f *Focus) Do() error {
 			return err
 		}
 	} else if f.jsonData.TypeId == 30 {
-		fmt.Println("card json uid:" + strconv.Itoa(f.jsonData.Uid) + " infoid:" + strconv.Itoa(f.jsonData.Infoid))
+		log.Info("card json uid: ", strconv.Itoa(f.jsonData.Uid) ," infoid:" , strconv.Itoa(f.jsonData.Infoid))
 		cfp := cardFansPersons.NewCardFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := cfp.Do()
 		if err != nil {

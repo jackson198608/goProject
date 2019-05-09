@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
 	"gouminGitlab/common/orm/mysql/member"
+	"github.com/donnie4w/go-logger/logger"
 )
 
 type Robots struct {
@@ -41,9 +42,9 @@ func (r *Robots) Do() error {
 	startId := 0
 	for {
 		//获取机器人数据
-		currentPersionList := r.getPersons(startId)
-		if currentPersionList == nil {
-			return nil
+		currentPersionList,err := r.getPersons(startId)
+		if err != nil {
+			return err
 		}
 		endId, err := r.pushPersons(currentPersionList)
 		startId = endId
@@ -74,6 +75,7 @@ func (r *Robots) pushPersons(robots *[]member.PublishUser) (int, error) {
 		err := elx.PushPerson(person.RealUid)
 		if err != nil {
 			for i := 0; i < 5; i++ {
+				logger.Info("push fans ", person.RealUid, " try ", i, " by ",r.jsonData)
 				err := elx.PushPerson(person.RealUid)
 				if err == nil {
 					break
@@ -90,14 +92,14 @@ func (r *Robots) pushPersons(robots *[]member.PublishUser) (int, error) {
 	获取机器人uid
  */
 //get fans persons by uid
-func (r *Robots) getPersons(startId int) *[]member.PublishUser {
+func (r *Robots) getPersons(startId int) (*[]member.PublishUser, error){
 	// var persons []int
 	var uids []member.PublishUser
 	err := r.mysqlXorm[3].Where("robot_uid =? and robot_nums>? and id>?", 0, 0, startId).Asc("id").Limit(count).Find(&uids)
 	if err != nil {
-		return nil
+		return &uids,err
 	}
 
-	return &uids
+	return &uids,nil
 }
 

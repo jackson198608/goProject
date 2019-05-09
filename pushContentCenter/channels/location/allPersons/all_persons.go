@@ -40,7 +40,7 @@ func NewAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jsonData 
 
 func (f *AllPersons) Do() error {
 	//get all active user from hashmap
-	er,err := elasticsearch.NewUser(f.esConn)
+	er,err := elasticsearch.NewUserInfo(f.esConn)
 	if err != nil {
 		return err
 	}
@@ -48,18 +48,18 @@ func (f *AllPersons) Do() error {
 	i :=1
 	for {
 		var uids []int
-		rst := er.SearchAllActiveUser(from, count)
-		total := rst.Hits.TotalHits
-		if total> 0 {
-			for _, hit := range rst.Hits.Hits {
-				uid,_ := strconv.Atoi(hit.Id)
-				uids = append(uids, uid)
-			}
+		activeuids,err := er.GetAllActiveUserId(from, count)
+		if err != nil {
+			return err
+		}
+
+		for activeuid,_  := range activeuids {
+			uids = append(uids,activeuid)
 		}
 		f.pushPersons(uids)
+		from = i*count
 		i++
-		from = (i-1)*count
-		if int(total) < from {
+		if(uids == nil){
 			break
 		}
 	}

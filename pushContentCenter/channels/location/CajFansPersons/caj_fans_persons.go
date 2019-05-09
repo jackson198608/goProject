@@ -42,9 +42,9 @@ func (f *CajFansPersons) Do() error {
 	startId := 0
 	for {
 		//获取粉丝用户
-		currentPersionList := f.getPersons(startId)
-		if currentPersionList == nil {
-			return nil
+		currentPersionList,err := f.getPersons(startId)
+		if err != nil {
+			return err
 		}
 		endId, err := f.pushPersons(currentPersionList)
 		startId = endId
@@ -89,13 +89,13 @@ func (f *CajFansPersons) pushPersons(follows *[]adoption.UserFollow) (int, error
 }
 
 //get fans persons by uid
-func (f *CajFansPersons) getPersons(startId int) *[]adoption.UserFollow {
+func (f *CajFansPersons) getPersons(startId int) (*[]adoption.UserFollow, error) {
 	// var persons []int
 	var follows []adoption.UserFollow
 	err := f.mysqlXorm[2].Where("fuid=? and id>?", f.jsonData.Uid, startId).Asc("id").Limit(count).Find(&follows)
 	if err != nil {
-		return nil
+		return &follows,err
 	}
 
-	return &follows
+	return &follows,nil
 }

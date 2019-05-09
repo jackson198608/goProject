@@ -39,7 +39,7 @@ func NewRecommendAllPersons(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, 
 }
 
 func (f *RecommendAllPersons) Do() error {
-	er,err := elasticsearch.NewUser(f.esConn)
+	er,err := elasticsearch.NewUserInfo(f.esConn)
 	if err!=nil {
 		return err
 	}
@@ -47,14 +47,15 @@ func (f *RecommendAllPersons) Do() error {
 	i :=1
 	for {
 		var uids []int
-		rst := er.SearchAllActiveUser(from, count)
-		total := rst.Hits.TotalHits
-		if total> 0 {
-			for _, hit := range rst.Hits.Hits {
-				uid,_ := strconv.Atoi(hit.Id)
-				uids = append(uids, uid)
-			}
+		activeuids,err := er.GetAllActiveUserId(from, count)
+		if err != nil {
+			return err
 		}
+
+		for activeuid,_  := range activeuids {
+			uids = append(uids,activeuid)
+		}
+
 		if len(uids)>0 {
 			if f.jsonData.Action == 0 {
 				//get all active user from hashmap
@@ -71,7 +72,7 @@ func (f *RecommendAllPersons) Do() error {
 		}
 		i++
 		from = (i-1)*count
-		if int(total) < from {
+		if uids==nil {
 			break
 		}
 	}

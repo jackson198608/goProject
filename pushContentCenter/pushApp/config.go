@@ -17,6 +17,7 @@ type Config struct {
 	queueName   string
 	//mongoConn   string
 	elkNodes string
+	log     string
 }
 
 func loadConfig() {
@@ -35,4 +36,5 @@ func loadConfig() {
 	c.queueName = config.GetString("queueName")
 	//c.mongoConn = ""//config.GetString("mongoConn")
 	c.elkNodes = config.GetString("elkNodes")
+	c.log = config.GetString("log")
 }
