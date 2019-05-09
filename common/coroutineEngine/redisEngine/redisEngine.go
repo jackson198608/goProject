@@ -6,13 +6,13 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/common/tools"
+	"github.com/olivere/elastic"
 	mgo "gopkg.in/mgo.v2"
 	redis "gopkg.in/redis.v4"
+	"gouminGitlab/common/orm/elasticsearchBase"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/olivere/elastic"
-	"gouminGitlab/common/orm/elasticsearchBase"
 )
 
 const tryTimeLimit = 5
@@ -27,7 +27,7 @@ type RedisEngine struct {
 	redisInfo     *redis.ClusterOptions //require
 	mongoConnInfo []string              //custom @todo need to multi
 	mysqlInfo     []string              //the result format like tools.GetMysqlDsn return value,pass to task
-	esInfo     []string              //the result format like tools.GetElasticsearchNodes return value,pass to task
+	esInfo        []string              //the result format like tools.GetElasticsearchNodes return value,pass to task
 	coroutinNum   int
 	daemon        int
 	taskArgs      []string //somethin you want to give task
@@ -146,16 +146,16 @@ func (r *RedisEngine) mgoSingleConnect(mgoInfo string) (*mgo.Session, error) {
 	return session, nil
 }
 
-func (r *RedisEngine) esConnect() (*elastic.Client, error)  {
+func (r *RedisEngine) esConnect() (*elastic.Client, error) {
 	if r.esInfo == nil {
-		return nil,nil
+		return nil, nil
 	}
-	esR,_ := elasticsearchBase.NewClient(r.esInfo)
-	client,err := esR.Run()
-	if err!=nil {
-		return nil,nil
+	esR, _ := elasticsearchBase.NewClient(r.esInfo)
+	client, err := esR.Run()
+	if err != nil {
+		return nil, nil
 	}
-	return client,nil
+	return client, nil
 }
 
 //create several coroutin to do the job and controll the error is job fail
@@ -221,9 +221,8 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 
 	defer r.closeMgoConn(mgoConns)
 
-
 	esConn, err := r.esConnect()
-	if r.checkError(&result,c , err) {
+	if r.checkError(&result, c, err) {
 		return
 	}
 
@@ -253,20 +252,17 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 			continue
 		}
 
-		redisConn, redisErr :=r.checkAndRepairRedisConnectins(redisConn)
+		redisConn, err = r.checkAndRepairRedisConnectins(redisConn)
 
-		mysqlConns, mysqlErr :=r.checkAndRepairMysqlConnectins(mysqlConns)
+		mysqlConns, err = r.checkAndRepairMysqlConnectins(mysqlConns)
 
 		//esConn, esErr :=r.checkAndRepairEsConnectins(esConn)
 
-		//如果mysql 或 redis 连接异常，则把任务重新抛回任务列表
-		if redisErr != nil || mysqlErr !=nil {
-			fmt.Println("[error]invalid connection ,but still can be retry", err)
-			err = r.pushFails(redisConn, realraw, trytimes)
-			continue
+		//only if repair connection sucess  going to finish the workfun
+		if err == nil {
+			err = r.workFun(realraw, redisConn, mysqlConns, mgoConns, esConn, r.taskArgs)
 		}
-		//if goint to here ,call the invoke
-		err = r.workFun(realraw, redisConn, mysqlConns, mgoConns, esConn, r.taskArgs)
+
 		if err != nil {
 			fmt.Println("[error]jobFunc get error ,but still can be retry", err)
 			err = r.pushFails(redisConn, realraw, trytimes)
@@ -288,8 +284,8 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 }
 
 //检查redis链接, 链接异常时重连
-func (r *RedisEngine) checkAndRepairRedisConnectins(redisConn *redis.ClusterClient) (*redis.ClusterClient,error) {
-    _,err := redisConn.Ping().Result()
+func (r *RedisEngine) checkAndRepairRedisConnectins(redisConn *redis.ClusterClient) (*redis.ClusterClient, error) {
+	_, err := redisConn.Ping().Result()
 	if err != nil {
 		redisConn, err := redisConnect(r.redisInfo)
 		if err != nil {
@@ -297,15 +293,15 @@ func (r *RedisEngine) checkAndRepairRedisConnectins(redisConn *redis.ClusterClie
 		}
 		defer redisConn.Close()
 	}
-	return redisConn,nil
+	return redisConn, nil
 }
 
 //检查mysql链接, 链接异常时重连
-func (r *RedisEngine) checkAndRepairMysqlConnectins(mysqlConns []*xorm.Engine) ([]*xorm.Engine,error) {
+func (r *RedisEngine) checkAndRepairMysqlConnectins(mysqlConns []*xorm.Engine) ([]*xorm.Engine, error) {
 	//for _, mysqlInfo := range r.mysqlInfo {
-	for i,mysqlConn := range mysqlConns{
+	for i, mysqlConn := range mysqlConns {
 		err := mysqlConn.Ping()
-		if err !=nil{
+		if err != nil {
 			x, err := r.mysqlSingleConnect(r.mysqlInfo[i])
 			if err != nil {
 				//close former connection
@@ -316,7 +312,7 @@ func (r *RedisEngine) checkAndRepairMysqlConnectins(mysqlConns []*xorm.Engine) (
 			defer r.closeMysqlConn(mysqlConns)
 		}
 	}
-	return mysqlConns,nil
+	return mysqlConns, nil
 }
 
 //检查es链接, 链接异常时重连
