@@ -287,11 +287,13 @@ func (r *RedisEngine) coroutinFunc(c chan coroutineResult, i int) {
 func (r *RedisEngine) checkAndRepairRedisConnectins(redisConn *redis.ClusterClient) (*redis.ClusterClient, error) {
 	_, err := redisConn.Ping().Result()
 	if err != nil {
+		fmt.Println("[error] redis connection crashed ,going to create a new one")
 		redisConn, err := redisConnect(r.redisInfo)
 		if err != nil {
+			fmt.Println("[error] redis connection crashed ,attempting to create a new one  fail, return err to skip workFunc")
 			return nil, err
 		}
-		defer redisConn.Close()
+		fmt.Println("[error] redis connection crashed ,successful creating new one")
 	}
 	return redisConn, nil
 }
@@ -302,14 +304,15 @@ func (r *RedisEngine) checkAndRepairMysqlConnectins(mysqlConns []*xorm.Engine) (
 	for i, mysqlConn := range mysqlConns {
 		err := mysqlConn.Ping()
 		if err != nil {
-			x, err := r.mysqlSingleConnect(r.mysqlInfo[i])
+			fmt.Println("[error] mysql connection crashed,going to create new one info:", r.mysqlInfo[i])
+			repairedMysqlConnection, err := r.mysqlSingleConnect(r.mysqlInfo[i])
 			if err != nil {
+				fmt.Println("[error] mysql connection crashed ,attempting to create a new one  fail, return err to skip workFunc info:", r.mysqlInfo[i])
 				//close former connection
-				r.closeMysqlConn(mysqlConns)
 				return nil, err
 			}
-			mysqlConns[i] = x
-			defer r.closeMysqlConn(mysqlConns)
+			mysqlConns[i] = repairedMysqlConnection
+			fmt.Println("[error] mysql connection crashed ,successful creating new one", r.mysqlInfo[i])
 		}
 	}
 	return mysqlConns, nil
