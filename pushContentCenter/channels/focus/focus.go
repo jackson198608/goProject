@@ -6,8 +6,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/allPersons"
-	"github.com/jackson198608/goProject/pushContentCenter/channels/location/breedPersons"
-
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/fansPersons"
 	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	"gopkg.in/mgo.v2"
@@ -109,12 +107,12 @@ func (f *Focus) Do() error {
 			return err
 		}
 
-		f.jsonData.Source = 4
-		bp := breedPersons.NewBreedPersons(f.mysqlXorm, f.mongoConn, f.jsonData,f.esConn)
-		err = bp.Do()
-		if err != nil {
-			return err
-		}
+		//f.jsonData.Source = 4
+		//bp := breedPersons.NewBreedPersons(f.mysqlXorm, f.mongoConn, f.jsonData,f.esConn)
+		//err = bp.Do()
+		//if err != nil {
+		//	return err
+		//}
 
 		//推送给机器人
 		fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
