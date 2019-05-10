@@ -288,7 +288,7 @@ func (r *RedisEngine) checkAndRepairRedisConnectins(redisConn *redis.ClusterClie
 	_, err := redisConn.Ping().Result()
 	if err != nil {
 		fmt.Println("[error] redis connection crashed ,going to create a new one")
-		redisConn, err := redisConnect(r.redisInfo)
+		redisConn, err = redisConnect(r.redisInfo)
 		if err != nil {
 			fmt.Println("[error] redis connection crashed ,attempting to create a new one  fail, return err to skip workFunc")
 			return nil, err
