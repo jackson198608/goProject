@@ -61,7 +61,8 @@ func changeRedisKey(mongoStr string) {
 	}
 
 	fmt.Println("[info]set key", key)
-	(*client).Set(key, 1, 0)
+	(*client).Incr(key)
+	//(*client).Set(key, 1, 0)
 }
 
 //func insertMongo() {
