@@ -12,6 +12,12 @@ import (
 	"gopkg.in/redis.v4"
 )
 
+//The key prefix of small red dot in redis
+var activityRedpointKey = "redpoint_activity_"
+var recommendRedpointKey = "redpoint_recommend_"
+var serviceRedpointKey = "redpoint_service_"
+var totalRedpointKey = "redpoint_totle_"
+
 func doInMongo(c chan int, esConn *elastic.Client,redisConn *redis.ClusterClient, i int) {
 	mongoStr := tasks[i].insertStr
 	if mongoStr == "0" {
@@ -51,18 +57,20 @@ func changeRedisKey(mongoStr string) {
 
 	var key string
 	if Jtype == 1 {
-		key = "redpoint_activity_" + strconv.Itoa(uid)
+		key = activityRedpointKey + strconv.Itoa(uid)
 
 	} else if Jtype == 6 {
-		key = "redpoint_recommend_" + strconv.Itoa(uid)
+		key = recommendRedpointKey + strconv.Itoa(uid)
 
 	} else {
-		key = "redpoint_service_" + strconv.Itoa(uid)
+		key = serviceRedpointKey + strconv.Itoa(uid)
 	}
 
 	fmt.Println("[info]set key", key)
 	(*client).Incr(key)
-	//(*client).Set(key, 1, 0)
+
+	totalRedPointKey := totalRedpointKey + strconv.Itoa(uid)
+	(*client).Set(totalRedPointKey, 1, 0)
 }
 
 //func insertMongo() {
