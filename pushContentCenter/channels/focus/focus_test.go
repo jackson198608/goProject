@@ -115,7 +115,8 @@ func TestDo2(t *testing.T) {
 func TestDo3(t *testing.T) {
 	mysqlXorm, mongoConn,esConn := testConn()
 
-	jobStr := "{\"time\":1550387388,\"event_info\":{\"adopt_id\":2435,\"pet_name\":\"5\",\"pet_age\":\"6\",\"pet_breed\":1,\"pet_gender\":7,\"pet_species\":\"\u6bd4\u683c\",\"province\":\"11\",\"city\":\"12\",\"county\":\"13\",\"reason\":\"9\",\"image\":\"\",\"is_video\":1,\"pet_immunity\":16,\"pet_expelling\":17,\"pet_sterilization\":18,\"pet_status\":19,\"pet_agenum\":15,\"adopt_status\":0,\"pet_introduction\":\"20\",\"user_identity\":0,\"adopt_tag\":[\"26\",\"27\"]},\"uid\":2265027,\"event_type\":36,\"infoid\":2435,\"status\":1,\"action\":1}|focus"
+	//jobStr := "{\"time\":1550387388,\"event_info\":{\"adopt_id\":2435,\"pet_name\":\"5\",\"pet_age\":\"6\",\"pet_breed\":1,\"pet_gender\":7,\"pet_species\":\"\u6bd4\u683c\",\"province\":\"11\",\"city\":\"12\",\"county\":\"13\",\"reason\":\"9\",\"image\":\"\",\"is_video\":1,\"pet_immunity\":16,\"pet_expelling\":17,\"pet_sterilization\":18,\"pet_status\":19,\"pet_agenum\":15,\"adopt_status\":0,\"pet_introduction\":\"20\",\"user_identity\":0,\"adopt_tag\":[\"26\",\"27\"]},\"uid\":2265027,\"event_type\":36,\"infoid\":2435,\"status\":1,\"action\":1}|focus"
+	jobStr := "{\"time\":\"2019-05-20 21:58:23\",\"event_info\":{\"title\":\"\\u8fd9\\u4e24\\u5929\\u7a7a\\u6c14\\u8d28\\u91cf\\u592a\\u5dee\",\"content\":\"\\u94c3\\u94db4.7\\u53d1\\u5e16\",\"image_num\":0,\"forum\":\"\\u4e8c\\u624b\\u5e02\\u573a\",\"tag\":144,\"source\":2,\"fid\":65,\"register_time\":0},\"uid\":1567638,\"event_type\":1,\"infoid\":4438027,\"status\":1,\"action\":0}|focus"
 	f := NewFocus(mysqlXorm, mongoConn, jobStr, esConn)
 	fmt.Println(f.Do())
 }

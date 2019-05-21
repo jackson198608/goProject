@@ -202,6 +202,7 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.UserIdentity, _ = js.Get("event_info").Get("user_identity").Int()
 	jsonC.AdoptTag = js.Get("event_info").Get("adopt_tag").Interface()
 	jsonC.PetAgenum, _ = js.Get("event_info").Get("pet_agenum").Int()
+	jsonC.RegisterTime,_ = js.Get("event_info").Get("register_time").Int()
 	//jsonC.Channel = 0  //1推送给机器人 0 推送给粉丝
 	return &jsonC, nil
 }
