@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"gouminGitlab/common/orm/elasticsearch"
 	"gouminGitlab/common/orm/mysql/member"
-	"github.com/donnie4w/go-logger/logger"
+	log "github.com/thinkboy/log4go"
 )
 
 type Robots struct {
@@ -60,7 +60,7 @@ func (r *Robots) Do() error {
 
 func (r *Robots) pushPersons(robots *[]member.PublishUser) (int, error) {
 	if robots == nil {
-		return 0, errors.New("push to fans active user : you have no person to push " + strconv.Itoa(r.jsonData.Infoid))
+		return 0, errors.New("push to robot : you have no person to push " + strconv.Itoa(r.jsonData.Infoid))
 	}
 	persons := *robots
 
@@ -74,7 +74,7 @@ func (r *Robots) pushPersons(robots *[]member.PublishUser) (int, error) {
 		err := elx.PushPerson(person.RealUid)
 		if err != nil {
 			for i := 0; i < 5; i++ {
-				logger.Info("push fans ", person.RealUid, " try ", i, " by ",r.jsonData)
+				log.Info("push robot ", person.RealUid, " try ", i, " by ",r.jsonData)
 				err := elx.PushPerson(person.RealUid)
 				if err == nil {
 					break
