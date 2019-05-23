@@ -64,7 +64,6 @@ func (r *Robots) pushPersons(robots *[]member.PublishUser) (int, error) {
 	}
 	persons := *robots
 
-	r.jsonData.Channel = 1
 	var endId int
 	elx,err := elasticsearch.NewEventLogX(r.esConn, r.jsonData)
 	if err !=nil {

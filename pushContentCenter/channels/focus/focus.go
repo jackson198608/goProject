@@ -69,12 +69,11 @@ func (f *Focus) Do() error {
 			return err
 		}
 
-		if f.jsonData.TypeId ==1 {
+		if f.jsonData.TypeId == 1 && f.jsonData.Channel == 1 {
 			//推送给机器人
 			fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 			frErr := fr.Do()
 			if frErr != nil {
-				f.jsonData.Channel = 0
 				return frErr
 			}
 		}
@@ -92,12 +91,13 @@ func (f *Focus) Do() error {
 			return err
 		}
 
-		//推送给机器人
-		fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
-		frErr := fr.Do()
-		if frErr != nil {
-			f.jsonData.Channel = 0
-			return frErr
+		if f.jsonData.Channel == 1 {
+			//推送给机器人
+			fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
+			frErr := fr.Do()
+			if frErr != nil {
+				return frErr
+			}
 		}
 	} else if f.jsonData.TypeId == 8 {
 		f.jsonData.Source = 3
@@ -115,12 +115,12 @@ func (f *Focus) Do() error {
 		//}
 
 		//推送给机器人
-		fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
-		frErr := fr.Do()
-		if frErr != nil {
-			f.jsonData.Channel = 0
-			return frErr
-		}
+		//fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
+		//frErr := fr.Do()
+		//if frErr != nil {
+		//	f.jsonData.Channel = 0
+		//	return frErr
+		//}
 
 	} else if ((f.jsonData.TypeId == 9) || (f.jsonData.TypeId == 15)) && (f.jsonData.Source) == 1 {
 		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
@@ -203,6 +203,6 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.AdoptTag = js.Get("event_info").Get("adopt_tag").Interface()
 	jsonC.PetAgenum, _ = js.Get("event_info").Get("pet_agenum").Int()
 	jsonC.RegisterTime,_ = js.Get("event_info").Get("register_time").Int()
-	//jsonC.Channel = 0  //1推送给机器人 0 推送给粉丝
+	jsonC.Channel,_ = js.Get("Channel").Int()  //1推送给粉丝+机器人 0 仅推送给粉丝
 	return &jsonC, nil
 }
