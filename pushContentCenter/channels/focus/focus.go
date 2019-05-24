@@ -62,9 +62,12 @@ func (f *Focus) Do() error {
 	//fmt.Println(f.jsonData)
 	log.Info("get task: ",f.jsonData)
 	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 || f.jsonData.TypeId == 19 {
+		//获取原始channel
+		originalChannel := f.jsonData.Channel
 		f.jsonData.Source = 3
 		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := fp.Do()
+		f.jsonData.Channel = originalChannel //恢复channel
 		if err != nil {
 			return err
 		}

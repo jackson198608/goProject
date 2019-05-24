@@ -67,7 +67,7 @@ func (f *FansPersons) pushPersons(follows *[]new_dog123.Follow) (int, error) {
 		return 0, errors.New("push to fans active user : you have no person to push " + strconv.Itoa(f.jsonData.Infoid))
 	}
 	persons := *follows
-
+	f.jsonData.Channel=0 //粉丝数据，channel=0
 	var endId int
 	elx,err := elasticsearch.NewEventLogX(f.esConn, f.jsonData)
 	if err !=nil {
