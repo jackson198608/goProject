@@ -19,7 +19,7 @@ var timeout time.Duration = 5
 
 //mobPush推送
 var mobKey = "2b14bb6c10bac"
-var mobSign = "172cca337b3b9ea4cf4b250bd7c773e0"
+var mobSecret = "172cca337b3b9ea4cf4b250bd7c773e0"
 
 type Worker struct {
 	t *Task
@@ -125,7 +125,7 @@ func (w Worker) androidPushMob() (result bool) {
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
 	//sign加密
-	info := w.t.TaskJson + mobSign
+	info := w.t.TaskJson + mobSecret
 	secret := md5Str(info)
 
 	req.Header.Set("key", mobKey)
