@@ -2,16 +2,16 @@ package appPush
 
 import (
 	"bytes"
-	"fmt"
-	apns "github.com/sideshow/apns2"
-	"github.com/sideshow/apns2/certificate"
-	"io/ioutil"
-	"net/http"
-	"time"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	apns "github.com/sideshow/apns2"
+	"github.com/sideshow/apns2/certificate"
 	"github.com/thinkboy/log4go"
+	"io/ioutil"
+	"net/http"
+	"time"
 )
 
 //gloabl variables
@@ -26,7 +26,7 @@ type Worker struct {
 }
 
 type modPushRes struct {
-	Status int `json:"status"`
+	Status int    `json:"status"`
 	Error  string `json:"error"`
 	Res    string `json:"res"`
 }
@@ -79,6 +79,7 @@ func (w Worker) iosPush(p12bytes []byte) (result bool) {
 	client := apns.NewClient(cert).Production()
 	res, err := client.Push(notification)
 	//_, err := client.Push(notification)
+	fmt.Println("res:", res)
 
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -147,14 +148,15 @@ func (w Worker) androidPushMob() (result bool) {
 	ioutil.ReadAll(resp.Body)
 
 	var a modPushRes
-	json.Unmarshal([]byte(string(body)),&a)
+	json.Unmarshal([]byte(string(body)), &a)
 	if a.Status != 200 {
-		log4go.Debug("android push fail status:",a.Status," error:",a.Error," taskJson:",w.t.TaskJson)
+		log4go.Debug("android push fail status:", a.Status, " error:", a.Error, " taskJson:", w.t.TaskJson)
 	}
 	fmt.Println("[notice] android response Body:", string(body))
 
 	return true
 }
+
 //md5加密
 func md5Str(str string) string {
 	h := md5.New()
