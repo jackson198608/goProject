@@ -98,7 +98,7 @@ func TestDo0(t *testing.T) {
 func TestDo1(t *testing.T) {
 	mysqlXorm, mongoConn,esConn := testConn()
 
-	jobStr := "{\"uid\":2060500,\"event_type\":1,\"infoid\":56921,\"event_info\":{\"title\":\"subject\",\"event type 1focus content\":\" focus  message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":1,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"action\":0,\"time\":\"2017-10-23 10:54:00\"}"
+	jobStr := "{\"uid\":2060500,\"event_type\":1,\"infoid\":56921,\"event_info\":{\"title\":\"subject\",\"event type 1focus content\":\" focus  message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":1,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"action\":0,\"time\":\"2017-10-23 10:54:00\",\"channel\":2}"
 	f := NewFocus(mysqlXorm, mongoConn, jobStr, esConn)
 	fmt.Println(f.Do())
 }
