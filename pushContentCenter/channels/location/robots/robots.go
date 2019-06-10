@@ -63,6 +63,7 @@ func (r *Robots) pushPersons(robots *[]member.PublishUser) (int, error) {
 		return 0, errors.New("push to robot : you have no person to push " + strconv.Itoa(r.jsonData.Infoid))
 	}
 	persons := *robots
+	r.jsonData.Channel=1 //机器人数据，channel=1
 
 	var endId int
 	elx,err := elasticsearch.NewEventLogX(r.esConn, r.jsonData)

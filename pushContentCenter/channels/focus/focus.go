@@ -25,6 +25,9 @@ type Focus struct {
 	esConn   *elastic.Client
 }
 
+var fansChannel = 0
+var fansAndRobotChannel = 1
+var robotChannel = 2
 func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string, esConn *elastic.Client) *Focus {
 	if (mysqlXorm == nil) || (jobStr == "") ||( esConn == nil) {
 		return nil
@@ -64,18 +67,21 @@ func (f *Focus) Do() error {
 	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 || f.jsonData.TypeId == 19 {
 		//获取原始channel
 		originalChannel := f.jsonData.Channel
-		f.jsonData.Source = 3
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
-		err := fp.Do()
-		f.jsonData.Channel = originalChannel //恢复channel
-		if err != nil {
-			return err
+		if f.jsonData.Channel== fansChannel || f.jsonData.Channel==fansAndRobotChannel {
+			f.jsonData.Source = 3
+			fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
+			err := fp.Do()
+			f.jsonData.Channel = originalChannel //恢复channel
+			if err != nil {
+				return err
+			}
 		}
 
-		if f.jsonData.TypeId == 1 && f.jsonData.Channel == 1 {
+		if f.jsonData.TypeId == 1 && (f.jsonData.Channel == fansAndRobotChannel || f.jsonData.Channel == robotChannel) {
 			//推送给机器人
 			fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 			frErr := fr.Do()
+			f.jsonData.Channel = originalChannel //恢复channel
 			if frErr != nil {
 				return frErr
 			}
@@ -94,14 +100,14 @@ func (f *Focus) Do() error {
 			return err
 		}
 
-		if f.jsonData.Channel == 1 {
-			//推送给机器人
-			fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
-			frErr := fr.Do()
-			if frErr != nil {
-				return frErr
-			}
-		}
+		//if f.jsonData.Channel == 1 {
+		//	//推送给机器人
+		//	fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
+		//	frErr := fr.Do()
+		//	if frErr != nil {
+		//		return frErr
+		//	}
+		//}
 	} else if f.jsonData.TypeId == 8 {
 		f.jsonData.Source = 3
 		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
