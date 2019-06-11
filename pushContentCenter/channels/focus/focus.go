@@ -213,5 +213,6 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.PetAgenum, _ = js.Get("event_info").Get("pet_agenum").Int()
 	jsonC.RegisterTime,_ = js.Get("event_info").Get("register_time").Int()
 	jsonC.Channel,_ = js.Get("channel").Int()  //1推送给粉丝+机器人 0 仅推送给粉丝
+	jsonC.Inhome,_ = js.Get("inhome").Int()  //是否是首页推荐内容  1是
 	return &jsonC, nil
 }

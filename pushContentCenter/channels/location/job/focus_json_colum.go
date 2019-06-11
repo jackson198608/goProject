@@ -46,4 +46,5 @@ type FocusJsonColumn struct {
 	Channel int  //1 水军数据
 	RegisterTime int  //注册时间
 	ReplyNum     int  //回复数
+	Inhome   int
 }
