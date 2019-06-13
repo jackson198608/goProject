@@ -6,12 +6,11 @@ import (
 	"os"
 	"time"
 	"strings"
-	//"log"
 	"github.com/jackson198608/gotest/common/tools"
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
 	"github.com/go-xorm/xorm"
 	"gopkg.in/mgo.v2"
-	log "github.com/thinkboy/log4go"
+	"github.com/donnie4w/go-logger/logger"
 	"gopkg.in/redis.v4"
 	"github.com/olivere/elastic"
 	"github.com/pkg/errors"
@@ -64,68 +63,6 @@ func getRedisQueueName() {
 	}
 }
 
-func pushCenter() {
-	//main loop
-	for {
-		//init data
-		tasks = make([]redisData, numForOneLoop, numForOneLoop)
-		taskNum = 0
-
-		//load data from redis
-		loadDataFromRedis()
-
-		//if there is no data
-		if taskNum == 0 {
-			time.Sleep(5 * time.Second)
-		}
-
-		//push data to app
-		push()
-	}
-
-}
-
-func singlePush() {
-	//main loop
-	for {
-		//init data
-		tasks = make([]redisData, numForOneLoop, numForOneLoop)
-		taskNum = 0
-
-		//load data from redis
-		loadDataFromRedis()
-
-		//if there is no data
-		if taskNum == 0 {
-			time.Sleep(5 * time.Second)
-		}
-
-		//push data to app
-		push()
-	}
-
-}
-
-func onlyInsertMongo() {
-	//main loop
-	for {
-		//init data
-		tasks = make([]redisData, numForOneLoop, numForOneLoop)
-		taskNum = 0
-
-		//load data from redis
-		loadDataFromRedis()
-
-		//if there is no data
-		if taskNum == 0 {
-			time.Sleep(5 * time.Second)
-		}
-
-		//insert data into mongo
-		insertMongo()
-	}
-
-}
 
 func main() {
 
@@ -143,12 +80,12 @@ func main() {
 
 	r, err := redisEngine.NewRedisEngine(redisQueueName, &redisInfo, mongoConnInfo, mysqlInfo, esNodes, c.currentNum, 1, jobFuc)
 	if err != nil {
-		log.Error("[NewRedisEngine] ", err)
+		logger.Error("[NewRedisEngine] ", err)
 	}
 
 	err = r.Do()
 	if err != nil {
-		log.Error("[redisEngine Do] ", err)
+		logger.Error("[redisEngine Do] ", err)
 	}
 
 }

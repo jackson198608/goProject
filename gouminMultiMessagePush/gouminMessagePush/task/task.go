@@ -2,14 +2,13 @@ package task
 
 import (
 	"github.com/olivere/elastic"
-	"github.com/jackson198608/goProject/gouminMultiMessagePush/channels/multiPush"
-	"github.com/jackson198608/goProject/gouminMultiMessagePush/channels/singlePush"
 	"gopkg.in/redis.v4"
 	"github.com/jackson198608/goProject/gouminMultiMessagePush/channels/mcInsert"
 	"github.com/bitly/go-simplejson"
 	"fmt"
 	"strconv"
 	"github.com/pkg/errors"
+	"github.com/jackson198608/gotest/gouminMultiMessagePush/channels/basepush"
 )
 
 var activityRedpointKey = "redpoint_activity_"
@@ -68,7 +67,7 @@ func (t *Task) Do() error{
 }
 
 func (t *Task) channelMulti() error {
-	m := multiPush.NewMultipush(t.Jobstr,t.RedisConn,t.P12Bytes)
+	m := basepush.Newpush(t.Jobstr,t.RedisConn,t.P12Bytes)
 	err := m.Do()
 	if err != nil {
 		return err
@@ -77,7 +76,7 @@ func (t *Task) channelMulti() error {
 }
 
 func (t *Task) channelSingle() error {
-	s := singlePush.NewSinglepush(t.Jobstr,t.RedisConn,t.P12Bytes)
+	s := basepush.Newpush(t.Jobstr,t.RedisConn,t.P12Bytes)
 	err := s.Do()
 	if err != nil {
 		return err
@@ -87,28 +86,31 @@ func (t *Task) channelSingle() error {
 
 func (t *Task) channelInsert() error {
 	mc := mcInsert.NewTask(t.Jobstr)
-	if mc.Insert(t.EsConn,t.RedisConn) {
+	err := mc.Insert(t.EsConn,t.RedisConn)
+	if err == nil {
+		//更新小红点
 		t.changeRedisKey(t.Jobstr)
+		return nil
 	}
-	return nil
+	return err
 }
 
 func (t *Task) changeRedisKey(jobStr string) {
 
 	json, err := simplejson.NewJson([]byte(jobStr))
 	if err != nil {
-		fmt.Println("[error]json format error", jobStr, err)
+		errors.New("mcinsert update redpoint fail jobstr:"+jobStr)
 		return
 	}
 	Jtype, err := json.Get("type").Int()
 	if err != nil {
-		fmt.Println("[error]get type from json error", jobStr, err)
+		errors.New("mcinsert update redpoint fail jobstr:"+jobStr)
 		return
 	}
 
 	uid, err := json.Get("uid").Int()
 	if err != nil {
-		fmt.Println("[error]get uid from json error", jobStr, err)
+		errors.New("mcinsert update redpoint fail jobstr:"+jobStr)
 		return
 	}
 

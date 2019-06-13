@@ -22,28 +22,21 @@ func NewTask(jsonString string) (t *Task) {
 	return &tR
 }
 
-func NewWorker(t *Task) (w *Worker) {
-	//init the worker
-	var wR Worker
-	wR.t = t
-	return &wR
-}
 
-func (w *Task) Insert(es *elastic.Client,redisConn *redis.ClusterClient) bool {
+func (w *Task) Insert(es *elastic.Client,redisConn *redis.ClusterClient) error {
 	//convert json string to struct
 	job,jobErr := w.parseJson()
 	if jobErr != nil {
-		return false
+		return jobErr
 	}
 
 	//create elastic
 	m := elasticsearch.NewMessagePushRecord(es,job)
 	err := m.CreateRecord(redisConn)
 	if err != nil {
-		//fmt.Println("[Error]insert into mongo error", err)
-		return false
+		return err
 	}
-	return true
+	return nil
 }
 /**
 json任务串转成struct
