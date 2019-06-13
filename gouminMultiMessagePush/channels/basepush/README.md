@@ -1,5 +1,5 @@
 # introduction
-- This package is designed to send app push to single user.
+- This package is designed to send app push to users.
 
 # Installation
 
@@ -7,12 +7,12 @@
 
 # Quick Start
 
-- Create fileEngine
+- Create fileEngine 
 
 ```Go
 ```
 
--  Read File by line
+-  Read File by line 
 
 ```Go
 

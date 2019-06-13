@@ -1,4 +1,4 @@
-package multiPush
+package basepush
 
 import (
 	"github.com/jackson198608/goProject/appPush"
@@ -6,40 +6,37 @@ import (
 	"github.com/pkg/errors"
 )
 
-var queuename = "mcMulti"
-
-type Multipush struct {
+type Basepush struct {
 	jobstr string
 	redisConn *redis.ClusterClient
 	p12Bytes []byte
 }
 
-func NewMultipush(jobStr string,redisConn *redis.ClusterClient,p12Bytes []byte) *Multipush{
+func Newpush(jobStr string,redisConn *redis.ClusterClient,p12Bytes []byte) *Basepush{
 	if (jobStr == "") ||( redisConn == nil) || (p12Bytes == nil){
 		return nil
 	}
 
-	m := new(Multipush)
-	if m == nil {
+	b := new(Basepush)
+	if b == nil {
 		return nil
 	}
-	m.jobstr = jobStr
-	m.redisConn = redisConn
-	m.p12Bytes = p12Bytes
+	b.jobstr = jobStr
+	b.redisConn = redisConn
+	b.p12Bytes = p12Bytes
 
-	return m
+	return b
 }
 
-func (m *Multipush) Do() error {
+func (b *Basepush) Do() error {
 	//发送push
-	t := appPush.NewTask(m.jobstr)
+	t := appPush.NewTask(b.jobstr)
 	if t != nil {
 		w := appPush.NewWorker(t)
-		result := w.Push(m.p12Bytes)
+		result := w.Push(b.p12Bytes)
 		if !result {
 			return errors.New("multi push fail")
 		}
 	}
 	return nil
 }
-
