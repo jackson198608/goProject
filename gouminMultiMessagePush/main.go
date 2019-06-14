@@ -10,7 +10,7 @@ import (
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
 	"github.com/go-xorm/xorm"
 	"gopkg.in/mgo.v2"
-	"github.com/donnie4w/go-logger/logger"
+	log "github.com/thinkboy/log4go"
 	"gopkg.in/redis.v4"
 	"github.com/olivere/elastic"
 	"github.com/pkg/errors"
@@ -18,7 +18,7 @@ import (
 )
 
 //define the config var
-var c Config = Config{5, 100, "192.168.86.68:6380,192.168.86.68:6381,192.168.86.68:6382,192.168.86.68:6383,192.168.86.68:6384,192.168.86.68:6385", "http://192.168.86.230:9200,http://192.168.86.231:9200"}
+var c Config = Config{5, 100, "192.168.86.68:6380,192.168.86.68:6381,192.168.86.68:6382,192.168.86.68:6383,192.168.86.68:6384,192.168.86.68:6385", "http://192.168.86.230:9200,http://192.168.86.231:9200","/etc/gouminMultiMessagePushLog.xml"}
 var numForOneLoop int = c.currentNum
 var p12Bytes []byte
 var timeout time.Duration = c.httpTimeOut
@@ -70,6 +70,9 @@ func main() {
 	Init()
 	jobType = os.Args[1]
 
+	//初始化日志配置
+	log.LoadConfiguration(c.log)
+
 
 	var mongoConnInfo []string
 	var mysqlInfo []string
@@ -80,12 +83,12 @@ func main() {
 
 	r, err := redisEngine.NewRedisEngine(redisQueueName, &redisInfo, mongoConnInfo, mysqlInfo, esNodes, c.currentNum, 1, jobFuc)
 	if err != nil {
-		logger.Error("[NewRedisEngine] ", err)
+		log.Error("[NewRedisEngine] ", err)
 	}
 
 	err = r.Do()
 	if err != nil {
-		logger.Error("[redisEngine Do] ", err)
+		log.Error("[redisEngine Do] ", err)
 	}
 
 }

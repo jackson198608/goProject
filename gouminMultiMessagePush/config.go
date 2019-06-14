@@ -11,6 +11,7 @@ type Config struct {
 	redisConn   string
 	//mongoConn   string
 	elasticConn string
+	log string
 }
 
 type redisData struct {
@@ -28,4 +29,5 @@ func loadConfig() {
 	c.elasticConn = config.GetString("elasticConn")
 	numForOneLoop = c.currentNum
 	timeout = c.httpTimeOut
+	c.log = config.GetString("log")
 }
