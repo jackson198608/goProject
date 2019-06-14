@@ -5,10 +5,10 @@ import (
 	"gopkg.in/redis.v4"
 	"github.com/jackson198608/goProject/gouminMultiMessagePush/channels/mcInsert"
 	"github.com/bitly/go-simplejson"
-	"fmt"
 	"strconv"
 	"github.com/pkg/errors"
 	"github.com/jackson198608/gotest/gouminMultiMessagePush/channels/basepush"
+	log "github.com/thinkboy/log4go"
 )
 
 var activityRedpointKey = "redpoint_activity_"
@@ -39,6 +39,7 @@ func NewTask(jobType string,jobStr string,redisConn *redis.ClusterClient,esConn 
 }
 
 func (t *Task) Do() error{
+	log.Info("task jobType:",t.JobType," jobstr:",t.Jobstr)
 	switch t.JobType {
 	case "multi":
 		err := t.channelMulti()
@@ -67,31 +68,40 @@ func (t *Task) Do() error{
 }
 
 func (t *Task) channelMulti() error {
+	log.Info("multi jobstr:",t.Jobstr)
 	m := basepush.Newpush(t.Jobstr,t.RedisConn,t.P12Bytes)
 	err := m.Do()
 	if err != nil {
+		log.Info("multi fail err:",err," jobstr:",t.Jobstr)
 		return err
 	}
+	log.Info("multi success jobstr:",t.Jobstr)
 	return nil
 }
 
 func (t *Task) channelSingle() error {
+	log.Info("single jobstr:",t.Jobstr)
 	s := basepush.Newpush(t.Jobstr,t.RedisConn,t.P12Bytes)
 	err := s.Do()
 	if err != nil {
+		log.Info("single fail err:",err," jobstr:",t.Jobstr)
 		return err
 	}
+	log.Info("single success jobstr:",t.Jobstr)
 	return nil
 }
 
 func (t *Task) channelInsert() error {
+	log.Info("insert jobstr:",t.Jobstr)
 	mc := mcInsert.NewTask(t.Jobstr)
 	err := mc.Insert(t.EsConn,t.RedisConn)
 	if err == nil {
 		//更新小红点
 		t.changeRedisKey(t.Jobstr)
+		log.Info("insert success jobstr:",t.Jobstr)
 		return nil
 	}
+	log.Info("insert fail err:",err," jobstr:",t.Jobstr)
 	return err
 }
 
@@ -126,10 +136,9 @@ func (t *Task) changeRedisKey(jobStr string) {
 	} else {
 		key = serviceRedpointKey + strconv.Itoa(uid)
 	}
-
-	fmt.Println("[info]set key", key)
 	(*client).Incr(key)
 
 	totalRedPointKey := totalRedpointKey + strconv.Itoa(uid)
 	(*client).Set(totalRedPointKey, 1, 0)
+	log.Info("success redpoint jobstr:",jobStr)
 }
