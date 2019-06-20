@@ -2,10 +2,17 @@ package mcInsert
 
 import (
 	"github.com/olivere/elastic"
-	"gouminGitlab/common/orm/elasticsearch"
-	"github.com/bitly/go-simplejson"
-	"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
+	//"gouminGitlab/common/orm/elasticsearch"
+	//"github.com/bitly/go-simplejson"
+	//"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	"gopkg.in/redis.v4"
+	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
+	"fmt"
+	"net/http"
+	"encoding/json"
+	"github.com/donnie4w/go-logger/logger"
+	"github.com/pkg/errors"
+	"time"
 )
 
 type Task struct {
@@ -22,46 +29,36 @@ func NewTask(jsonString string) (t *Task) {
 	return &tR
 }
 
-
-func (w *Task) Insert(es *elastic.Client,redisConn *redis.ClusterClient) error {
-	//convert json string to struct
-	job,jobErr := w.parseJson()
-	if jobErr != nil {
-		return jobErr
-	}
-
-	//create elastic
-	m := elasticsearch.NewMessagePushRecord(es,job)
-	err := m.CreateRecord(redisConn)
+func (w *Task) Insert(es *elastic.Client, redisConn *redis.ClusterClient, esInfo string) error {
+	var target = esInfo+"/_bulk"
+	var h http.Header = make(http.Header)
+	h.Set("Content-Type","application/x-ndjson")
+	h.Set("timeout", "30")
+	abuyun := w.getAbuyun()
+	statusCode, _, body, err := abuyun.SendPostRequest(target, h, w.columData, true)
 	if err != nil {
 		return err
 	}
+	if statusCode == 200 {
+		var result map[string]interface{}
+		if err:=json.Unmarshal([]byte(body),&result);err==nil{
+			if(result["errors"] == true){
+				//休眠100毫秒
+				time.Sleep(100 * time.Millisecond)
+				logger.Error("bulk sync to es fail, error: ",body, " task: " ,w.columData)
+				return errors.New("bulk sync to es fail, error message: " + body)
+			}
+		}
+		logger.Info("bulk to es success ", w.columData)
+	}
 	return nil
 }
-/**
-json任务串转成struct
- */
-func (w *Task) parseJson() (*job.MsgPushRecordJsonColumn, error) {
-	var jsonC job.MsgPushRecordJsonColumn
-	js, err := simplejson.NewJson([]byte(w.columData))
-	if err != nil {
-		return &jsonC, err
+
+func (p *Task) getAbuyun() *abuyunHttpClient.AbuyunProxy {
+	var abuyun *abuyunHttpClient.AbuyunProxy = abuyunHttpClient.NewAbuyunProxy("", "", "")
+	if abuyun == nil {
+		fmt.Println("create abuyun error")
+		return nil
 	}
-
-	jsonC.Uid, _ = js.Get("uid").Int()
-	jsonC.Type, _ = js.Get("type").Int()
-	jsonC.Created, _ = js.Get("created").String()
-	jsonC.Mark, _ = js.Get("mark").Int()
-	jsonC.Isnew, _ = js.Get("isnew").Int()
-	jsonC.From, _ = js.Get("from").Int()
-	jsonC.Title, _ = js.Get("title").String()
-	jsonC.Content, _ = js.Get("content").String()
-	jsonC.Channel, _ = js.Get("channel").Int()
-	jsonC.ChannelTypes, _ = js.Get("channel_types").Int()
-	jsonC.Image, _ = js.Get("image").String()
-	jsonC.UrlType, _ = js.Get("url_type").Int()
-	jsonC.Url, _ = js.Get("url").String()
-	jsonC.Modified, _ = js.Get("modified").String()
-
-	return &jsonC, nil
+	return abuyun
 }
