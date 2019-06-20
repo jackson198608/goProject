@@ -2,11 +2,10 @@ package main
 
 import (
 	"github.com/jackson198608/goProject/appPush"
-	"io/ioutil"
 	"os"
 	"time"
 	"strings"
-	"github.com/jackson198608/gotest/common/tools"
+	"github.com/jackson198608/goProject/common/tools"
 	"github.com/jackson198608/goProject/common/coroutineEngine/redisEngine"
 	"github.com/go-xorm/xorm"
 	"gopkg.in/mgo.v2"
@@ -18,7 +17,7 @@ import (
 )
 
 //define the config var
-var c Config = Config{5, 100, "192.168.86.68:6380,192.168.86.68:6381,192.168.86.68:6382,192.168.86.68:6383,192.168.86.68:6384,192.168.86.68:6385", "http://192.168.86.230:9200,http://192.168.86.231:9200","/etc/gouminMultiMessagePushLog.xml"}
+var c Config = Config{5, 100, "192.168.86.80:6380,192.168.86.80:6381,192.168.86.81:6380,192.168.86.81:6380,192.168.86.82:6380,192.168.86.82:6381", "http://192.168.86.230:9200,http://192.168.86.231:9200","/Users/Snow/Work/go/config/gouminMultiMessagePushLog.xml"}
 var numForOneLoop int = c.currentNum
 var p12Bytes []byte
 var timeout time.Duration = c.httpTimeOut
@@ -97,7 +96,8 @@ func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engin
 	if (redisConn == nil) || (esConn==nil){
 		return errors.New("redis or elastic conn error")
 	}
-	t, err := task.NewTask(jobType,job,redisConn,esConn,p12Bytes)
+	esNodes := strings.SplitN(c.elasticConn, ",", -1)
+	t, err := task.NewTask(jobType,job,redisConn,esConn,p12Bytes, esNodes[0])
 	if err != nil {
 		return err
 	}
