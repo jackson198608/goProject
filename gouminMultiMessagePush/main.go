@@ -14,6 +14,7 @@ import (
 	"github.com/olivere/elastic"
 	"github.com/pkg/errors"
 	"github.com/jackson198608/goProject/gouminMultiMessagePush/gouminMessagePush/task"
+	"io/ioutil"
 )
 
 //define the config var

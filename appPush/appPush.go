@@ -79,15 +79,18 @@ func (w Worker) iosPush(p12bytes []byte) (result bool) {
 	client := apns.NewClient(cert).Production()
 	res, err := client.Push(notification)
 	//_, err := client.Push(notification)
-	fmt.Println("res:", res)
+	log4go.Info("res:", res)
+
 
 	if err != nil {
-		fmt.Println("Error:", err)
+		//fmt.Println("Error:", err)
+		log4go.Error("Error:", err)
 		result = false
 		return result
 	}
 
-	fmt.Println("APNs ID:", res.ApnsID)
+	log4go.Info("APNs ID:", res.ApnsID)
+	//fmt.Println("APNs ID:", res.ApnsID)
 	return true
 }
 
@@ -152,7 +155,7 @@ func (w Worker) androidPushMob() (result bool) {
 	if a.Status != 200 {
 		log4go.Debug("android push fail status:", a.Status, " error:", a.Error, " taskJson:", w.t.TaskJson)
 	}
-	fmt.Println("[notice] android response Body:", string(body))
+	log4go.Info("[notice] android response Body:", string(body))
 
 	return true
 }

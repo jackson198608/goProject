@@ -7,10 +7,9 @@ import (
 	//"github.com/jackson198608/goProject/pushContentCenter/channels/location/job"
 	"gopkg.in/redis.v4"
 	"github.com/jackson198608/goProject/common/http/abuyunHttpClient"
-	"fmt"
 	"net/http"
 	"encoding/json"
-	"github.com/donnie4w/go-logger/logger"
+	log "github.com/thinkboy/log4go"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -47,11 +46,11 @@ func (w *Task) Insert(es *elastic.Client, redisConn *redis.ClusterClient, esInfo
 			if(result["errors"] == true){
 				//curl请求es一次休眠100毫秒
 				time.Sleep(100 * time.Millisecond)
-				logger.Error("bulk sync to es fail, error: ",body, " task: " ,w.columData)
+				log.Error("bulk sync to es fail, error: ",body, " task: " ,w.columData)
 				return errors.New("bulk sync to es fail, error message: " + body)
 			}
 		}
-		logger.Info("bulk to es success ", w.columData)
+		log.Info("bulk to es success ", w.columData)
 	}
 	return nil
 }
@@ -59,7 +58,8 @@ func (w *Task) Insert(es *elastic.Client, redisConn *redis.ClusterClient, esInfo
 func (p *Task) getAbuyun() *abuyunHttpClient.AbuyunProxy {
 	var abuyun *abuyunHttpClient.AbuyunProxy = abuyunHttpClient.NewAbuyunProxy("", "", "")
 	if abuyun == nil {
-		fmt.Println("create abuyun error")
+		//fmt.Println("create abuyun error")
+		log.Error("create abuyun error")
 		return nil
 	}
 	return abuyun
