@@ -38,8 +38,6 @@ func (w *Task) Insert(es *elastic.Client, redisConn *redis.ClusterClient, esInfo
 	if err != nil {
 		return err
 	}
-	//curl请求es一次休眠10毫秒
-	time.Sleep(10 * time.Millisecond)
 	if statusCode == 200 {
 		var result map[string]interface{}
 		if err:=json.Unmarshal([]byte(body),&result);err==nil{
