@@ -39,11 +39,13 @@ func (w *Task) Insert(es *elastic.Client, redisConn *redis.ClusterClient, esInfo
 	if err != nil {
 		return err
 	}
+	//curl请求es一次休眠10毫秒
+	time.Sleep(10 * time.Millisecond)
 	if statusCode == 200 {
 		var result map[string]interface{}
 		if err:=json.Unmarshal([]byte(body),&result);err==nil{
 			if(result["errors"] == true){
-				//休眠100毫秒
+				//curl请求es一次休眠100毫秒
 				time.Sleep(100 * time.Millisecond)
 				logger.Error("bulk sync to es fail, error: ",body, " task: " ,w.columData)
 				return errors.New("bulk sync to es fail, error message: " + body)
