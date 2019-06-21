@@ -48,7 +48,9 @@ func (w Worker) Push(p12bytes []byte) (result bool) {
 		result = w.iosPush(p12bytes)
 	} else if phoneType == 1 {
 		//result = w.androidPush()
-		result = w.androidPushMob()
+
+		//result = w.androidPushMob()
+		result = true
 	} else {
 		//wx program
 		result = w.wxProgramPush()
