@@ -61,7 +61,6 @@ do request weixin
 func (p *Task)requestWeixin(accesstoken string,messqge string) error{
 	var target = _sendUrl+"access_token="+accesstoken
 	var h http.Header = make(http.Header)
-	h.Set("Content-Type","application/x-ndjson")
 	abuyun := p.getAbuyun()
 	statusCode, _, body, err := abuyun.SendPostRequest(target,h,messqge,true)
 	if err != nil {
