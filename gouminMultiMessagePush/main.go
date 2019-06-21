@@ -106,5 +106,7 @@ func jobFuc(job string, redisConn *redis.ClusterClient, mysqlConns []*xorm.Engin
 	if err != nil {
 		return err
 	}
+	//完成一次休眠5毫秒
+	time.Sleep(5 * time.Millisecond)
 	return err
 }
