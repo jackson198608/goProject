@@ -47,4 +47,9 @@ type FocusJsonColumn struct {
 	RegisterTime int  //注册时间
 	ReplyNum     int  //回复数
 	Inhome   int
+	IsDigest int //是否精华
+	Pid   int  //楼层id
+	TagInfo  string //标签信息
+	ImageWidth  int  //图片宽度
+	ImageHeight int  //图片高度
 }
