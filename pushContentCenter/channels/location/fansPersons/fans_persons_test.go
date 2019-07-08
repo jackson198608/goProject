@@ -61,7 +61,7 @@ func jsonData() *job.FocusJsonColumn {
 	jsonData.Fid = 0
 	jsonData.Source = 2
 	jsonData.Status = 1
-	jsonData.Action  = 0
+	jsonData.Action = 0
 	return &jsonData
 }
 
@@ -70,7 +70,7 @@ var m map[int]bool
 func Init() {
 	m = make(map[int]bool)
 
-	mongoConn := "192.168.86.192:27017"
+	mongoConn := "192.168.86.80:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
 		// return m
