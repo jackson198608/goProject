@@ -214,9 +214,9 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.RegisterTime,_ = js.Get("event_info").Get("register_time").Int()
 	jsonC.Channel,_ = js.Get("channel").Int()  //1推送给粉丝+机器人 0 仅推送给粉丝
 	jsonC.Inhome,_ = js.Get("inhome").Int()  //是否是首页推荐内容  1是
-	jsonC.Pid,_ = js.Get("pid").Int()  //帖子楼层id
-	jsonC.IsDigest,_ = js.Get("is_digest").Int()  //是否精华
-	jsonC.TagInfo,_ = js.Get("tag_info").String()  //标签信息
+	jsonC.Pid,_ = js.Get("event_info").Get("pid").Int()  //帖子楼层id
+	jsonC.IsDigest,_ = js.Get("event_info").Get("is_digest").Int()  //是否精华
+	jsonC.TagInfo,_ = js.Get("event_info").Get("tag_info").String()  //标签信息
 	jsonC.ImageWidth,_ = js.Get("event_info").Get("image_width").Int()
 	jsonC.ImageHeight,_ = js.Get("event_info").Get("image_height").Int()
 	return &jsonC, nil
