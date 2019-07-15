@@ -112,13 +112,14 @@ func (f *Focus) Do() error {
 	} else if f.jsonData.TypeId == 8 {
 		//获取原始channel
 		originalChannel := f.jsonData.Channel
-
 		f.jsonData.Source = 3
-		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
-		err := fp.Do()
-		f.jsonData.Channel = originalChannel //恢复channel
-		if err != nil {
-			return err
+		if f.jsonData.Channel== fansChannel || f.jsonData.Channel==fansAndRobotChannel {
+			fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
+			err := fp.Do()
+			f.jsonData.Channel = originalChannel //恢复channel
+			if err != nil {
+				return err
+			}
 		}
 
 		//f.jsonData.Source = 4
