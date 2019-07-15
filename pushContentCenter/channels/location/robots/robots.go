@@ -12,7 +12,6 @@ import (
 	log "github.com/thinkboy/log4go"
 	"gouminGitlab/common/orm/mysql/robot"
 	"time"
-	"fmt"
 	"gouminGitlab/common/orm/mysql/recommend_data"
 )
 
@@ -86,7 +85,6 @@ func (r *Robots) pushPersons(robots *[]member.PublishUser) (int, error) {
 			//检查水军是否是审核员
 			is_checker := r.isChecker(person.RealUid)
 			if(is_checker == 0){
-				fmt.Println(" not checker uid:",person.RealUid)
 				continue
 			}
 		}
