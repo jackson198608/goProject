@@ -15,6 +15,7 @@ type FocusJsonColumn struct {
 	Imagenums int
 	ImageInfo string
 	VideoUrl  string
+	Duration  int
 	IsVideo   int
 	Forum     string
 	Tag       int
@@ -52,4 +53,5 @@ type FocusJsonColumn struct {
 	TagInfo  string //标签信息
 	ImageWidth  int  //图片宽度
 	ImageHeight int  //图片高度
+	ThreadStatus int  //pre_forum_thread表中的status
 }

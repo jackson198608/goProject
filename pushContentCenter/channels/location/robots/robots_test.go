@@ -47,6 +47,23 @@ func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 		return nil, nil,nil
 	}
 
+	//水军任务存储
+	dbName4 := "robot"
+	dataSourceName4 := dbAuth + "@tcp(" + dbDsn + ")/" + dbName4 + "?charset=utf8mb4"
+	engine4, err := xorm.NewEngine("mysql", dataSourceName4)
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil,nil
+	}
+
+	dbName5 := "recommend_data"
+	dataSourceName5 := dbAuth + "@tcp(" + dbDsn + ")/" + dbName5 + "?charset=utf8mb4"
+	engine5, err := xorm.NewEngine("mysql", dataSourceName5)
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil,nil
+	}
+
 	mongoConn := "192.168.86.80:27017"
 	session, err := mgo.Dial(mongoConn)
 	if err != nil {
@@ -64,6 +81,8 @@ func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	engineAry = append(engineAry, engine1)
 	engineAry = append(engineAry, engine2)
 	engineAry = append(engineAry, engine3)
+	engineAry = append(engineAry, engine4)
+	engineAry = append(engineAry, engine5)
 	var sessionAry []*mgo.Session
 	sessionAry = append(sessionAry, session)
 	return engineAry, sessionAry, esConn
@@ -114,3 +133,23 @@ func TestDo(t *testing.T) {
 	f := NewRobots(mysqlXorm, mongoConn, jsonData, esConn)
 	fmt.Println(f.Do())
 }
+
+func TestMysql(t *testing.T) {
+
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	nodes = append(nodes, "http://192.168.86.231:9200")
+
+	var mysqlInfo []string
+	mysqlInfo = append(mysqlInfo, "dog123:dog123"+"@tcp("+"192.168.86.193:3307"+")/"+"message"+"?charset=utf8mb4")
+	mysqlInfo = append(mysqlInfo, "dog123:dog123"+"@tcp("+"192.168.86.193:3307"+")/"+"new_dog123"+"?charset=utf8mb4")
+	mysqlXorm, mongoConn,esConn := testConn()
+	jsonData := jsonData()
+
+	//fmt.Println("mysql:",mysqlXorm," mongo:",mongoConn," es:",esConn)
+	//fmt.Println("json:",jsonData)
+	f := NewRobots(mysqlXorm, mongoConn, jsonData, esConn)
+	fmt.Println(f.Do())
+}
+
+
