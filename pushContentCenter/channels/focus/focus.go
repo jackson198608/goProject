@@ -230,5 +230,6 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.ImageWidth,_ = js.Get("event_info").Get("image_width").Int()
 	jsonC.ImageHeight,_ = js.Get("event_info").Get("image_height").Int()
 	jsonC.ThreadStatus,_ = js.Get("event_info").Get("thread_status").Int()
+	jsonC.Duration,_ = js.Get("event_info").Get("duration").Int()
 	return &jsonC, nil
 }
