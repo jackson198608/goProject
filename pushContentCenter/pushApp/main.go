@@ -23,6 +23,8 @@ var c Config = Config{
 	"card",
 	"adoption",//mysql dbName
 	"member",
+	"robot",
+	"recommend_data",
 	"dog123:dog123",       //mysqldbAuth
 	"127.0.0.1:6379",      //redis info
 	1,                     //thread num
@@ -62,6 +64,12 @@ func main() {
 		}
 		if c.dbDsn3 != "" && c.dbName3 != "" {
 			mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn3+")/"+c.dbName3+"?charset=utf8mb4")
+		}
+		if c.dbDsn3 != "" && c.dbName4 != "" {
+			mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn3+")/"+c.dbName4+"?charset=utf8mb4")
+		}
+		if c.dbDsn3 != "" && c.dbName5 != "" {
+			mysqlInfo = append(mysqlInfo, c.dbAuth+"@tcp("+c.dbDsn3+")/"+c.dbName5+"?charset=utf8mb4")
 		}
 		esNodes := strings.SplitN(c.elkNodes, ",", -1)
 

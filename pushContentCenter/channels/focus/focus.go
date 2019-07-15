@@ -219,5 +219,6 @@ func (f *Focus) parseJson() (*job.FocusJsonColumn, error) {
 	jsonC.TagInfo,_ = js.Get("event_info").Get("tag_info").String()  //标签信息
 	jsonC.ImageWidth,_ = js.Get("event_info").Get("image_width").Int()
 	jsonC.ImageHeight,_ = js.Get("event_info").Get("image_height").Int()
+	jsonC.ThreadStatus,_ = js.Get("event_info").Get("thread_status").Int()
 	return &jsonC, nil
 }
