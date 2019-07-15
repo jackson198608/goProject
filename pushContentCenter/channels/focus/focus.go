@@ -64,6 +64,7 @@ func NewFocus(mysqlXorm []*xorm.Engine, mongoConn []*mgo.Session, jobStr string,
 func (f *Focus) Do() error {
 	//fmt.Println(f.jsonData)
 	log.Info("get task: ",f.jsonData)
+
 	if f.jsonData.TypeId == 1 || f.jsonData.TypeId == 18 || f.jsonData.TypeId == 19 {
 		//获取原始channel
 		originalChannel := f.jsonData.Channel
@@ -109,9 +110,13 @@ func (f *Focus) Do() error {
 		//	}
 		//}
 	} else if f.jsonData.TypeId == 8 {
+		//获取原始channel
+		originalChannel := f.jsonData.Channel
+
 		f.jsonData.Source = 3
 		fp := fansPersons.NewFansPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
 		err := fp.Do()
+		f.jsonData.Channel = originalChannel //恢复channel
 		if err != nil {
 			return err
 		}
@@ -123,13 +128,17 @@ func (f *Focus) Do() error {
 		//	return err
 		//}
 
-		//推送给机器人
-		//fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
-		//frErr := fr.Do()
-		//if frErr != nil {
-		//	f.jsonData.Channel = 0
-		//	return frErr
-		//}
+		if f.jsonData.Channel == fansAndRobotChannel || f.jsonData.Channel == robotChannel {
+			//推送给机器人
+			fr := robots.NewRobots(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
+			frErr := fr.Do()
+			f.jsonData.Channel = originalChannel //恢复channel
+			if frErr != nil {
+				f.jsonData.Channel = 0
+				return frErr
+			}
+		}
+
 
 	} else if ((f.jsonData.TypeId == 9) || (f.jsonData.TypeId == 15)) && (f.jsonData.Source) == 1 {
 		ap := allPersons.NewAllPersons(f.mysqlXorm, f.mongoConn, f.jsonData, f.esConn)
