@@ -54,4 +54,5 @@ type FocusJsonColumn struct {
 	ImageWidth  int  //图片宽度
 	ImageHeight int  //图片高度
 	ThreadStatus int  //pre_forum_thread表中的status
+	IsRead      int   //是否已读  0否  1是
 }
