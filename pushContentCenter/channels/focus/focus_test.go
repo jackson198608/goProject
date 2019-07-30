@@ -47,6 +47,22 @@ func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 		return nil, nil,nil
 	}
 
+	dbName4 := "robot"
+	dataSourceName4 := dbAuth + "@tcp(" + dbDsn3 + ")/" + dbName4 + "?charset=utf8mb4"
+	engine4, err := xorm.NewEngine("mysql", dataSourceName4)
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil,nil
+	}
+
+	dbName5 := "recommend_data"
+	dataSourceName5 := dbAuth + "@tcp(" + dbDsn3 + ")/" + dbName5 + "?charset=utf8mb4"
+	engine5, err := xorm.NewEngine("mysql", dataSourceName5)
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil,nil
+	}
+
 	//mongoConn := "192.168.86.80:27017"
 	//session, err := mgo.Dial(mongoConn)
 	//if err != nil {
@@ -64,6 +80,8 @@ func testConn() ([]*xorm.Engine, []*mgo.Session, *elastic.Client) {
 	engineAry = append(engineAry, engine1)
 	engineAry = append(engineAry, engine2)
 	engineAry = append(engineAry, engine3)
+	engineAry = append(engineAry, engine4)
+	engineAry = append(engineAry, engine5)
 	var sessionAry []*mgo.Session
 	//sessionAry = append(sessionAry, session)
 	//Init()
@@ -98,7 +116,7 @@ func TestDo0(t *testing.T) {
 func TestDo1(t *testing.T) {
 	mysqlXorm, mongoConn,esConn := testConn()
 
-	jobStr := "{\"uid\":2060500,\"event_type\":1,\"infoid\":56921,\"event_info\":{\"title\":\"subject\",\"event type 1focus content\":\" focus  message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":1,\"fid\":36,\"bid\":34},\"tid\":0,\"status\":1,\"action\":0,\"time\":\"2017-10-23 10:54:00\",\"channel\":2}"
+	jobStr := "{\"uid\":2060500,\"event_type\":1,\"infoid\":56921,\"event_info\":{\"title\":\"subject\",\"event type 1focus content\":\" focus  message\",\"image_num\":\"image_num\",\"forum\":\"金毛俱乐部\",\"tag\":0,\"source\":1,\"fid\":36,\"bid\":34,\"is_potential_kol\":1},\"tid\":0,\"status\":1,\"action\":0,\"time\":\"2017-10-23 10:54:00\",\"channel\":2}"
 	f := NewFocus(mysqlXorm, mongoConn, jobStr, esConn)
 	fmt.Println(f.Do())
 }
