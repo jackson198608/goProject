@@ -136,7 +136,7 @@ func (r *Robots) formatCreatedToInt() int {
  */
  func (r *Robots) saveContent(fuid int,jsonData *job.FocusJsonColumn) (int,error) {
  	 createdInt := r.formatCreatedToInt()
- 	 exec := robot.UserPublishContent{Type:jsonData.TypeId,Fuid:fuid,Uid:jsonData.Uid,Title:jsonData.Title,Content:jsonData.Content,Images:jsonData.ImageInfo,Image:jsonData.Image,ImageNum:jsonData.Imagenums,ImageWidth:jsonData.ImageWidth,ImageHeight:jsonData.ImageHeight,VideoUrl:jsonData.VideoUrl,Duration:jsonData.Duration,Infoid:jsonData.Infoid,Pid:jsonData.Pid,Created:createdInt,TagInfo:jsonData.TagInfo,City:jsonData.City,IsDigest:jsonData.IsDigest,Source:jsonData.Source,RegisterTime:jsonData.RegisterTime,Inhome:jsonData.Inhome,Channel:jsonData.Channel,ThreadStatus:jsonData.ThreadStatus}
+ 	 exec := robot.UserPublishContent{Type:jsonData.TypeId,Fuid:fuid,Uid:jsonData.Uid,Title:jsonData.Title,Content:jsonData.Content,Images:jsonData.ImageInfo,Image:jsonData.Image,ImageNum:jsonData.Imagenums,ImageWidth:jsonData.ImageWidth,ImageHeight:jsonData.ImageHeight,VideoUrl:jsonData.VideoUrl,Duration:jsonData.Duration,Infoid:jsonData.Infoid,Pid:jsonData.Pid,Created:createdInt,TagInfo:jsonData.TagInfo,City:jsonData.City,IsDigest:jsonData.IsDigest,Source:jsonData.Source,RegisterTime:jsonData.RegisterTime,Inhome:jsonData.Inhome,Channel:jsonData.Channel,ThreadStatus:jsonData.ThreadStatus,IsPotentialKol:jsonData.IsPotentialKol}
  	 num, err := r.mysqlXorm[4].Insert(&exec)
 	 if err != nil {
 		 return 0, err
