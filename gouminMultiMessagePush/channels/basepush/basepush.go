@@ -32,7 +32,7 @@ func (b *Basepush) Do() error {
 	//发送push
 	t := appPush.NewTask(b.jobstr)
 	if t != nil {
-		w := appPush.NewWorker(t)
+		w := appPush.NewWorker(t, b.redisConn)
 		result := w.Push(b.p12Bytes)
 		if !result {
 			return errors.New("multi push fail")
