@@ -15,12 +15,12 @@ func testConn() ( *redis.ClusterClient) {
 	redisInfo := tools.FormatRedisOption(redisstr)
 	redisConn,_ := tools.GetClusterClient(&redisInfo)
 
-	// var nodes []string
-	// nodes = append(nodes, "http://192.168.86.230:9200")
-	// //nodes = append(nodes, "http://192.168.86.231:9200")
-	// r,_ := elasticsearchBase.NewClient(nodes)
-	// esConn,_ :=r.Run()
-	return redisConn
+	var nodes []string
+	nodes = append(nodes, "http://192.168.86.230:9200")
+	//nodes = append(nodes, "http://192.168.86.231:9200")
+	r,_ := elasticsearchBase.NewClient(nodes)
+	esConn,_ :=r.Run()
+	return redisConn,esConn
 	// return engine, session
 }
 
