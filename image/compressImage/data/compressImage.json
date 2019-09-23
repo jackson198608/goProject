@@ -1,1 +1,1 @@
-{"redisConn":"192.168.5.45:6380,192.168.5.45:6381,192.168.5.220:6380,192.168.5.220:6381,192.168.5.230:6380,192.168.5.230:6381","coroutinNum":10,"queueName":"imageCompressTaskList","phpServerIp":"192.168.5.25","watermarkPath":"/www/wwwroot/goumin.com/www/diary/watermark/"}
+{"redisConn":"192.168.5.30:6380,192.168.5.30:6381,192.168.5.26:6380,192.168.5.26:6381,192.168.5.27:6380,192.168.5.27:6381","coroutinNum":10,"queueName":"imageCompressTaskList","phpServerIp":"192.168.5.25","watermarkPath":"/www/wwwroot/goumin.com/www/diary/watermark/"}
