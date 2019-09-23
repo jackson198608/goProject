@@ -18,7 +18,7 @@ import (
 )
 
 //define the config var
-var c Config = Config{5, 100, "192.168.86.80:6380,192.168.86.80:6381,192.168.86.81:6380,192.168.86.81:6380,192.168.86.82:6380,192.168.86.82:6381", "http://192.168.86.230:9200,http://192.168.86.231:9200","/Users/Snow/Work/go/config/gouminMultiMessagePushLog.xml"}
+var c Config = Config{5, 100, "192.168.86.80:6380,192.168.86.80:6381,192.168.86.81:6380,192.168.86.81:6380,192.168.86.82:6380,192.168.86.82:6381", "http://192.168.86.230:9200,http://192.168.86.231:9200","/etc/gouminMultiMessagePushLog.xml"}
 var numForOneLoop int = c.currentNum
 var p12Bytes []byte
 var timeout time.Duration = c.httpTimeOut
