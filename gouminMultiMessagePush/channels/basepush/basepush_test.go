@@ -25,7 +25,7 @@ func testConn() ( *redis.ClusterClient) {
 }
 
 func TestDo(t *testing.T) {
-	redisConn := testConn()
+	redisConn, _ := testConn()
 
 	cBytes, err := ioutil.ReadFile("/etc/pro-lingdang.pem")
 	if err != nil {
