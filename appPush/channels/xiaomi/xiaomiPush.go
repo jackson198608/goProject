@@ -2,37 +2,38 @@ package xiaomi
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/jackson198608/goProject/ActiveRecord"
+	log "github.com/thinkboy/log4go"
+	"gopkg.in/redis.v4"
 	"io/ioutil"
 	"net/http"
-	"time"
-	"gopkg.in/redis.v4"
-	"strconv"
 	"net/url"
+	"strconv"
 	"strings"
-	"github.com/jackson198608/goProject/ActiveRecord"
+	"time"
 )
 
 var push_url = "https://api.xmpush.xiaomi.com/v3/message/regid"
-var secret = "i4ktMRyMLHE70rT6X/fU2A==";
-var package_name = "com.goumin.forum";
+var secret = "i4ktMRyMLHE70rT6X/fU2A=="
+var package_name = "com.goumin.forum"
 var timeout time.Duration = 5
+
 func Init(t time.Duration) {
 	timeout = t
 }
 
 type Worker struct {
-	token string
-	jsonStr string
+	token     string
+	jsonStr   string
 	redisConn *redis.ClusterClient
 }
 
 type PushResponse struct {
-	Result string `json:"result"`
-	Reason string `json:"reason"`
+	Result  string `json:"result"`
+	Reason  string `json:"reason"`
 	TraceId string `json:"trace_id"`
-	Code int `json:"code"`
-	Desc string `json:"description"`
+	Code    int    `json:"code"`
+	Desc    string `json:"description"`
 }
 
 func NewPush(token string, jsonStr string, redisConn *redis.ClusterClient) (w *Worker) {
@@ -44,10 +45,10 @@ func NewPush(token string, jsonStr string, redisConn *redis.ClusterClient) (w *W
 	return &wR
 }
 
-func (w Worker) AndroidXiaomiPush() (result bool){
+func (w Worker) AndroidXiaomiPush() (result bool) {
 	err, commonInfo := ParsePushInfo(w.jsonStr)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
 
@@ -75,7 +76,7 @@ func (w Worker) AndroidXiaomiPush() (result bool){
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
 	defer resp.Body.Close()
@@ -84,17 +85,16 @@ func (w Worker) AndroidXiaomiPush() (result bool){
 
 	err, response := parseResponse(string(body))
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return false
 	}
 	if response.Code != 0 {
-		fmt.Println("[error] response error :", response.Desc)
+		log.Info("[error] response error :", response.Desc)
 		return false
 	}
-	fmt.Println("[success] xiaomi push response: ", string(body))
+	log.Info("[success] xiaomi push response: ", string(body))
 	return true
 }
-
 
 func parseResponse(response string) (error, PushResponse) {
 	var arr PushResponse
@@ -104,7 +104,6 @@ func parseResponse(response string) (error, PushResponse) {
 	}
 	return nil, arr
 }
-
 
 func ParsePushInfo(jsonStr string) (error, ActiveRecord.PushInfo) {
 	var arr ActiveRecord.PushInfo

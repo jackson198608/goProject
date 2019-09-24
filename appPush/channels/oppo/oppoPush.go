@@ -1,18 +1,18 @@
 package oppo
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
+	"github.com/jackson198608/goProject/ActiveRecord"
+	log "github.com/thinkboy/log4go"
+	"gopkg.in/redis.v4"
 	"io/ioutil"
 	"net/http"
-	"time"
-	"gopkg.in/redis.v4"
-	"strconv"
 	"net/url"
-	"crypto/sha256"
+	"strconv"
 	"strings"
-	"github.com/jackson198608/goProject/ActiveRecord"
+	"time"
 )
 
 var auth_url = "https://api.push.oppomobile.com/server/v1/auth"
@@ -22,31 +22,32 @@ var unicast_batch_url = "https://api.push.oppomobile.com/server/v1/message/notif
 var APP_KEY = "7jGL33e7EMsC4S488s4O8OwS8"
 var MasterSecret = "87874c1285Eb2C2E3f3ed0159cDd06F7"
 var timeout time.Duration = 5
+
 func Init(t time.Duration) {
 	timeout = t
 }
 
 type Worker struct {
-	token string
-	jsonStr string
+	token     string
+	jsonStr   string
 	redisConn *redis.ClusterClient
 }
 
 type OppoTokenInfo struct {
-	Code 	int    		`json:"code"`
-	Data  	DataInfo  	`json:"data"` 
-	Message string 		`json:"message"`
+	Code    int      `json:"code"`
+	Data    DataInfo `json:"data"`
+	Message string   `json:"message"`
 }
 
 type DataInfo struct {
-	AuthToken  string 	`json:"auth_token"`
-	CreateTime int 		`json:"create_time"`
+	AuthToken  string `json:"auth_token"`
+	CreateTime int    `json:"create_time"`
 }
 
 type MessageInfo struct {
-	Code 	int 		`json:"code"`
-	MsgData 	MsgDataInfo `json:"data"`
-	Message string 		`json:"message"`
+	Code    int         `json:"code"`
+	MsgData MsgDataInfo `json:"data"`
+	Message string      `json:"message"`
 }
 
 type MsgDataInfo struct {
@@ -61,12 +62,12 @@ func NewPush(token string, jsonStr string, redisConn *redis.ClusterClient) (w *W
 	return &wR
 }
 
-func (w Worker) AndroidOppoPush() (result bool){
+func (w Worker) AndroidOppoPush() (result bool) {
 	auth_token := w.getAuth()
 	if auth_token == "" {
 		return false
 	}
-	fmt.Println("[success] oppo auth_token is :", auth_token)
+	log.Info("[success] oppo auth_token is :", auth_token)
 	message_id := w.getPushMessageId(auth_token)
 	v := url.Values{}
 	v.Set("message_id", message_id)
@@ -83,20 +84,20 @@ func (w Worker) AndroidOppoPush() (result bool){
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("[error] oppo client response :", err)
+		log.Info("[error] oppo client response :", err)
 		return false
 	}
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("[success] oppo push message response :", string(body))
+	log.Info("[success] oppo push message response :", string(body))
 	return true
 }
 
 func (w Worker) getPushMessageId(auth_token string) (message_id string) {
-    err, commonInfo := ParsePushInfo(w.jsonStr)
+	err, commonInfo := ParsePushInfo(w.jsonStr)
 	if err != nil {
-		fmt.Println("[error] oppo parse :", err)
+		log.Info("[error] oppo parse :", err)
 		return ""
 	}
 
@@ -118,23 +119,23 @@ func (w Worker) getPushMessageId(auth_token string) (message_id string) {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("[error] oppo client ", err)
+		log.Info("[error] oppo client ", err)
 		return ""
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("[message] oppo get message id :", string(body))
+	log.Info("[message] oppo get message id :", string(body))
 
 	err, msgInfo := w.ParseMessageInfo(string(body))
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return ""
 	}
-	fmt.Println("[success] oppo android response oppoMessageId:", msgInfo.MsgData.MessageId)
+	log.Info("[success] oppo android response oppoMessageId:", msgInfo.MsgData.MessageId)
 	return msgInfo.MsgData.MessageId
 }
 
-func (w Worker) getAuth() (token string){
+func (w Worker) getAuth() (token string) {
 	msectime := int(time.Now().UnixNano() / 1e6)
 	hashStr := APP_KEY + strconv.Itoa(msectime) + MasterSecret
 	//使用sha256哈希函数
@@ -157,20 +158,20 @@ func (w Worker) getAuth() (token string){
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("[error] oppo client :", err)
+		log.Info("[error] oppo client :", err)
 		return ""
 	}
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("[notice] oppo android response oppoGetToken:", string(body))
+	log.Info("[notice] oppo android response oppoGetToken:", string(body))
 
 	err, tokenInfo := w.ParseToken(string(body))
 	if err != nil {
-		fmt.Println("[error] oppo parse token :", err)
+		log.Info("[error] oppo parse token :", err)
 		return ""
 	}
-	fmt.Println("[success] oppo android response oppoGetToken:", string(tokenInfo.Message))
+	log.Info("[success] oppo android response oppoGetToken:", string(tokenInfo.Message))
 	return tokenInfo.Data.AuthToken
 }
 

@@ -6,18 +6,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/jackson198608/goProject/appPush/channels/huawei"
+	"github.com/jackson198608/goProject/appPush/channels/meizu"
+	"github.com/jackson198608/goProject/appPush/channels/oppo"
+	"github.com/jackson198608/goProject/appPush/channels/vivo"
+	"github.com/jackson198608/goProject/appPush/channels/xiaomi"
 	apns "github.com/sideshow/apns2"
 	"github.com/sideshow/apns2/certificate"
 	"github.com/thinkboy/log4go"
+	log "github.com/thinkboy/log4go"
+	"gopkg.in/redis.v4"
 	"io/ioutil"
 	"net/http"
 	"time"
-	"gopkg.in/redis.v4"
-	"github.com/jackson198608/goProject/appPush/channels/oppo"
-	"github.com/jackson198608/goProject/appPush/channels/huawei"
-	"github.com/jackson198608/goProject/appPush/channels/vivo"
-	"github.com/jackson198608/goProject/appPush/channels/meizu"
-	"github.com/jackson198608/goProject/appPush/channels/xiaomi"
 )
 
 //gloabl variables
@@ -28,7 +29,7 @@ var mobKey = "2b14bb6c10bac"
 var mobSign = "172cca337b3b9ea4cf4b250bd7c773e0"
 
 type Worker struct {
-	t *Task
+	t         *Task
 	redisConn *redis.ClusterClient
 }
 
@@ -38,13 +39,9 @@ type modPushRes struct {
 	Res    string `json:"res"`
 }
 
-
 func Init(t time.Duration) {
 	timeout = t
 }
-
-
-
 
 func NewWorker(t *Task, redisConn *redis.ClusterClient) (w *Worker) {
 	//init the worker
@@ -64,23 +61,23 @@ func (w Worker) Push(p12bytes []byte) (result bool) {
 		//result = w.androidPushMob()
 		result = true
 	} else if phoneType == 2 {
-		fmt.Println("[request] huawei phoneType:2")
+		log.Info("[request] huawei phoneType:2")
 		hw := huawei.NewPush(w.t.DeviceToken, w.t.TaskJson, w.redisConn)
 		result = hw.AndroidHuaweiPush()
 	} else if phoneType == 3 {
-		fmt.Println("[request] xiaomi phoneType:3")
+		log.Info("[request] xiaomi phoneType:3")
 		xm := xiaomi.NewPush(w.t.DeviceToken, w.t.TaskJson, w.redisConn)
 		result = xm.AndroidXiaomiPush()
 	} else if phoneType == 4 {
-		fmt.Println("[request] oppo phoneType:4")
+		log.Info("[request] oppo phoneType:4")
 		op := oppo.NewPush(w.t.DeviceToken, w.t.TaskJson, w.redisConn)
 		result = op.AndroidOppoPush()
 	} else if phoneType == 5 {
-		fmt.Println("[request] vivo phoneType:5")
+		log.Info("[request] vivo phoneType:5")
 		vv := vivo.NewPush(w.t.DeviceToken, w.t.TaskJson, w.redisConn)
 		result = vv.AndroidVivoPush()
 	} else if phoneType == 6 {
-		fmt.Println("[request] meizu phoneType:6")
+		log.Info("[request] meizu phoneType:6")
 		mz := meizu.NewPush(w.t.DeviceToken, w.t.TaskJson, w.redisConn)
 		result = mz.AndroidMeizuPush()
 	} else {
@@ -114,7 +111,6 @@ func (w Worker) iosPush(p12bytes []byte) (result bool) {
 	res, err := client.Push(notification)
 	//_, err := client.Push(notification)
 	log4go.Info("res:", res)
-
 
 	if err != nil {
 		//fmt.Println("Error:", err)
@@ -200,5 +196,3 @@ func md5Str(str string) string {
 	h.Write([]byte(str))
 	return hex.EncodeToString(h.Sum(nil))
 }
-
-

@@ -5,13 +5,13 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
+	"github.com/jackson198608/goProject/ActiveRecord"
+	log "github.com/thinkboy/log4go"
+	"gopkg.in/redis.v4"
 	"io/ioutil"
 	"net/http"
-	"time"
-	"gopkg.in/redis.v4"
 	"strconv"
-	"github.com/jackson198608/goProject/ActiveRecord"
+	"time"
 )
 
 var app_key = "b2466161-ef62-414f-bb10-1b6150978001"
@@ -20,26 +20,27 @@ var app_secret = "bef72815-a082-4f93-a857-52e758bd5b74"
 var push_url = "https://api-push.vivo.com.cn/message/send"
 var auth_url = "https://api-push.vivo.com.cn/message/auth"
 var timeout time.Duration = 5
+
 func Init(t time.Duration) {
 	timeout = t
 }
 
 type Worker struct {
-	token string
-	jsonStr string
+	token     string
+	jsonStr   string
 	redisConn *redis.ClusterClient
 }
 
 type AuthInfo struct {
-	Result 		int 	`json:"result"`
-	Desc 		string 	`json:"desc"`
-	AuthToken 	string  `json:"authToken"`
+	Result    int    `json:"result"`
+	Desc      string `json:"desc"`
+	AuthToken string `json:"authToken"`
 }
 
 type ResponseInfo struct {
-	Result 		int 	`json:"result"`
-	Desc 		string 	`json:"desc"`
-	TaskId 		string 	`json:"taskId"`
+	Result int    `json:"result"`
+	Desc   string `json:"desc"`
+	TaskId string `json:"taskId"`
 }
 
 func NewPush(token string, jsonStr string, redisConn *redis.ClusterClient) (w *Worker) {
@@ -50,12 +51,12 @@ func NewPush(token string, jsonStr string, redisConn *redis.ClusterClient) (w *W
 	return &wR
 }
 
-func (w Worker) AndroidVivoPush() (result bool){
+func (w Worker) AndroidVivoPush() (result bool) {
 	authToken := w.getAuth()
 	if authToken == "" {
 		return false
 	}
-	fmt.Println("[success] vivo authToken : ", authToken)
+	log.Info("[success] vivo authToken : ", authToken)
 	params := w.getPushParams()
 	var jsonStr []byte = []byte(params)
 	req, err := http.NewRequest("POST", push_url, bytes.NewBuffer(jsonStr))
@@ -68,24 +69,24 @@ func (w Worker) AndroidVivoPush() (result bool){
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("[error] vivo push request :", err)
+		log.Error("[error] vivo push request :", err)
 		return false
 	}
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("[messge] vivo android response vivoPushMsg:", string(body))
+	log.Info("[messge] vivo android response vivoPushMsg:", string(body))
 	//{"result":0,"desc":"请求成功","taskId":"624304170434887680"}
 	err, response := w.parseResponseInfo(string(body))
 	if err != nil {
-		fmt.Println("[error] vivo parase response info :", err)
+		log.Error("[error] vivo parase response info :", err)
 		return false
 	}
 	if response.Result != 0 {
-		fmt.Println("[error] vivo response error info :", response.Desc)
+		log.Info("[error] vivo response error info :", response.Desc)
 		return false
 	}
-	fmt.Println("[success] vivo android response vivoMessageId: ", response.Desc)
+	log.Info("[success] vivo android response vivoMessageId: ", response.Desc)
 	return true
 }
 
@@ -95,14 +96,14 @@ func (w Worker) getPushParams() (params string) {
 		return ""
 	}
 	msectime := int(time.Now().UnixNano() / 1e6)
-	params = `{"regId":"`+ w.token +`","notifyType":4,"title":"`+ commonInfo.Title +`","content":"`+ commonInfo.Content +`","skipType":3,"skipContent":"start","clientCustomMap":`+ w.jsonStr +`,"requestId":"`+ strconv.Itoa(msectime) +`"}`
+	params = `{"regId":"` + w.token + `","notifyType":4,"title":"` + commonInfo.Title + `","content":"` + commonInfo.Content + `","skipType":3,"skipContent":"start","clientCustomMap":` + w.jsonStr + `,"requestId":"` + strconv.Itoa(msectime) + `"}`
 	return params
 }
 
-func (w Worker) getAuth() (auth_token string){
+func (w Worker) getAuth() (auth_token string) {
 	msectime := int(time.Now().UnixNano() / 1e6)
 	sign := w.getSignStr(msectime)
-	params := `{"appId":"`+ app_id +`","appKey":"`+ app_key +`","timestamp":`+ strconv.Itoa(msectime) +`,"sign":"`+ sign +`"}`
+	params := `{"appId":"` + app_id + `","appKey":"` + app_key + `","timestamp":` + strconv.Itoa(msectime) + `,"sign":"` + sign + `"}`
 	var jsonStr []byte = []byte(params)
 	req, err := http.NewRequest("POST", auth_url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
@@ -113,7 +114,7 @@ func (w Worker) getAuth() (auth_token string){
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("[error] auth request :", err)
+		log.Error("[error] auth request :", err)
 		return ""
 	}
 	defer resp.Body.Close()
@@ -121,10 +122,10 @@ func (w Worker) getAuth() (auth_token string){
 	body, _ := ioutil.ReadAll(resp.Body)
 	err, tokenInfo := w.parseAuthInfo(string(body))
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		return ""
 	}
-	fmt.Println("[success] android response vivoGetToken:", string(tokenInfo.AuthToken))
+	log.Info("[success] android response vivoGetToken:", string(tokenInfo.AuthToken))
 	return tokenInfo.AuthToken
 }
 
